@@ -1,8 +1,14 @@
+$LOAD_PATH.unshift "#{File.dirname(__FILE__)}/lib"
+require 'redmine_ai_helper/sidebar_hook'
 Redmine::Plugin.register :redmine_ai_helper do
   name 'Redmine Ai Helper plugin'
-  author 'Author name'
-  description 'This is a plugin for Redmine'
+  author 'Haruyuki Iida'
+  description 'This is a plugin that helps you analyze issues with AI.'
   version '0.0.1'
-  url 'http://example.com/path/to/plugin'
+  url 'https://github.com/haru/redmine_ai_helper'
   author_url 'http://example.com/about'
+
+  project_module :ai_helper do
+    permission :view_ai_helper, { ai_helper: :index }
+  end
 end

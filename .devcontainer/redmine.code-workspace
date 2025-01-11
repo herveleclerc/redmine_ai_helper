@@ -1,11 +1,13 @@
 {
-	"folders": [
-		{
-			"path": ".."
-		},
-		{
-			"path": "../../../usr/local/redmine"
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "path": ".."
+    },
+    {
+      "path": "../../../usr/local/redmine"
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true
+  }
 }
