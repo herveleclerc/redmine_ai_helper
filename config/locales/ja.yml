@@ -1,2 +1,5 @@
 ja:
   project_module_ai_helper: "AIヘルパー"
+  label_ai_helper: "AI ヘルパー"
+  label_chat_placeholder: "メッセージを入力してください..."
+  label_ai_helper_input_newline: "Shift + Enter で改行します。"

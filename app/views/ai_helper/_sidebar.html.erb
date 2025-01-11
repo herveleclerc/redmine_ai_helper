@@ -1,9 +1,26 @@
-<div id="aihelper-sidebar">
-  <h3>
-    <%= t(:label_ai_helper) %>
-  </h3>
-  <form id="ai_helper_chat_form">
-    <input type="text" id="ai_helper_chat_input" placeholder="<%= t(:label_chat_placeholder) %>" />
-    <input type="submit" value="<%= t(:label_chat_send) %>" />
-  </form>
-</div>
+<% if @project and @project.module_enabled?(:ai_helper) %>
+  <div id="aihelper-sidebar">
+    <h3>
+      <%= t(:label_ai_helper) %>
+    </h3>
+    <div id="aihelper-chat-conversation"></div>
+    <div id="aihelper-chat-form-area"></div>
+    <span><%= t(:label_ai_helper_input_newline)%></span>
+    <hr>
+  </div>
+  <% content_for :header_tags do %>
+    <%= stylesheet_link_tag('ai_helper.css', plugin: :redmine_ai_helper) %>
+    <%= javascript_include_tag('ai_helper.js', plugin: :redmine_ai_helper) %>
+  <% end %>
+  <script>
+    $(document).ready(function() {
+      var chatForm = $('#aihelper-chat-form-area');
+      var form_url = '<%= ai_helper_chat_form_path(@project) %>';
+      chatForm.load(form_url);
+
+      var chatArea = $('#aihelper-chat-conversation');
+      var reload_url = '<%= ai_helper_reload_path(@project) %>';
+      chatArea.load(reload_url);
+    });
+  </script>
+<% end %>

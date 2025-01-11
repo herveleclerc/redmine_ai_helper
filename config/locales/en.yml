@@ -3,4 +3,4 @@ en:
   project_module_ai_helper: "AI Helper"
   label_ai_helper: "AI Helper"
   label_chat_placeholder: "Type your message here..."
-  label_chat_send: "Send"
+  label_ai_helper_input_newline: "Press Shift + Enter for a new line."

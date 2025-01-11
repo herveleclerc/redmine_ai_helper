@@ -1,0 +1,8 @@
+#ai_helper_chat_submit {
+  /* 右寄せ */
+  float: right;
+}
+
+#ai_helper_chat_form p {
+  margin: 0;
+}
