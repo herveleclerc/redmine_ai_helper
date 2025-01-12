@@ -9,11 +9,11 @@
   <%= text_field_tag 'settings[organization_id]', @settings['organization_id'], size: 48 %>
 </p>
 <p>
-  <%= label_tag 'settings[base_url]', 'Base URL(Optional)' %>
-  <%= text_field_tag 'settings[base_url]', @settings['base_url'], size: 48 %>
+  <%= label_tag 'settings[uri_base]', 'Base URL(Optional)' %>
+  <%= text_field_tag 'settings[uri_base]', @settings['uri_base'], size: 48 %>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-            var baseUrlField = document.querySelector('input[name="settings[base_url]"]');
+            var baseUrlField = document.querySelector('input[name="settings[uri_base]"]');
             baseUrlField.addEventListener('input', function() {
                     var urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
                     if (baseUrlField.value && !urlPattern.test(baseUrlField.value)) {
