@@ -2,7 +2,13 @@
   <% @conversation.messages.each do |message| %>
     <div class="aihelper-message">
       <strong><%= message.role == 'user' ? @user : message.role %></strong>
-      <pre><%= message.content %></pre>
+      <% if message.role == 'user' %>
+        <pre><%= message.content %></pre>
+      <% else %>
+        <div>
+          <%= CommonMarker.render_html(message.content).html_safe %>
+        </div>
+      <% end %>
     </div>
   <% end %>
   <% unless @conversation.messages.empty? %>
