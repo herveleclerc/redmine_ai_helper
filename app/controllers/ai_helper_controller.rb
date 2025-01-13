@@ -1,6 +1,7 @@
 # This controller is responsible for handling the chat messages between the user and the AI.
 # require 'ai_helper_conversation'
 # require 'ai_helper_message'
+require 'redmine_ai_helper/llm'
 
 class AiHelperController < ApplicationController
   before_action :find_user, :find_project, :authorize, :create_session, :find_conversation
@@ -24,7 +25,12 @@ class AiHelperController < ApplicationController
     @message.role = 'user'
     @message.content = params[:ai_helper_message][:content]
     @message.save!
+    @conversation = AiHelperConversation.find(@conversation.id)
+    llm = RedmineAiHelper::Llm.new
+    @conversation.messages << llm.chat(@conversation)
+    @conversation.save!
     render partial: 'ai_helper/chat'
+
   end
 
   private

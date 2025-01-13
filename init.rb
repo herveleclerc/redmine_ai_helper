@@ -12,5 +12,5 @@ Redmine::Plugin.register :redmine_ai_helper do
     permission :view_ai_helper, { ai_helper: [:chat, :chat_form, :reload] }
   end
 
-  settings default: {}, partial: 'ai_helper/settings'
+  settings default: {'model': 'gpt-4o-mini'}, partial: 'ai_helper/settings'
 end

@@ -1,7 +1,7 @@
 <div id="aihelper-chat-conversation">
   <% @conversation.messages.each do |message| %>
-    <div class="message">
-      <strong><%= message.role == 'user' ? @user : massage.role %></strong>
+    <div class="aihelper-message">
+      <strong><%= message.role == 'user' ? @user : message.role %></strong>
       <pre><%= message.content %></pre>
     </div>
   <% end %>

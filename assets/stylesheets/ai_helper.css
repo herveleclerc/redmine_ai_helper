@@ -6,3 +6,13 @@
 #ai_helper_chat_form p {
   margin: 0;
 }
+
+#aihelper-chat-conversation div.aihelper-message {
+  border-top: 1px solid #ccc;
+  padding-top: 1px;
+}
+
+#aihelper-chat-conversation div.aihelper-message pre {
+  white-space: pre-wrap;
+  margin-top: 0;
+}
