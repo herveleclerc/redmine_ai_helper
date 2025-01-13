@@ -1,7 +1,9 @@
-var set_ai_helper_form_handlers = function () {
+var ai_helper_urls = {};
+
+var set_ai_helper_form_handlers = function() {
   // フォームのデフォルトのsubmit動作を防ぐ
   var form = $("#ai_helper_chat_form");
-  form.on("submit", function (e) {
+  form.on("submit", function(e) {
     e.preventDefault();
     submitAction();
   });
@@ -22,18 +24,21 @@ var set_ai_helper_form_handlers = function () {
       data: formData,
       processData: false,
       contentType: false,
-      success: function (response) {
+      success: function(response) {
         $("#aihelper-chat-conversation").html(response);
         $("#ai_helper_chat_input").val("");
+        $("#aihelper-chat-conversation").scrollTop(
+          $("#aihelper-chat-conversation")[0].scrollHeight
+        );
       },
-      error: function (xhr, status, error) {
+      error: function(xhr, status, error) {
         console.error("Error:", error);
-      },
+      }
     });
   }
 
   // textareaのキーイベント処理
-  $("#ai_helper_chat_input").on("keydown", function (e) {
+  $("#ai_helper_chat_input").on("keydown", function(e) {
     if (e.key === "Enter") {
       if (e.shiftKey) {
         // Shift + Enter の場合は改行を許可
@@ -47,6 +52,21 @@ var set_ai_helper_form_handlers = function () {
         submitAction();
         return false;
       }
+    }
+  });
+};
+
+var ai_helper_reload_chat = function() {
+  var chatArea = $("#aihelper-chat-conversation");
+  $.ajax({
+    url: ai_helper_urls.reload,
+    type: "GET",
+    success: function(data) {
+      chatArea.html(data);
+      chatArea.scrollTop(chatArea[0].scrollHeight);
+    },
+    error: function(xhr, status, error) {
+      console.error("Failed to reload chat conversation:", error);
     }
   });
 };

@@ -14,13 +14,17 @@
   <% end %>
   <script>
     $(document).ready(function() {
+      ai_helper_urls = {
+        chat: '<%= ai_helper_chat_path(@project) %>',
+        reload: '<%= ai_helper_reload_path(@project) %>'
+      };
+      ai_helper_reload_chat();
+
       var chatForm = $('#aihelper-chat-form-area');
       var form_url = '<%= ai_helper_chat_form_path(@project) %>';
       chatForm.load(form_url);
 
-      var chatArea = $('#aihelper-chat-conversation');
-      var reload_url = '<%= ai_helper_reload_path(@project) %>';
-      chatArea.load(reload_url);
+      
     });
   </script>
 <% end %>

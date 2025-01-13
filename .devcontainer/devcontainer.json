@@ -53,7 +53,8 @@
 		"github.vscode-github-actions",
 		"Shopify.ruby-extensions-pack",
 		"ritwickdey.LiveServer",
-		"aliariff.vscode-erb-beautify"
+		"aliariff.vscode-erb-beautify",
+		"bysabi.prettier-vscode-standard"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
