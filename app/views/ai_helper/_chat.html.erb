@@ -5,5 +5,14 @@
       <pre><%= message.content %></pre>
     </div>
   <% end %>
+  <% unless @conversation.messages.empty? %>
+  <script>
+    $('#aihelper-chat-clear').show();
+  </script>
+  <% else %>
+  <script>
+    $('#aihelper-chat-clear').hide();
+  </script>
+  <% end %>
 
 

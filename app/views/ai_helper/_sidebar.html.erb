@@ -3,6 +3,9 @@
     <h3>
       <%= t(:label_ai_helper) %>
     </h3>
+    <span id="aihelper-chat-clear" style="display: none;">
+      <%= link_to "Clear", 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %>
+    </span>
     <div id="aihelper-chat-conversation"></div>
     <div id="aihelper-chat-form-area"></div>
     <span><%= t(:label_ai_helper_input_newline)%></span>
@@ -16,7 +19,8 @@
     $(document).ready(function() {
       ai_helper_urls = {
         chat: '<%= ai_helper_chat_path(@project) %>',
-        reload: '<%= ai_helper_reload_path(@project) %>'
+        reload: '<%= ai_helper_reload_path(@project) %>',
+        clear: '<%= ai_helper_clear_path(@project) %>'
       };
       ai_helper_reload_chat();
 

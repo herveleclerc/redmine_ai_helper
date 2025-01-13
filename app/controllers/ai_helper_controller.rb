@@ -33,6 +33,12 @@ class AiHelperController < ApplicationController
 
   end
 
+  def clear
+    session[:ai_helper][@project.identifier] = {}
+    find_conversation
+    render partial: 'ai_helper/chat'
+  end
+
   private
 
   def find_user
@@ -53,7 +59,6 @@ class AiHelperController < ApplicationController
   end
 
   def find_conversation
-    session[:ai_helper] ||= {}
     if conversation_id
       @conversation = AiHelperConversation.find(conversation_id)
     else

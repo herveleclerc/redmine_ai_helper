@@ -70,3 +70,16 @@ var ai_helper_reload_chat = function() {
     }
   });
 };
+
+var ai_helper_clear_chat = function() {
+  $.ajax({
+    url: ai_helper_urls.clear,
+    type: "GET",
+    success: function(data) {
+      ai_helper_reload_chat();
+    },
+    error: function(xhr, status, error) {
+      console.error("Failed to clear chat conversation:", error);
+    }
+  });
+};
