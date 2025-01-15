@@ -26,11 +26,13 @@ var set_ai_helper_form_handlers = function() {
       contentType: false,
       success: function(response) {
         $("#aihelper-chat-conversation").html(response);
+        $('#ai-helper-loader-area').show();
         $("#ai_helper_chat_input").val("");
         $("#aihelper-chat-conversation").scrollTop(
           $("#aihelper-chat-conversation")[0].scrollHeight
         );
         call_llm();
+
       },
       error: function(xhr, status, error) {
         console.error("Error:", error);
