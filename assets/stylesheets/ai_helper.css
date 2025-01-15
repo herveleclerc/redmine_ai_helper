@@ -9,7 +9,7 @@
 
 #aihelper-chat-conversation {
   /* チャットのスクロール */
-  overflow-y: scroll;
+  overflow-y: auto;
   max-height: 500px;
   padding: 5px;
 }
@@ -24,20 +24,7 @@
   margin-top: 0;
 }
 
-/* HTML: <div class="loader"></div> */
-/* .loader {
-  width: 60px;
-  aspect-ratio: 4;
-  background: radial-gradient(circle closest-side,#000 90%,#0000) 0/calc(100%/3) 100% space;
-  clip-path: inset(0 100% 0 0);
-  animation: l1 1s steps(4) infinite;
-}
-@keyframes l1 {to{clip-path: inset(0 -34% 0 0)}} */
-
-/* HTML: <div class="loader"></div> */
 .ai-helper-loader {
-  /* width: 120px;
-  height: 20px; */
   width: 60px;
   height: 10px;
   -webkit-mask: radial-gradient(circle closest-side,#000 94%,#0000) left/20% 100%;
