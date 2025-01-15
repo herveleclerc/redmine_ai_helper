@@ -30,6 +30,7 @@ var set_ai_helper_form_handlers = function() {
         $("#aihelper-chat-conversation").scrollTop(
           $("#aihelper-chat-conversation")[0].scrollHeight
         );
+        call_llm();
       },
       error: function(xhr, status, error) {
         console.error("Error:", error);
@@ -52,6 +53,25 @@ var set_ai_helper_form_handlers = function() {
         submitAction();
         return false;
       }
+    }
+  });
+};
+
+var call_llm = function() {
+  $.ajax({
+    url: ai_helper_urls.call_llm,
+    type: "POST",
+    data: {},
+    processData: false,
+    contentType: false,
+    success: function(response) {
+      $("#aihelper-chat-conversation").html(response);
+      $("#aihelper-chat-conversation").scrollTop(
+        $("#aihelper-chat-conversation")[0].scrollHeight
+      );
+    },
+    error: function(xhr, status, error) {
+      console.error("Error:", error);
     }
   });
 };

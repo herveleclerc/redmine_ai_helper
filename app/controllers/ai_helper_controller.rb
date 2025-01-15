@@ -26,11 +26,14 @@ class AiHelperController < ApplicationController
     @message.content = params[:ai_helper_message][:content]
     @message.save!
     @conversation = AiHelperConversation.find(@conversation.id)
+    render partial: 'ai_helper/chat'
+  end
+
+  def call_llm
     llm = RedmineAiHelper::Llm.new
     @conversation.messages << llm.chat(@conversation)
     @conversation.save!
     render partial: 'ai_helper/chat'
-
   end
 
   def clear
