@@ -1,40 +1,133 @@
-require 'openai'
-require 'json'
-module RedmineAiHelper
+require "redmine_ai_helper/agent"
+require "openai"
+require "json"
 
+module RedmineAiHelper
   class Llm
     attr_accessor :model
+
+    # initialize the client
+    # @param [Hash] params
+    # @option params [String] :access_token
+    # @option params [String] :uri_base
+    # @option params [String] :organization_id
     def initialize(params = {})
-      params[:access_token] ||= Setting.plugin_redmine_ai_helper['access_token']
-      params[:uri_base] ||= Setting.plugin_redmine_ai_helper['uri_base']
-      params[:organization_id] ||= Setting.plugin_redmine_ai_helper['organization_id']
-      @model ||= Setting.plugin_redmine_ai_helper['model']
+      params[:access_token] ||= Setting.plugin_redmine_ai_helper["access_token"]
+      params[:uri_base] ||= Setting.plugin_redmine_ai_helper["uri_base"]
+      params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
+      @model ||= Setting.plugin_redmine_ai_helper["model"]
 
       @client = OpenAI::Client.new(params)
     end
 
+    # chat with the AI
     def chat(conversation)
       messages = conversation.messages.map do |message|
         {
           role: message.role,
-          content: message.content
+          content: message.content,
         }
       end
+      tool = select_tool(messages.last, conversation)
+      answer = dispatch(tool, conversation)
+      return answer if answer
+
       system_message = {
-        role: 'system',
-        content: system_prompt(conversation)
+        role: "system",
+        content: system_prompt(conversation),
       }
       messages.prepend(system_message)
       response = @client.chat(
         parameters: {
           model: @model,
-          messages: messages
-        }
+          messages: messages,
+        },
       )
 
-      AiHelperMessage.new(role: 'assistant', content: response['choices'][0]['message']['content'], conversation: conversation)
+      AiHelperMessage.new(role: "assistant", content: response["choices"][0]["message"]["content"], conversation: conversation)
     end
 
+    def dispatch(tool, conversation)
+      name = tool["name"]
+      args = tool["arguments"]
+      return if name.nil?
+
+      begin
+        agent = Agent.new(self)
+        result = agent.callTool(name: name, arguments: args)
+        json_str = result.to_json
+        messages = []
+        messages << {
+          role: "system",
+          content: system_prompt(conversation),
+        }
+        prompt = <<-EOS
+ツールの実行結果は以下のJSONになります。ユーザーに回答する文章を作成してください。回答は簡潔に要約してください。
+箇条書きで回答可能であれば、箇条書きで回答を作成してください。
+また、過去の会話履歴も参考にしてください。
+----
+JSON:
+#{json_str}
+----
+過去の会話履歴:
+#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
+
+        EOS
+        messages << { role: "user", content: prompt }
+        response = @client.chat(
+          parameters: {
+            model: @model,
+            messages: messages,
+          },
+        )
+        AiHelperMessage.new(role: "assistant", content: response["choices"][0]["message"]["content"], conversation: conversation)
+      rescue => e
+        AiHelperMessage.new(role: "assistant", content: e.message, conversation: conversation)
+      end
+    end
+
+    # select the tool to solve the task
+    def select_tool(task, conversation)
+      tools = Agent.listTools
+      messages = []
+      messages << {
+        role: "system",
+        content: system_prompt(conversation),
+      }
+      conversation_history = ""
+      conversation.messages.each do |message|
+        conversation_history += "----\n#{message.role}: #{message.content}\n"
+      end
+
+      prompt = <<-EOS
+#{task}を解決するのに最適なツールを以下のJSONの中から選択してください。選択には過去の会話履歴も参考にしてください。また、そのツールに渡すのに必要な引数も作成してください。
+回答は以下の形式のJSONで作成してください。最適なツールがない場合は、空のJSONを返してください。
+
+JSONの例:
+{
+  "name": "read_issue",
+  "arguments": {  "id": 1 }
+}
+** 回答にはJSON以外を含めないでください。解説等は不要です。 **
+----
+ツールのリスト
+#{tools}
+----
+過去の会話履歴:
+#{conversation_history}
+      EOS
+      messages << { role: "user", content: prompt }
+      response = @client.chat(
+        parameters: {
+          model: @model,
+          messages: messages,
+        },
+      )
+      json = response["choices"][0]["message"]["content"]
+      JsonExtractor.extract(json)
+    end
+
+    # generate system prompt
     def system_prompt(conversation = nil)
       project = conversation.nil? ? nil : conversation.project
       prompt = <<-EOS
@@ -46,32 +139,12 @@ module RedmineAiHelper
 
 以下はあなたの参考知識です。
 ----
-JSONで定義したこのRedmineの情報は以下になります。
-current_projectが現在ユーザーが表示中のプロジェクトです。
+参考情報：
+JSONで定義したこのRedmineのサイト情報は以下になります。
+JSONの中のcurrent_projectが現在ユーザーが表示している、このプロジェクトです。
 
 #{site_info_json(project: project)}
-----
-Redmineの一般的な説明は以下になります。
---
-Redmineは、オープンソースのプロジェクト管理ツールです。Ruby on Railsで開発されており、以下のような特徴があります。
-プロジェクト管理の主要機能：
-チケット（課題）管理：タスクや不具合などをチケットとして登録・追跡できます。優先度、担当者、期限などを設定可能です。
-ガントチャート：プロジェクトのスケジュール管理をビジュアル的に行えます。タスクの依存関係や進捗状況を確認できます。
-カレンダー：締め切りやマイルストーンをカレンダー形式で表示できます。
-Wiki：プロジェクトのドキュメント作成・共有が可能です。Markdownなどの記法に対応しています。
-バージョン管理システムとの連携：GitやSVNなどのバージョン管理システムと連携でき、ソースコードの変更履歴とチケットを関連付けられます。
-カスタマイズ性：
-プラグイン機能により、機能を追加・拡張できます。
-ワークフローやチケットのフィールドをカスタマイズ可能です。
-多言語対応しており、日本語を含む様々な言語で利用できます。
-セキュリティ：
-ユーザー管理とロール（役割）ベースのアクセス制御を提供します。
-プロジェクトごとに権限を細かく設定できます。
-多くの企業や組織で採用されており、特に以下のような場面で活用されています：
-・ソフトウェア開発プロジェクトの管理
-・社内システムの課題管理
-・部門横断的なタスク管理
-・ドキュメント共有とナレッジ管理
+
       EOS
 
       prompt
@@ -81,8 +154,8 @@ Wiki：プロジェクトのドキュメント作成・共有が可能です。M
       hash = {
         site: {
           title: Setting.app_title,
-          welcome_text: Setting.welcome_text
-        }
+          welcome_text: Setting.welcome_text,
+        },
       }
 
       if param[:project]
@@ -92,12 +165,42 @@ Wiki：プロジェクトのドキュメント作成・共有が可能です。M
           name: project.name,
           description: project.description,
           identifier: project.identifier,
-          created_on: project.created_on
+          created_on: project.created_on,
 
         }
       end
 
       JSON.pretty_generate(hash)
+    end
+
+    class JsonExtractor
+      def self.extract(input)
+        # パターン1: 純粋なJSONテキスト
+        # パターン2: Markdownのコードブロックで囲まれたJSON
+
+        # Markdownのコードブロックを処理
+        if input.start_with?("```json") && input.end_with?("```")
+          # ```json と ``` を削除
+          json_str = input.gsub(/^```json\n/, "").gsub(/```$/, "")
+        else
+          # 純粋なJSONテキストとして扱う
+          json_str = input
+        end
+
+        # JSONとして解析できるか確認
+        begin
+          # 文字列からRubyのハッシュに変換
+          JSON.parse(json_str)
+        rescue JSON::ParserError => e
+          raise "Invalid JSON format: #{e.message}"
+        end
+      end
+
+      # 文字列として整形されたJSONを取得するメソッド
+      def self.extract_pretty(input)
+        hash = extract(input)
+        JSON.pretty_generate(hash)
+      end
     end
   end
 end
