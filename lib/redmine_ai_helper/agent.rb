@@ -66,7 +66,12 @@ module RedmineAiHelper
     def read_issue(args = {})
       sym_args = args.deep_symbolize_keys
       issue_id = sym_args[:id]
-      issue = Issue.find(issue_id)
+      issue = Issue.find_by(id: issue_id)
+      return { error: "Issue not found" } unless issue
+
+      # Check if the issue is visible to the current user
+      return { error: "You don't have permission to view this issue" } unless issue.visible?
+
       issue_json = {
         id: issue.id,
         subject: issue.subject,
@@ -134,6 +139,7 @@ module RedmineAiHelper
       project_id = sym_args[:id]
       project_name = sym_args[:name]
       project_identifier = sym_args[:identifier]
+      project = nil
       if project_id
         project = Project.find(project_id)
       elsif project_name
@@ -141,8 +147,11 @@ module RedmineAiHelper
       elsif project_identifier
         project = Project.find_by(identifier: project_identifier)
       else
-        raise "No project identifier provided"
+        return { error: "No id or name or Identifier specified." }
       end
+
+      return { error: "Project not found" } unless project
+      return { error: "You don't have permission to view this project" } unless project.visible?
       project_json = {
         id: project.id,
         name: project.name,
@@ -154,7 +163,10 @@ module RedmineAiHelper
         inherit_members: project.inherit_members,
         created_on: project.created_on,
         updated_on: project.updated_on,
-        subprojects: project.children.map do |child|
+        subprojects: project.children.select { |p|
+          puts "##### #{p.name} #{p.visible?} ####"
+          p.visible?
+        }.map do |child|
           {
             id: child.id,
             name: child.name,
