@@ -8,6 +8,9 @@
     }
   ],
   "settings": {
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "git.ignoredRepositories": [
+      "/usr/local/redmine/plugins/redmine_ai_helper"
+    ]
   }
 }

@@ -1,2 +1,3 @@
 # Load the Redmine helper
-require_relative '../../../test/test_helper'
+p Rails
+require_relative "#{Rails.application.root}/test/test_helper"

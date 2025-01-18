@@ -6,7 +6,8 @@
 	"service": "app",
 	
 	"mounts": [
-		"source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind"
+		"source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind",
+		"source=${localWorkspaceFolder},target=/usr/local/redmine/plugins/${localWorkspaceFolderBasename},type=bind"
 	],
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     
