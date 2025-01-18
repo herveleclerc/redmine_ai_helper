@@ -22,16 +22,134 @@ module RedmineAiHelper
 
     # chat with the AI
     def chat(conversation)
+      task = conversation.messages.last.content
+      goal = task
+
+      answer = execute_task(goal, task, conversation)
+
+      AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
+    end
+
+    def execute_task(goal, task, conversation, pre_tasks = [], depth = 0)
+      answer = ""
+      tasks = decompose_task(goal, task, conversation, pre_tasks)
+      puts "####### tasks: #{tasks} #######"
+      if tasks.length > 1 and depth < 4
+        depth += 1
+        tasks.each do |task|
+          answer = execute_task(goal, task, conversation, pre_tasks, depth)
+          pre_task = {
+            "name": task["name"],
+            "step": task["step"],
+            "result": answer,
+          }
+          pre_tasks << pre_task
+        end
+        answer = merge_results(goal, task, conversation, pre_tasks)
+      else
+        answer = dispatch(goal, task, conversation, pre_tasks)
+      end
+      answer
+    end
+
+    def merge_results(goal, task, conversation, pre_tasks)
+      messages = []
+      messages << {
+        role: "system",
+        content: system_prompt(conversation),
+      }
+      goal_string = ""
+      if goal != task
+        goal_string = "なお、このタスクが最終的に解決したいゴールは「#{goal}」です。"
+      end
+      pre_task_string = ""
+
+      prompt = <<-EOS
+「 #{task}」というタスクを解決するために今までに実施したステップは以下の通りです。これらの結果の内容をまとめて、最終回答を作成してください。
+#{goal_string}
+回答の作成には過去の会話履歴も参考にしてください。
+----
+事前のステップ:
+#{pre_tasks.map { |pre_task| "----\n#{pre_task["name"]}: #{pre_task["step"]}\n#{pre_task["result"]}" }.join("\n")}
+----
+過去の会話履歴:
+#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
+
+EOS
+    end
+
+    # decompose the task
+    # @param [String] goal
+    # @param [String] task
+    # @param [Conversation] conversation
+    # @param [Array] pre_tasks
+    def decompose_task(goal, task, conversation, pre_tasks = [])
+      tools = Agent.listTools
+      messages = []
+      messages << {
+        role: "system",
+        content: system_prompt(conversation),
+      }
+      goal_string = ""
+      if goal != task
+        goal_string = "なお、このタスクが最終的に解決したいゴールは「#{goal}」です。"
+      end
+      pre_task_string = ""
+      if pre_tasks.length > 0
+        pre_task_string = <<-EOS
+---
+「#{goal}」を解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップを考えてください。
+事前のステップ:
+#{pre_tasks.map { |pre_task| "----\n#{pre_task["name"]}: #{pre_task["step"]}\n#{pre_task["result"]}" }.join("\n")}
+---
+EOS
+      end
+
+      prompt = <<-EOS
+「#{task}」というタスクを解決するために必要なステップに分解してください。#{goal_string}
+ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。それらをまとめてJSONを作成してください。２つ以上のステップに分解ができない場合には元のタスクをそのまま一つのステップとして記述してください。
+#{pre_task_string}
+ステップの作成には過去の会話履歴も参考にしてください。
+** 回答にはJSON以外を含めないでください。解説等は不要です。 **
+----
+JSONの例:
+{
+  "steps": [
+    {
+          "name": "step1",
+          "step": "プロジェクトの一覧を取得する",
+        },
+    {
+          "name": "step2",
+          "step": "個々のプロジェクトの詳細情報を取得する",
+        },
+  ],
+}
+----
+tools:
+#{tools}
+----
+過去の会話履歴:
+#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
+      EOS
+      messages << { role: "user", content: prompt }
+      response = @client.chat(
+        parameters: {
+          model: @model,
+          messages: messages,
+        },
+      )
+      json = response["choices"][0]["message"]["content"]
+      JsonExtractor.extract(json)
+    end
+
+    def simple_llm_chat(conversation)
       messages = conversation.messages.map do |message|
         {
           role: message.role,
           content: message.content,
         }
       end
-      tool = select_tool(messages.last, conversation)
-      answer = dispatch(tool, conversation)
-      return answer if answer
-
       system_message = {
         role: "system",
         content: system_prompt(conversation),
@@ -44,13 +162,17 @@ module RedmineAiHelper
         },
       )
 
-      AiHelperMessage.new(role: "assistant", content: response["choices"][0]["message"]["content"], conversation: conversation)
+      answer = response["choices"][0]["message"]["content"]
+
+      answer
     end
 
-    def dispatch(tool, conversation)
+    # dispatch the tool
+    def dispatch(goal, task, conversation, pre_tasks = [])
+      tool = select_tool(goal, task, conversation)
       name = tool["name"]
       args = tool["arguments"]
-      return if name.nil?
+      return simple_llm_chat(conversation) if name.nil?
 
       begin
         agent = Agent.new(self)
@@ -80,14 +202,14 @@ JSON:
             messages: messages,
           },
         )
-        AiHelperMessage.new(role: "assistant", content: response["choices"][0]["message"]["content"], conversation: conversation)
+        response["choices"][0]["message"]["content"]
       rescue => e
-        AiHelperMessage.new(role: "assistant", content: e.message, conversation: conversation)
+        e.message
       end
     end
 
     # select the tool to solve the task
-    def select_tool(task, conversation)
+    def select_tool(goal, task, conversation)
       tools = Agent.listTools
       messages = []
       messages << {

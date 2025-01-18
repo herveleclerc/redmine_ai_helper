@@ -182,7 +182,7 @@ module RedmineAiHelper
         inherit_members: project.inherit_members,
         created_on: project.created_on,
         updated_on: project.updated_on,
-        subprojects: project.children.select { |p| }.map do |child|
+        subprojects: project.children.select { |p| p.visible? }.map do |child|
           {
             id: child.id,
             name: child.name,
