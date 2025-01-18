@@ -10,15 +10,15 @@ class AgentTest < ActiveSupport::TestCase
 
   def test_callTool
     assert_raise(RuntimeError) { @agent.callTool(name: "not_exist") }
-    issue_json = @agent.callTool(name: "read_issue", arguments: { id: Issue.first.id })
+    issue_json = @agent.callTool(name: "read_issue", arguments: { 'id': Issue.first.id })
     assert_equal Issue.first.id, issue_json[:id]
-    project_json = @agent.callTool(name: "read_project", arguments: { id: Project.first.id })
+    project_json = @agent.callTool(name: "read_project", arguments: { 'id': Project.first.id })
     assert_equal Project.first.id, project_json[:id]
   end
 
   def test_read_issue
     issue = Issue.first
-    issue_json = @agent.read_issue(id: issue.id)
+    issue_json = @agent.read_issue({ 'id': issue.id })
     assert_equal issue.id, issue_json[:id]
     assert_equal issue.subject, issue_json[:subject]
     assert_equal issue.project.id, issue_json[:project][:id]
@@ -47,7 +47,7 @@ class AgentTest < ActiveSupport::TestCase
 
   def test_read_project
     project = Project.first
-    project_json = @agent.read_project('id': project.id)
+    project_json = @agent.read_project({ 'id': project.id })
     assert_equal project.id, project_json[:id]
     assert_equal project.name, project_json[:name]
     assert_equal project.description, project_json[:description]

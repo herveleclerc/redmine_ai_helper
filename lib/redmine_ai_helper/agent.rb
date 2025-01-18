@@ -15,20 +15,32 @@ module RedmineAiHelper
             name: "read_issue",
             description: "Read an issue from the database and return it as a JSON object.",
             arguments: {
-              shema: {
-                id: "integer",
+              schema: {
+                type: "object",
+                properties: {
+                  id: "integer",
+                },
+                required: ["id"],
               },
-              required: ["id"],
             },
           },
           {
             name: "read_project",
             description: "Read a project from the database and return it as a JSON object.",
             arguments: {
-              shema: {
-                id: "integer",
+              schema: {
+                type: "object",
+                properties: {
+                  id: "integer",
+                  name: "string",
+                  identifier: "string",
+                },
+                "anyOf": [
+                  { required: ["id"] },
+                  { required: ["name"] },
+                  { required: ["identifier"] },
+                ],
               },
-              required: ["id"],
             },
           },
         ],
@@ -52,7 +64,8 @@ module RedmineAiHelper
     # Read an issue from the database and return it as a JSON object.
     # args: { id: issue_id }
     def read_issue(args = {})
-      issue_id = args["id"]
+      sym_args = args.deep_symbolize_keys
+      issue_id = sym_args[:id]
       issue = Issue.find(issue_id)
       issue_json = {
         id: issue.id,
@@ -117,8 +130,19 @@ module RedmineAiHelper
     end
 
     def read_project(args = {})
-      project_id = args["id"]
-      project = Project.find(project_id)
+      sym_args = args.deep_symbolize_keys
+      project_id = sym_args[:id]
+      project_name = sym_args[:name]
+      project_identifier = sym_args[:identifier]
+      if project_id
+        project = Project.find(project_id)
+      elsif project_name
+        project = Project.find_by(name: project_name)
+      elsif project_identifier
+        project = Project.find_by(identifier: project_identifier)
+      else
+        raise "No project identifier provided"
+      end
       project_json = {
         id: project.id,
         name: project.name,
