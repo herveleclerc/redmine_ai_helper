@@ -1,14 +1,16 @@
-require 'openai'
-require 'json'
-module RedmineAiHelper
+require "redmine_ai_helper/agent"
+require "openai"
+require "json"
 
+module RedmineAiHelper
   class Llm
     attr_accessor :model
+
     def initialize(params = {})
-      params[:access_token] ||= Setting.plugin_redmine_ai_helper['access_token']
-      params[:uri_base] ||= Setting.plugin_redmine_ai_helper['uri_base']
-      params[:organization_id] ||= Setting.plugin_redmine_ai_helper['organization_id']
-      @model ||= Setting.plugin_redmine_ai_helper['model']
+      params[:access_token] ||= Setting.plugin_redmine_ai_helper["access_token"]
+      params[:uri_base] ||= Setting.plugin_redmine_ai_helper["uri_base"]
+      params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
+      @model ||= Setting.plugin_redmine_ai_helper["model"]
 
       @client = OpenAI::Client.new(params)
     end
@@ -17,22 +19,65 @@ module RedmineAiHelper
       messages = conversation.messages.map do |message|
         {
           role: message.role,
-          content: message.content
+          content: message.content,
         }
       end
+      tool = select_tool(messages.last, conversation)
+      puts "####################"
+      p tool
       system_message = {
-        role: 'system',
-        content: system_prompt(conversation)
+        role: "system",
+        content: system_prompt(conversation),
       }
       messages.prepend(system_message)
       response = @client.chat(
         parameters: {
           model: @model,
-          messages: messages
-        }
+          messages: messages,
+        },
       )
 
-      AiHelperMessage.new(role: 'assistant', content: response['choices'][0]['message']['content'], conversation: conversation)
+      AiHelperMessage.new(role: "assistant", content: response["choices"][0]["message"]["content"], conversation: conversation)
+    end
+
+    # conversationの内容から、taskを解決するのに適切なツールを選択する
+    def select_tool(task, conversation)
+      tools = Agent.listTools
+      messages = []
+      messages << {
+        role: "system",
+        content: system_prompt(conversation),
+      }
+      conversation_history = ""
+      conversation.messages.each do |message|
+        conversation_history += "#{message.role}: #{message.content}\n"
+      end
+
+      prompt = <<-EOS
+#{task}を解決するのに最適なツールを以下のJSONの中から選択してください。選択には過去の会話履歴も参考にしてください。また、そのツールに渡すのに必要な引数も作成してください。
+回答は以下の形式のJSONで作成してください。最適なツールがない場合は、空のJSONを返してください。
+
+JSONの例:
+{
+  "name": "read_issue",
+  "arguments": {  "id": 1 }
+}
+** 回答にはJSON以外を含めないでください。解説等は不要です。 **
+----
+ツールのリスト
+#{tools}
+----
+過去の会話履歴:
+#{conversation_history}
+      EOS
+      messages << { role: "user", content: prompt }
+      response = @client.chat(
+        parameters: {
+          model: @model,
+          messages: messages,
+        },
+      )
+      return response["choices"][0]["message"]["content"]
     end
 
     def system_prompt(conversation = nil)
@@ -81,8 +126,8 @@ Wiki：プロジェクトのドキュメント作成・共有が可能です。M
       hash = {
         site: {
           title: Setting.app_title,
-          welcome_text: Setting.welcome_text
-        }
+          welcome_text: Setting.welcome_text,
+        },
       }
 
       if param[:project]
@@ -92,7 +137,7 @@ Wiki：プロジェクトのドキュメント作成・共有が可能です。M
           name: project.name,
           description: project.description,
           identifier: project.identifier,
-          created_on: project.created_on
+          created_on: project.created_on,
 
         }
       end
