@@ -25,6 +25,11 @@ module RedmineAiHelper
             },
           },
           {
+            name: "list_projects",
+            description: "List all projects visible to the current user.",
+            arguments: {},
+          },
+          {
             name: "read_project",
             description: "Read a project from the database and return it as a JSON object.",
             arguments: {
@@ -134,6 +139,20 @@ module RedmineAiHelper
       issue_json
     end
 
+    # List all projects visible to the current user.
+    def list_projects(args = {})
+      projects = Project.all
+      projects.select { |p| p.visible? }.map do |project|
+        {
+          id: project.id,
+          name: project.name,
+          identifier: project.identifier,
+          description: project.description,
+        }
+      end
+    end
+
+    # Read a project from the database and return it as a JSON object.
     def read_project(args = {})
       sym_args = args.deep_symbolize_keys
       project_id = sym_args[:id]
@@ -163,10 +182,7 @@ module RedmineAiHelper
         inherit_members: project.inherit_members,
         created_on: project.created_on,
         updated_on: project.updated_on,
-        subprojects: project.children.select { |p|
-          puts "##### #{p.name} #{p.visible?} ####"
-          p.visible?
-        }.map do |child|
+        subprojects: project.children.select { |p| }.map do |child|
           {
             id: child.id,
             name: child.name,
