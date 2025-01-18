@@ -29,8 +29,9 @@ module RedmineAiHelper
         }
       end
       tool = select_tool(messages.last, conversation)
-      puts "####################"
-      p tool
+      answer = dispatch(tool, conversation)
+      return answer if answer
+
       system_message = {
         role: "system",
         content: system_prompt(conversation),
@@ -46,6 +47,44 @@ module RedmineAiHelper
       AiHelperMessage.new(role: "assistant", content: response["choices"][0]["message"]["content"], conversation: conversation)
     end
 
+    def dispatch(tool, conversation)
+      name = tool["name"]
+      args = tool["arguments"]
+      return if name.nil?
+
+      begin
+        agent = Agent.new(self)
+        result = agent.callTool(name: name, arguments: args)
+        json_str = result.to_json
+        messages = []
+        messages << {
+          role: "system",
+          content: system_prompt(conversation),
+        }
+        prompt = <<-EOS
+ツールの実行結果は以下のJSONになります。ユーザーに回答する文章を作成してください。回答は簡潔に要約してください。
+また、過去の会話履歴も参考にしてください。
+----
+JSON:
+#{json_str}
+----
+過去の会話履歴:
+#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
+
+        EOS
+        messages << { role: "user", content: prompt }
+        response = @client.chat(
+          parameters: {
+            model: @model,
+            messages: messages,
+          },
+        )
+        AiHelperMessage.new(role: "assistant", content: response["choices"][0]["message"]["content"], conversation: conversation)
+      rescue => e
+        AiHelperMessage.new(role: "assistant", content: e.message, conversation: conversation)
+      end
+    end
+
     # select the tool to solve the task
     def select_tool(task, conversation)
       tools = Agent.listTools
@@ -56,7 +95,7 @@ module RedmineAiHelper
       }
       conversation_history = ""
       conversation.messages.each do |message|
-        conversation_history += "#{message.role}: #{message.content}\n"
+        conversation_history += "----\n#{message.role}: #{message.content}\n"
       end
 
       prompt = <<-EOS

@@ -52,7 +52,7 @@ module RedmineAiHelper
     # Read an issue from the database and return it as a JSON object.
     # args: { id: issue_id }
     def read_issue(args = {})
-      issue_id = args[:id]
+      issue_id = args["id"]
       issue = Issue.find(issue_id)
       issue_json = {
         id: issue.id,
@@ -117,7 +117,7 @@ module RedmineAiHelper
     end
 
     def read_project(args = {})
-      project_id = args[:id]
+      project_id = args["id"]
       project = Project.find(project_id)
       project_json = {
         id: project.id,

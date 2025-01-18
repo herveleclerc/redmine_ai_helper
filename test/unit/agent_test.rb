@@ -47,7 +47,7 @@ class AgentTest < ActiveSupport::TestCase
 
   def test_read_project
     project = Project.first
-    project_json = @agent.read_project(id: project.id)
+    project_json = @agent.read_project('id': project.id)
     assert_equal project.id, project_json[:id]
     assert_equal project.name, project_json[:name]
     assert_equal project.description, project_json[:description]
