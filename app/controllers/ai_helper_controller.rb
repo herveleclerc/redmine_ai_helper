@@ -1,17 +1,18 @@
 # This controller is responsible for handling the chat messages between the user and the AI.
 # require 'ai_helper_conversation'
 # require 'ai_helper_message'
-require 'redmine_ai_helper/llm'
+require "redmine_ai_helper/llm"
 
 class AiHelperController < ApplicationController
   before_action :find_user, :find_project, :authorize, :create_session, :find_conversation
+
   def chat_form
     @message = AiHelperMessage.new
-    render partial: 'ai_helper/chat_form'
+    render partial: "ai_helper/chat_form"
   end
 
   def reload
-    render partial: 'ai_helper/chat'
+    render partial: "ai_helper/chat"
   end
 
   def chat
@@ -21,25 +22,28 @@ class AiHelperController < ApplicationController
       @conversation.save!
       set_conversation_id(@conversation.id)
     end
+    contoller_name = params[:controller_name]
+    action_name = params[:action_name]
+    content_id = params[:content_id].to_i unless params[:content_id].blank?
     @message.conversation = @conversation
-    @message.role = 'user'
+    @message.role = "user"
     @message.content = params[:ai_helper_message][:content]
     @message.save!
     @conversation = AiHelperConversation.find(@conversation.id)
-    render partial: 'ai_helper/chat'
+    render partial: "ai_helper/chat"
   end
 
   def call_llm
     llm = RedmineAiHelper::Llm.new
     @conversation.messages << llm.chat(@conversation)
     @conversation.save!
-    render partial: 'ai_helper/chat'
+    render partial: "ai_helper/chat"
   end
 
   def clear
     session[:ai_helper][@project.identifier] = {}
     find_conversation
-    render partial: 'ai_helper/chat'
+    render partial: "ai_helper/chat"
   end
 
   private

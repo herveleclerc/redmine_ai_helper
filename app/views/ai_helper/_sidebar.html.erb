@@ -15,6 +15,13 @@
     <%= stylesheet_link_tag('ai_helper.css', plugin: :redmine_ai_helper) %>
     <%= javascript_include_tag('ai_helper.js', plugin: :redmine_ai_helper) %>
   <% end %>
+  <% 
+  content_id = nil
+  if controller_name == "issues"
+    content_id = @issue.id if @issue
+  end
+  %>
+  
   <script>
     $(document).ready(function() {
       ai_helper_urls = {
@@ -28,7 +35,9 @@
       var chatForm = $('#aihelper-chat-form-area');
       var form_url = '<%= ai_helper_chat_form_path(@project) %>';
       chatForm.load(form_url);
-
+      ai_helper_page_info['content_id'] = '<%= content_id %>';
+      ai_helper_page_info['controller_name'] = '<%= controller_name %>';
+      ai_helper_page_info['action_name'] = '<%= action_name %>';
       
     });
   </script>

@@ -1,4 +1,5 @@
 var ai_helper_urls = {};
+var ai_helper_page_info = {};
 
 var set_ai_helper_form_handlers = function() {
   // フォームのデフォルトのsubmit動作を防ぐ
@@ -10,6 +11,9 @@ var set_ai_helper_form_handlers = function() {
 
   // submitAction関数 - Ajax送信の例
   function submitAction() {
+    $("#ai_helper_controller_name").val(ai_helper_page_info["controller_name"]);
+    $("#ai_helper_action_name").val(ai_helper_page_info["action_name"]);
+    $("#ai_helper_content_id").val(ai_helper_page_info["content_id"]);
     // フォームデータを取得
     var text = $("#ai_helper_chat_input").val();
     // textが空か空白文字のみの場合はreturn
@@ -26,13 +30,13 @@ var set_ai_helper_form_handlers = function() {
       contentType: false,
       success: function(response) {
         $("#aihelper-chat-conversation").html(response);
-        $('#ai-helper-loader-area').show();
-        $("#ai_helper_chat_input").val("");
+        $("#ai-helper-loader-area").show();
+        $("#ai_helper_chat_form")[0].reset();
+
         $("#aihelper-chat-conversation").scrollTop(
           $("#aihelper-chat-conversation")[0].scrollHeight
         );
         call_llm();
-
       },
       error: function(xhr, status, error) {
         console.error("Error:", error);

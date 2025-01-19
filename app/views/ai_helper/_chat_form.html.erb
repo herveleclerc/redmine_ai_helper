@@ -2,6 +2,9 @@
   <p>
     <%= f.text_area :content, rows: 5, placeholder: t(:label_chat_placeholder), id: 'ai_helper_chat_input', style: 'width: 100%;' %>
   </p>
+  <%= hidden_field_tag :controller_name, "", id: 'ai_helper_controller_name' %>
+  <%= hidden_field_tag :action_name, "", id: 'ai_helper_action_name' %>
+  <%= hidden_field_tag :content_id, "", id: 'ai_helper_content_id' %>
   <%= f.submit t(:button_submit), id: 'aihelper-chat-submit' %>
 <% end %>
 <script>
