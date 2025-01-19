@@ -1,12 +1,15 @@
 
   <% @conversation.messages.each do |message| %>
     <div class="aihelper-message">
-      <strong><%= message.role == 'user' ? @user : message.role %></strong>
+      <%if message.role == 'user' %>
+      <%= avatar(@user) %>
+      <strong><%= link_to_user(@user) %></strong>
+      <% end %>
       <% if message.role == 'user' %>
         <pre><%= message.content %></pre>
       <% else %>
         <div>
-          <%= CommonMarker.render_html(message.content).html_safe %>
+          <%= CommonMarker.render_html(message.content, :DEFAULT, [:table, :autolink, :strikethrough, :tasklist]).html_safe %>
         </div>
       <% end %>
     </div>
