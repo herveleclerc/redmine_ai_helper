@@ -411,7 +411,7 @@ module RedmineAiHelper
       end
       url += "&f[]=status_id&op[status_id]=o&v[status_id][]=open" if sym_args[:is_open]
 
-      url
+      return { url: url }
     end
   end
 end
