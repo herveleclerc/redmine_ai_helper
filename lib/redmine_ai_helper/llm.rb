@@ -175,7 +175,7 @@ tools:
       return simple_llm_chat(conversation) if name.nil?
 
       begin
-        agent = Agent.new(self)
+        agent = Agent.new(@client)
         result = agent.callTool(name: name, arguments: args)
         json_str = result.to_json
         messages = []
