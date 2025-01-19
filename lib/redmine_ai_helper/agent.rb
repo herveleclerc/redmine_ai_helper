@@ -112,6 +112,25 @@ module RedmineAiHelper
         created_on: issue.created_on,
         updated_on: issue.updated_on,
         closed_on: issue.closed_on,
+        children: issue.children.map do |child|
+          {
+            id: child.id,
+            tracker: {
+              id: child.tracker.id,
+              name: child.tracker.name,
+            },
+            subject: child.subject,
+          }
+        end,
+        relations: issue.relations.map do |relation|
+          {
+            id: relation.id,
+            issue_to_id: relation.issue_to_id,
+            issue_from_id: relation.issue_from_id,
+            relation_type: relation.relation_type,
+            delay: relation.delay,
+          }
+        end,
         journals: issue.journals.map do |journal|
           {
             id: journal.id,
