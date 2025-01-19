@@ -22,9 +22,6 @@ class AiHelperController < ApplicationController
       @conversation.save!
       set_conversation_id(@conversation.id)
     end
-    contoller_name = params[:controller_name]
-    action_name = params[:action_name]
-    content_id = params[:content_id].to_i unless params[:content_id].blank?
     @message.conversation = @conversation
     @message.role = "user"
     @message.content = params[:ai_helper_message][:content]
@@ -34,8 +31,16 @@ class AiHelperController < ApplicationController
   end
 
   def call_llm
+    contoller_name = params[:controller_name]
+    action_name = params[:action_name]
+    content_id = params[:content_id].to_i unless params[:content_id].blank?
     llm = RedmineAiHelper::Llm.new
-    @conversation.messages << llm.chat(@conversation)
+    option = {
+      controller_name: contoller_name,
+      action_name: action_name,
+      content_id: content_id,
+    }
+    @conversation.messages << llm.chat(@conversation, option)
     @conversation.save!
     render partial: "ai_helper/chat"
   end

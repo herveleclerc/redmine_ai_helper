@@ -21,7 +21,10 @@ module RedmineAiHelper
     end
 
     # chat with the AI
-    def chat(conversation)
+    def chat(conversation, option = {})
+      @controller_name = option[:controller_name]
+      @action_name = option[:action_name]
+      @content_id = option[:content_id]
       task = conversation.messages.last.content
       goal = task
 
@@ -263,13 +266,31 @@ JSONの例:
 ----
 参考情報：
 JSONで定義したこのRedmineのサイト情報は以下になります。
-JSONの中のcurrent_projectが現在ユーザーが表示している、このプロジェクトです。
-
+JSONの中のcurrent_projectが現在ユーザーが表示している、このプロジェクトです。ユーザが特にプロジェクトを指定せずにただ「プロジェクト」といった場合にはこのプロジェクトのことです。
 #{site_info_json(project: project)}
 
+#{current_page_info_string()}
       EOS
 
       prompt
+    end
+
+    def current_page_info_string()
+      page_name = nil
+      if @controller_name == "issues" && @action_name == "show"
+        issue = Issue.find(@content_id)
+        page_name = "チケット ##{issue.id} の詳細\nユーザが特にIDや名前を指定せずにただ「チケット」といった場合にはこのチケットのことです。"
+      elsif @controller_name == "issues" && @action_name == "index"
+        page_name = "チケット一覧"
+      end
+      return "" if page_name.nil?
+      string = <<-EOS
+----
+現在のユーザが表示しているRedmineのページの情報:
+ページ名: #{page_name}
+      EOS
+
+      string
     end
 
     def site_info_json(param = {})
@@ -314,7 +335,7 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
           # 文字列からRubyのハッシュに変換
           JSON.parse(json_str)
         rescue JSON::ParserError => e
-          raise "Invalid JSON format: #{e.message}"
+          raise "Invalid JSON format: #{e.message}: \n###original json\n #{json_str}\n###"
         end
       end
 

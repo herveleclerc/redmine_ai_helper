@@ -21,6 +21,7 @@ var set_ai_helper_form_handlers = function() {
       return;
     }
     var formData = new FormData($("#ai_helper_chat_form")[0]);
+    console.log(formData);
     // Ajax送信
     $.ajax({
       url: $("#ai_helper_chat_form").attr("action"),
@@ -64,12 +65,18 @@ var set_ai_helper_form_handlers = function() {
 };
 
 var call_llm = function() {
+  data = {
+    controller_name: ai_helper_page_info["controller_name"],
+    action_name: ai_helper_page_info["action_name"],
+    content_id: ai_helper_page_info["content_id"]
+  };
+  console.log(data);
   $.ajax({
     url: ai_helper_urls.call_llm,
     type: "POST",
-    data: {},
+    data: JSON.stringify(data),
     processData: false,
-    contentType: false,
+    contentType: "application/json",
     success: function(response) {
       $("#aihelper-chat-conversation").html(response);
       $("#aihelper-chat-conversation").scrollTop(
