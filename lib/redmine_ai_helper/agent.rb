@@ -387,10 +387,12 @@ module RedmineAiHelper
       #
       sym_args = args.deep_symbolize_keys
       project_id = sym_args[:project_id]
+      project = Project.find(project_id)
       fields = sym_args[:fields]
       custom_fields = sym_args[:custom_fields]
-      url = "/issues?"
-      url += "utf8=%E2%9C%93&set_filter=1&f[]=project_id&op[project_id]=%3D&v[project_id][]=#{project_id}"
+      url = "/projects/#{project}/issues?"
+      # url += "utf8=%E2%9C%93&set_filter=1&f[]=project_id&op[project_id]=%3D&v[project_id][]=#{project_id}"
+      url += "utf8=%E2%9C%93&set_filter=1"
       fields.each do |field|
         field_name = field[:field_name]
         operator = field[:operator]
