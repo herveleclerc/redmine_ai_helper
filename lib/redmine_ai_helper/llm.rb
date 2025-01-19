@@ -27,8 +27,12 @@ module RedmineAiHelper
       @content_id = option[:content_id]
       task = conversation.messages.last.content
       goal = task
-
-      answer = execute_task(goal, task, conversation)
+      begin
+        answer = execute_task(goal, task, conversation)
+      rescue => e
+        put_log "error: #{e.full_message}"
+        answer = e.message
+      end
 
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
@@ -36,7 +40,7 @@ module RedmineAiHelper
     def execute_task(goal, task, conversation, pre_tasks = [], depth = 0)
       answer = ""
       tasks = decompose_task(goal, task, conversation, pre_tasks)
-      puts "####### tasks: #{tasks} #######"
+      put_log "tasks: #{tasks}"
       if tasks.length > 1 and depth < 4
         depth += 1
         tasks.each do |task|
@@ -136,6 +140,7 @@ tools:
 #{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
       EOS
       messages << { role: "user", content: prompt }
+      put_log "message: #{messages.last[:content]}"
       response = @client.chat(
         parameters: {
           model: @model,
@@ -143,6 +148,7 @@ tools:
         },
       )
       json = response["choices"][0]["message"]["content"]
+      put_log "json: #{json}"
       JsonExtractor.extract(json)
     end
 
@@ -158,6 +164,7 @@ tools:
         content: system_prompt(conversation),
       }
       messages.prepend(system_message)
+      put_log "message: #{messages.last[:content]}"
       response = @client.chat(
         parameters: {
           model: @model,
@@ -166,21 +173,30 @@ tools:
       )
 
       answer = response["choices"][0]["message"]["content"]
+      put_log "answer: #{answer}"
 
       answer
     end
 
     # dispatch the tool
     def dispatch(goal, task, conversation, pre_tasks = [])
-      tool = select_tool(goal, task, conversation)
-      name = tool["name"]
-      args = tool["arguments"]
-      return simple_llm_chat(conversation) if name.nil?
+      response = select_tools(goal, task, conversation)
+      tools = response["tools"]
+      return simple_llm_chat(conversation) if tools.empty?
 
       begin
-        agent = Agent.new(@client)
-        result = agent.callTool(name: name, arguments: args)
-        json_str = result.to_json
+        results = {
+          results: [],
+        }
+        tools.each do |tool|
+          agent = Agent.new(@client)
+          put_log "tool: #{tool}"
+          result = agent.callTool(name: tool["name"], arguments: tool["arguments"])
+          put_log "result: #{result}"
+          results[:results] << result
+        end
+
+        json_str = results.to_json
         messages = []
         messages << {
           role: "system",
@@ -199,20 +215,23 @@ JSON:
 
         EOS
         messages << { role: "user", content: prompt }
+        put_log "message: #{messages.last[:content]}"
         response = @client.chat(
           parameters: {
             model: @model,
             messages: messages,
           },
         )
-        response["choices"][0]["message"]["content"]
+        answer = response["choices"][0]["message"]["content"]
+        put_log "answer: #{answer}"
+        answer
       rescue => e
-        e.message
+        e.full_message
       end
     end
 
-    # select the tool to solve the task
-    def select_tool(goal, task, conversation)
+    # select the toos to solve the task
+    def select_tools(goal, task, conversation)
       tools = Agent.listTools
       messages = []
       messages << {
@@ -225,13 +244,24 @@ JSON:
       end
 
       prompt = <<-EOS
-#{task}を解決するのに最適なツールを以下のJSONの中から選択してください。選択には過去の会話履歴も参考にしてください。また、そのツールに渡すのに必要な引数も作成してください。
-回答は以下の形式のJSONで作成してください。最適なツールがない場合は、空のJSONを返してください。
+「#{task}」を解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。
+ツールは複数選択できます。選択には過去の会話履歴も参考にしてください。
+また、そのツールに渡すのに必要な引数も作成してください。
+
+回答は以下の形式のJSONで作成してください。最適なツールがない場合は、toolsが空の配列のJSONを返してください。
 
 JSONの例:
 {
-  "name": "read_issue",
-  "arguments": {  "id": 1 }
+  tools: [
+    {
+      "name": "read_issue",
+      "arguments": {  "id": 1 }
+    },
+    {
+      "name": "list_issues",
+      "arguments": {  "project_id": 1 }
+    },
+  ]
 }
 ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
 ----
@@ -242,6 +272,7 @@ JSONの例:
 #{conversation_history}
       EOS
       messages << { role: "user", content: prompt }
+      put_log "message: #{messages.last[:content]}"
       response = @client.chat(
         parameters: {
           model: @model,
@@ -249,6 +280,7 @@ JSONの例:
         },
       )
       json = response["choices"][0]["message"]["content"]
+      put_log "json: #{json}"
       JsonExtractor.extract(json)
     end
 
@@ -314,6 +346,14 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
       end
 
       JSON.pretty_generate(hash)
+    end
+
+    private
+
+    def put_log(message)
+      puts "####################################################"
+      puts message
+      puts "####################################################"
     end
 
     class JsonExtractor
