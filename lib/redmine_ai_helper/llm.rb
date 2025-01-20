@@ -287,6 +287,11 @@ JSONの例:
     # generate system prompt
     def system_prompt(conversation = nil)
       project = conversation.nil? ? nil : conversation.project
+      current_user_info = {
+        id: User.current.id,
+        name: User.current.name,
+        mail: User.current.mail,
+      }
       prompt = <<-EOS
 あなたはRedmine AI Helperプラグインです。Redmineにインストールされており、Redmineのユーザーからの問い合わせに答えます。
 問い合わせの内容はRedmineの機能やプロジェクト、チケットなどこのRedmineに登録されているデータに関するものが主になります。
@@ -303,6 +308,11 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
 #{site_info_json(project: project)}
 
 #{current_page_info_string()}
+
+----
+あなたと話しているユーザーは"#{User.current}"です。
+ユーザーの情報を以下に示します。
+#{current_user_info}
       EOS
 
       prompt
