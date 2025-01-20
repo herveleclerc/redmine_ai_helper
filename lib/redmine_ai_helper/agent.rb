@@ -402,6 +402,7 @@ module RedmineAiHelper
     # }
     def generate_issue_search_url(args = {})
       sym_args = args.deep_symbolize_keys
+
       project_id = sym_args[:project_id]
       project = Project.find(project_id)
       fields = sym_args[:fields]
@@ -413,13 +414,28 @@ module RedmineAiHelper
       fields.each do |field|
         field_name = field[:field_name]
         operator = field[:operator]
+        # operatorのチェック["==", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"]のいずれかであること
+        unless ["==", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"].include?(operator)
+          raise "Invalid operator: #{operator}: #{field_name}"
+        end
         value = field[:value]
         field_params[field_name] ||= { operator: operator, values: [] }
         field_params[field_name][:values] += Array(value)
+        # field_nameがxxx_idの場合、数値以外が指定された場合はエラー
+        if field_name.end_with?("_id")
+          field_params[field_name][:values].each do |v|
+            unless v.to_s =~ /\A[0-9]+\z/
+              raise "Invalid value.id must be integer: #{v}: #{field_name}"
+            end
+          end
+        end
       end
 
       field_params.each do |field_name, params|
         operator = params[:operator]
+        unless ["==", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"].include?(operator)
+          raise "Invalid operator: #{operator}: #{field_name}"
+        end
         values = params[:values]
         url += "&f[]=#{field_name}&op[#{field_name}]=#{operator}"
         values.each do |v|

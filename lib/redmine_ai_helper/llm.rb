@@ -28,7 +28,12 @@ module RedmineAiHelper
       task = conversation.messages.last.content
       goal = task
       begin
-        answer = execute_task(goal, task, conversation)
+        result = execute_task(goal, task, conversation)
+        if result[:status] == "success"
+          answer = result[:answer]
+        else
+          answer = result[:error]
+        end
       rescue => e
         put_log "error: #{e.full_message}"
         answer = e.message
@@ -37,26 +42,43 @@ module RedmineAiHelper
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
 
-    def execute_task(goal, task, conversation, pre_tasks = [], depth = 0)
+    def execute_task(goal, task, conversation, pre_tasks = [], depth = 0, pre_error = nil)
       answer = ""
-      tasks = decompose_task(goal, task, conversation, pre_tasks)
+      tasks = decompose_task(goal, task, conversation, pre_tasks, pre_error)
+      result = {
+        status: "error",
+        error: "Failed to decompose the task",
+      }
       put_log "tasks: #{tasks}"
       if tasks.length > 1 and depth < 4
         depth += 1
         tasks.each do |task|
-          answer = execute_task(goal, task, conversation, pre_tasks, depth)
+          max_retry = 3
+          previous_error = nil
+          max_retry.times do |i|
+            result = execute_task(goal, task, conversation, pre_tasks, depth, previous_error)
+            break if result[:status] == "success"
+            if i == max_retry - 1
+              return result
+            end
+            previous_error = result[:error]
+          end
           pre_task = {
             "name": task["name"],
             "step": task["step"],
-            "result": answer,
+            "result": result[:answer],
           }
           pre_tasks << pre_task
         end
         answer = merge_results(goal, task, conversation, pre_tasks)
+        result = {
+          status: "success",
+          answer: answer,
+        }
       else
-        answer = dispatch(goal, task, conversation, pre_tasks)
+        result = dispatch(goal, task, conversation, pre_tasks)
       end
-      answer
+      result
     end
 
     def merge_results(goal, task, conversation, pre_tasks)
@@ -90,7 +112,8 @@ EOS
     # @param [String] task
     # @param [Conversation] conversation
     # @param [Array] pre_tasks
-    def decompose_task(goal, task, conversation, pre_tasks = [])
+    # @param [String] pre_error
+    def decompose_task(goal, task, conversation, pre_tasks = [], pre_error = nil)
       tools = Agent.listTools
       messages = []
       messages << {
@@ -100,6 +123,10 @@ EOS
       goal_string = ""
       if goal != task
         goal_string = "なお、このタスクが最終的に解決したいゴールは「#{goal}」です。"
+      end
+      pre_error_string = ""
+      if pre_error
+        pre_error_string = "\n----\n前回のタスク実行でエラーが発生しました。今回はそのリトライです。前回のエラー内容は以下の通りです。このエラーが再度発生しないようにタスクを作成してください。\n#{pre_error}"
       end
       pre_task_string = ""
       if pre_tasks.length > 0
@@ -116,6 +143,7 @@ EOS
 「#{task}」というタスクを解決するために必要なステップに分解してください。#{goal_string}
 ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。それらをまとめてJSONを作成してください。２つ以上のステップに分解ができない場合には元のタスクをそのまま一つのステップとして記述してください。
 #{pre_task_string}
+#{pre_error_string}
 ステップの作成には過去の会話履歴も参考にしてください。
 ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
 ----
@@ -224,9 +252,17 @@ JSON:
         )
         answer = response["choices"][0]["message"]["content"]
         put_log "answer: #{answer}"
-        answer
+        result = {
+          status: "success",
+          answer: answer,
+        }
+        result
       rescue => e
-        e.full_message
+        result = {
+          status: "error",
+          error: e.full_message,
+        }
+        result
       end
     end
 
