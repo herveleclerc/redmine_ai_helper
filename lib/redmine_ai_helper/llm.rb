@@ -42,9 +42,9 @@ module RedmineAiHelper
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
 
-    def execute_task(goal, task, conversation, pre_tasks = [], depth = 0, pre_error = nil)
+    def execute_task(goal, task, conversation, pre_tasks = [], depth = 0, previous_error = nil)
       answer = ""
-      tasks = decompose_task(goal, task, conversation, pre_tasks, pre_error)
+      tasks = decompose_task(goal, task, conversation, pre_tasks, previous_error)
       result = {
         status: "error",
         error: "Failed to decompose the task",
@@ -54,7 +54,6 @@ module RedmineAiHelper
         depth += 1
         tasks.each do |task|
           max_retry = 3
-          previous_error = nil
           max_retry.times do |i|
             result = execute_task(goal, task, conversation, pre_tasks, depth, previous_error)
             break if result[:status] == "success"
@@ -62,6 +61,7 @@ module RedmineAiHelper
               return result
             end
             previous_error = result[:error]
+            put_log "retry: #{i}"
           end
           pre_task = {
             "name": task["name"],
@@ -76,7 +76,7 @@ module RedmineAiHelper
           answer: answer,
         }
       else
-        result = dispatch(goal, task, conversation, pre_tasks)
+        result = dispatch(goal, task, conversation, pre_tasks, previous_error)
       end
       result
     end
@@ -207,8 +207,8 @@ tools:
     end
 
     # dispatch the tool
-    def dispatch(goal, task, conversation, pre_tasks = [])
-      response = select_tools(goal, task, conversation)
+    def dispatch(goal, task, conversation, pre_tasks = [], previous_error = nil)
+      response = select_tools(goal, task, conversation, previous_error)
       tools = response["tools"]
       return simple_llm_chat(conversation) if tools.empty?
 
@@ -217,7 +217,7 @@ tools:
           results: [],
         }
         tools.each do |tool|
-          agent = Agent.new(@client)
+          agent = Agent.new(@client, @model)
           put_log "tool: #{tool}"
           result = agent.callTool(name: tool["name"], arguments: tool["arguments"])
           put_log "result: #{result}"
@@ -260,14 +260,14 @@ JSON:
       rescue => e
         result = {
           status: "error",
-          error: e.full_message,
+          error: e.message,
         }
         result
       end
     end
 
     # select the toos to solve the task
-    def select_tools(goal, task, conversation)
+    def select_tools(goal, task, conversation, previous_error = nil)
       tools = Agent.listTools
       messages = []
       messages << {
@@ -279,10 +279,17 @@ JSON:
         conversation_history += "----\n#{message.role}: #{message.content}\n"
       end
 
+      previous_error_string = ""
+      if previous_error
+        previous_error_string = "\n----\n前回のツール実行でエラーが発生しました。今回はそのリトライです。前回のエラー内容は以下の通りです。このエラーが再度発生しないようにツールの選択とパラメータの作成してください。\n#{previous_error}"
+      end
+
       prompt = <<-EOS
 「#{task}」を解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。
 ツールは複数選択できます。選択には過去の会話履歴も参考にしてください。
 また、そのツールに渡すのに必要な引数も作成してください。
+
+#{previous_error_string}
 
 回答は以下の形式のJSONで作成してください。最適なツールがない場合は、toolsが空の配列のJSONを返してください。
 

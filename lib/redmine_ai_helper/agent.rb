@@ -2,8 +2,9 @@ require "redmine_ai_helper/llm"
 
 module RedmineAiHelper
   class Agent
-    def initialize(client)
+    def initialize(client, model)
       @client = client
+      @model = model
     end
 
     def self.listTools()
@@ -53,14 +54,14 @@ module RedmineAiHelper
               schema: {
                 type: "object",
                 properties: {
-                  id: "integer",
-                  name: "string",
-                  identifier: "string",
+                  project_id: "integer",
+                  project_name: "string",
+                  project_identifier: "string",
                 },
                 "anyOf": [
-                  { required: ["id"] },
-                  { required: ["name"] },
-                  { required: ["identifier"] },
+                  { required: ["project_id"] },
+                  { required: ["project_name"] },
+                  { required: ["project_identifier"] },
                 ],
               },
             },
@@ -84,8 +85,8 @@ module RedmineAiHelper
                         },
                         operator: {
                           type: "string",
-                          enum: ["==", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"],
-                          description: "Operators: == (equal), != (not equal), > (greater than), < (less than), >= (greater than or equal), <= (less than or equal), * (contains), !* (does not contain), o (open), !o (closed), c (is), !c (is not)",
+                          enum: ["=", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"],
+                          description: "Operators: = (equal), != (not equal), > (greater than), < (less than), >= (greater than or equal), <= (less than or equal), * (contains), !* (does not contain), o (open), !o (closed), c (is), !c (is not)",
                         },
                         value: {
                           "anyOf": [
@@ -105,8 +106,8 @@ module RedmineAiHelper
                         field_id: "integer",
                         operator: {
                           type: "string",
-                          enum: ["==", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"],
-                          description: "Operators: == (equal), != (not equal), > (greater than), < (less than), >= (greater than or equal), <= (less than or equal), * (contains), !* (does not contain), o (open), !o (closed), c (is), !c (is not)",
+                          enum: ["=", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"],
+                          description: "Operators: = (equal), != (not equal), > (greater than), < (less than), >= (greater than or equal), <= (less than or equal), * (contains), !* (does not contain), o (open), !o (closed), c (is), !c (is not)",
                         },
                         value: "string",
                       },
@@ -287,9 +288,9 @@ module RedmineAiHelper
     # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
     def capable_issue_properties(args = {})
       sym_args = args.deep_symbolize_keys
-      project_id = sym_args[:id]
-      project_name = sym_args[:name]
-      project_identifier = sym_args[:identifier]
+      project_id = sym_args[:project_id]
+      project_name = sym_args[:project_name]
+      project_identifier = sym_args[:project_identifier]
       project = nil
       if project_id
         project = Project.find(project_id)
@@ -402,7 +403,6 @@ module RedmineAiHelper
     # }
     def generate_issue_search_url(args = {})
       sym_args = args.deep_symbolize_keys
-
       project_id = sym_args[:project_id]
       project = Project.find(project_id)
       fields = sym_args[:fields]
@@ -410,17 +410,22 @@ module RedmineAiHelper
       url = "/projects/#{project}/issues?"
       url += "utf8=%E2%9C%93&set_filter=1"
 
+      valid_operators = ["=", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"]
+
       field_params = {}
       fields.each do |field|
         field_name = field[:field_name]
         operator = field[:operator]
-        # operatorのチェック["==", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"]のいずれかであること
-        unless ["==", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"].include?(operator)
+        value = field[:value]
+
+        # operatorのチェック
+        unless valid_operators.include?(operator)
           raise "Invalid operator: #{operator}: #{field_name}"
         end
-        value = field[:value]
+
         field_params[field_name] ||= { operator: operator, values: [] }
         field_params[field_name][:values] += Array(value)
+
         # field_nameがxxx_idの場合、数値以外が指定された場合はエラー
         if field_name.end_with?("_id")
           field_params[field_name][:values].each do |v|
@@ -433,9 +438,6 @@ module RedmineAiHelper
 
       field_params.each do |field_name, params|
         operator = params[:operator]
-        unless ["==", "!=", ">", "<", ">=", "<=", "*", "!*", "o", "!o", "c", "!c"].include?(operator)
-          raise "Invalid operator: #{operator}: #{field_name}"
-        end
         values = params[:values]
         url += "&f[]=#{field_name}&op[#{field_name}]=#{operator}"
         values.each do |v|
@@ -447,12 +449,48 @@ module RedmineAiHelper
         field_id = field[:field_id]
         operator = field[:operator]
         value = field[:value]
-        url += "&f[]=cf_#{field_id}&op[cf_#{field_id}]=#{operator}&v[cf_#{field_id}]=#{value}"
+
+        # operatorのチェック
+        unless valid_operators.include?(operator)
+          raise "Invalid operator: #{operator}: cf_#{field_id}"
+        end
+
+        url += "&f[]=cf_#{field_id}&op[cf_#{field_id}]=#{operator}&v[cf_#{field_id}][]=#{value}"
       end
 
       url += "&f[]=status_id&op[status_id]=o&v[status_id][]=open" if sym_args[:is_open]
-
+      url = repair_url(url, project.id)
       return { url: url }
+    end
+
+    # RedmineのURLをLLMに問い合わせて修正する
+    def repair_url(url, project_id)
+      messages = []
+      prompt = <<-EOS
+        以下はRedmineでチケットを検索するためのURLです。
+        このURLの形式が正しいか検証してください。
+        - 間違っている場合は、正しい形式に修正してください。
+        - 正しい場合は、そのまま元のURLを返してください。
+        - 修正方法がわからない場合は、そのまま元のURLを返してください。
+        ** 回答にはURLの文字列のみを返してください。解説は不要です。 **
+        ---
+        URL: #{url}
+        ---
+        参考情報としてこのRedmineでチケットの項目のIDと名前の情報の一部をを以下に示します。
+        #{capable_issue_properties(project_id)}
+      EOS
+      message = {
+        role: "user",
+        content: prompt,
+      }
+      messages << message
+      response = @client.chat(
+        parameters: {
+          model: @model,
+          messages: messages,
+        },
+      )
+      response
     end
   end
 end
