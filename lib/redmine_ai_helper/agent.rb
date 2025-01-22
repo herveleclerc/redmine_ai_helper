@@ -233,7 +233,7 @@ module RedmineAiHelper
           },
         ],
       }
-      list
+      JSON.pretty_generate(list)
     end
 
     def callTool(params = {})
@@ -338,7 +338,7 @@ module RedmineAiHelper
         end,
 
       }
-      issue_json
+      JSON.pretty_generate issue_json
     end
 
     # List all projects visible to the current user.
@@ -393,7 +393,7 @@ module RedmineAiHelper
           }
         end,
       }
-      project_json
+      JSON.pretty_generate project_json
     end
 
     # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
@@ -454,7 +454,7 @@ module RedmineAiHelper
         end,
       }
 
-      properties
+      JSON.pretty_generate properties
     end
 
     # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
