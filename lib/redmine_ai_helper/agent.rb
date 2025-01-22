@@ -88,14 +88,12 @@ module RedmineAiHelper
                           enum: ["=", "!", "*", "!*", "!p", "cf", "h"],
                           description: "Operators: = (equal), != (not equal), * (all), !* (none), !p (has nerver been), cf (changed from), h (has been)",
                         },
-                        value: {
-                          "anyOf": [
-                            { type: "string" },
-                            { type: "array", items: { type: "string" } },
-                          ],
+                        values: {
+                          type: "array",
+                          items: { type: "string" },
                         },
                       },
-                      required: ["field_name", "operator"],
+                      required: ["field_name", "operator", "values"],
                     },
                   },
                   date_fields: {
@@ -112,14 +110,12 @@ module RedmineAiHelper
                           enum: ["=", ">=", "<=", "><", "<t+", ">t+", "t+", "t", "ld", "w", "lw", "l2w", "m", "lm", "y", ">t-", "<t-", "t-", "!*", "*"],
                           description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (Within the next n days from today), >t+ (More than n days from today), t+ (n days from today), t (today), ld (last day), w (this week), lw (last week), l2w (last 2 weeks), m (this month), lm (last month), y (this year), >t- (More than n days ago), <t- (Within the past n days), t (today), t- (n days ago), !* (none), * (any)",
                         },
-                        value: {
-                          "anyOf": [
-                            { type: "string" },
-                            { type: "array", items: { type: "string" } },
-                          ],
+                        values: {
+                          type: "array",
+                          items: { type: "string" },
                         },
                       },
-                      required: ["field_name", "operator"],
+                      required: ["field_name", "operator", "values"],
                     },
                   },
                   time_fields: {
@@ -136,14 +132,12 @@ module RedmineAiHelper
                           enum: ["=", ">=", "<=", "><", "!*", "*"],
                           description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), !* (none), * (any)",
                         },
-                        value: {
-                          "anyOf": [
-                            { type: "string" },
-                            { type: "array", items: { type: "string" } },
-                          ],
+                        values: {
+                          type: "array",
+                          items: { type: "string" },
                         },
                       },
-                      required: ["field_name", "operator"],
+                      required: ["field_name", "operator", "values"],
                     },
                   },
                   number_fields: {
@@ -160,14 +154,12 @@ module RedmineAiHelper
                           enum: ["=", ">=", "<=", "><", "!*", "*"],
                           description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), !* (none), * (any)",
                         },
-                        value: {
-                          "anyOf": [
-                            { type: "integer" },
-                            { type: "array", items: { type: "integer" } },
-                          ],
+                        values: {
+                          type: "array",
+                          items: { type: "integer" },
                         },
                       },
-                      required: ["field_name", "operator"],
+                      required: ["field_name", "operator", "values"],
                     },
                   },
                   text_fields: {
@@ -185,13 +177,11 @@ module RedmineAiHelper
                           description: "Operators: ~ (contains), !~ (does not contain), = (equal), != (not equal), * (any value set), !* (no value set)",
                         },
                         value: {
-                          "anyOf": [
-                            { type: "string" },
-                            { type: "array", items: { type: "string" } },
-                          ],
+                          type: "array",
+                          items: { type: "string" },
                         },
                       },
-                      required: ["field_name", "operator"],
+                      required: ["field_name", "operator", "value"],
                     },
                   },
                   status_field: {
@@ -208,14 +198,12 @@ module RedmineAiHelper
                           enum: ["=", "!", "o", "c", "*"],
                           description: "Operators: = (exact match), ! (not equal), o (open), c (closed), * (any value set)",
                         },
-                        value: {
-                          "anyOf": [
-                            { type: "integer" },
-                            { type: "array", items: { type: "integer" } },
-                          ],
+                        values: {
+                          type: "array",
+                          items: { type: "integer" },
                         },
                       },
-                      required: ["field_name", "operator"],
+                      required: ["field_name", "operator", "values"],
                     },
                   },
                   custom_fields: {
@@ -230,9 +218,12 @@ module RedmineAiHelper
                           description: "Operators: = (equal), != (not equal), !* (no value set), * (any value set), ~ (contains), !~ (does not contain), ^ (starts with), $ (ends with), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (within the next n days), >t+ (more than n days ahead), t+ (n days in the future), t (today), w (this week), >t- (more than n days ago), <t- (within the past n days)",
 
                         },
-                        value: "string",
+                        values: {
+                          type: "array",
+                          items: { type: "integer" },
+                        },
                       },
-                      required: ["field_id", "operator"],
+                      required: ["field_id", "operator", "values"],
                     },
                   },
                 },
@@ -467,227 +458,6 @@ module RedmineAiHelper
     end
 
     # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
-    # {
-    #   name: "generate_issue_search_url",
-    #   description: "Generate a URL for searching issues based on the filter conditions. For search items with '_id', specify the ID instead of the name of the search target. If you do not know the ID, you need to call capable_issue_properties in advance to obtain the ID.",
-    #   arguments: {
-    #     schema: {
-    #       type: "object",
-    #       properties: {
-    #         project_id: "integer",
-    #         fields: {
-    #           type: "array",
-    #           items: {
-    #             type: "object",
-    #             properties: {
-    #               field_name: {
-    #                 type: "string",
-    #                 enum: ["tracker_id", "priority_id", "category_id", "version_id", "assigned_to_id", "author_id", "start_date"],
-    #               },
-    #               operator: {
-    #                 type: "string",
-    #                 enum: ["=", "!", "*", "!*", "!p", "cf", "h"],
-    #                 description: "Operators: = (equal), != (not equal), * (all), !* (none), !p (has nerver been), cf (changed from), h (has been)",
-    #               },
-    #               value: {
-    #                 "anyOf": [
-    #                   { type: "string" },
-    #                   { type: "array", items: { type: "string" } },
-    #                 ],
-    #               },
-    #             },
-    #             required: ["field_name", "operator"],
-    #           },
-    #         },
-    #         date_fields: {
-    #           type: "array",
-    #           items: {
-    #             type: "object",
-    #             properties: {
-    #               field_name: {
-    #                 type: "string",
-    #                 enum: ["created_on", "updated_on", "start_date", "due_date"],
-    #               },
-    #               operator: {
-    #                 type: "string",
-    #                 enum: ["=", ">=", "<=", "><", "<t+", ">t+", "t+", "t", "ld", "w", "lw", "l2w", "m", "lm", "y", ">t-", "<t-", "t-", "!*", "*"],
-    #                 description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (Within the next n days from today), >t+ (More than n days from today), t+ (n days from today), t (today), ld (last day), w (this week), lw (last week), l2w (last 2 weeks), m (this month), lm (last month), y (this year), >t- (More than n days ago), <t- (Within the past n days), t (today), t- (n days ago), !* (none), * (any)",
-    #               },
-    #               value: {
-    #                 "anyOf": [
-    #                   { type: "string" },
-    #                   { type: "array", items: { type: "string" } },
-    #                 ],
-    #               },
-    #             },
-    #             required: ["field_name", "operator"],
-    #           },
-    #         },
-    #         time_fields: {
-    #           type: "array",
-    #           items: {
-    #             type: "object",
-    #             properties: {
-    #               field_name: {
-    #                 type: "string",
-    #                 enum: ["estimated_hours", "spent_hours"],
-    #               },
-    #               operator: {
-    #                 type: "string",
-    #                 enum: ["=", ">=", "<=", "><", "!*", "*"],
-    #                 description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), !* (none), * (any)",
-    #               },
-    #               value: {
-    #                 "anyOf": [
-    #                   { type: "string" },
-    #                   { type: "array", items: { type: "string" } },
-    #                 ],
-    #               },
-    #             },
-    #             required: ["field_name", "operator"],
-    #           },
-    #         },
-    #         number_fields: {
-    #           type: "array",
-    #           items: {
-    #             type: "object",
-    #             properties: {
-    #               field_name: {
-    #                 type: "string",
-    #                 enum: ["done_ratio"],
-    #               },
-    #               operator: {
-    #                 type: "string",
-    #                 enum: ["=", ">=", "<=", "><", "!*", "*"],
-    #                 description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), !* (none), * (any)",
-    #               },
-    #               value: {
-    #                 "anyOf": [
-    #                   { type: "integer" },
-    #                   { type: "array", items: { type: "integer" } },
-    #                 ],
-    #               },
-    #             },
-    #             required: ["field_name", "operator"],
-    #           },
-    #         },
-    #         text_field: {
-    #           type: "array",
-    #           items: {
-    #             type: "object",
-    #             properties: {
-    #               field_name: {
-    #                 type: "string",
-    #                 enum: ["subject", "description", "notes"],
-    #               },
-    #               operator: {
-    #                 type: "string",
-    #                 enum: ["~", "!~", "=", "!", "*", "!*"],
-    #                 description: "Operators: ~ (contains), !~ (does not contain), = (equal), != (not equal), * (any value set), !* (no value set)",
-    #               },
-    #               value: {
-    #                 "anyOf": [
-    #                   { type: "string" },
-    #                   { type: "array", items: { type: "string" } },
-    #                 ],
-    #               },
-    #             },
-    #             required: ["field_name", "operator"],
-    #           },
-    #         },
-    #         status_field: {
-    #           type: "array",
-    #           items: {
-    #             type: "object",
-    #             properties: {
-    #               field_name: {
-    #                 type: "string",
-    #                 enum: ["status_id"],
-    #               },
-    #               operator: {
-    #                 type: "string",
-    #                 enum: ["=", "!", "o", "c", "*"],
-    #                 description: "Operators: = (exact match), ! (not equal), o (open), c (closed), * (any value set)",
-    #               },
-    #               value: {
-    #                 "anyOf": [
-    #                   { type: "integer" },
-    #                   { type: "array", items: { type: "integer" } },
-    #                 ],
-    #               },
-    #             },
-    #             required: ["field_name", "operator"],
-    #           },
-    #         },
-    #         custom_fields: {
-    #           type: "array",
-    #           items: {
-    #             type: "object",
-    #             properties: {
-    #               field_id: "integer",
-    #               operator: {
-    #                 type: "string",
-    #                 enum: ["=", "!", "!*", "*", "~", "!~", "^", "$", ">=", "<=", "><", "<t", ">", "t+", "t", "w", ">t-", "<t-"],
-    #                 description: "Operators: = (equal), != (not equal), !* (no value set), * (any value set), ~ (contains), !~ (does not contain), ^ (starts with), $ (ends with), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (within the next n days), >t+ (more than n days ahead), t+ (n days in the future), t (today), w (this week), >t- (more than n days ago), <t- (within the past n days)",
-
-    #               },
-    #               value: "string",
-    #             },
-    #             required: ["field_id", "operator"],
-    #           },
-    #         },
-    #       },
-    #       required: ["project_id"],
-    #     },
-    #   },
-    # },
-    #
-    # Redmine 6.0のチケット検索用クエリーストリングの仕様は以下の通りです:
-    # ## 基本構造
-    # 基本的なURLの構造は次のようになります:
-    # ```
-    # /issues?key1=value1&key2=value2&...
-    # ```
-    # ## 主要なパラメータ
-    # 1. `set_filter=1`: フィルターを有効にする
-    # 2. `f[]=`: フィルターフィールドを指定（複数指定可能）
-    # 3. `op[field_name]=`: 演算子を指定
-    # 4. `v[field_name][]=`: フィルター値を指定
-    #
-    # ## 演算子
-    # フィールドタイプによって使用可能な演算子が異なります:
-    #
-    # - テキストフィールド: `~`（含む）, `!~`（含まない）, `=`, `!`
-    # - 数値・日付フィールド: `=`, `>=`, `<=`, `><`（範囲）
-    # - リストフィールド: `=`, `!`
-    #
-    # ## 特殊なフィルター
-    #
-    # - `*`: 任意の値
-    # - `!*`: 値なし
-    #
-    # ## ページネーション
-    #
-    # - `offset`: スキップする結果の数
-    # - `limit`: 返す結果の数（最大100）
-    #
-    # ## 例
-    #
-    # 1. オープンステータスのチケットを検索:
-    #    ```
-    #    /issues?set_filter=1&f[]=status_id&op[status_id]=o
-    #    ```
-    #
-    # 2. 特定のプロジェクトの優先度が高いチケットを検索:
-    #    ```
-    #    /issues?set_filter=1&f[]=project_id&op[project_id]==&v[project_id][]=1&f[]=priority_id&op[priority_id]==&v[priority_id][]=4
-    #    ```
-    #
-    # 3. 題名に特定のキーワードを含むチケットを検索:
-    #    ```
-    #    /issues?set_filter=1&f[]=subject&op[subject]=~&v[subject][]=keyword
-    #    ```
-    # Redmine 6.0では、UTF-8チェックマークパラメータ（`utf8=✓`）が削除されました。また、複数のキーワードによるAND検索や、親チケットフィルターでの複数ID指定などが可能になっています[4][5]。
     def generate_issue_search_url(args = {})
       sym_args = args.deep_symbolize_keys
       project_id = sym_args[:project_id]
@@ -699,102 +469,52 @@ module RedmineAiHelper
       text_fields = sym_args[:text_fields] || []
       status_field = sym_args[:status_field] || []
       custom_fields = sym_args[:custom_fields] || []
-      url = "/projects/#{project}/issues?"
-      url += "utf8=%E2%9C%93&set_filter=1"
 
+      params = { fields: [], operators: {}, values: {} }
       fields.each do |field|
-        field_name = field[:field_name]
-        operator = field[:operator]
-        value = field[:value]
-        url += "&f[]=#{field_name}&op[#{field_name}]=#{operator}"
-        if value.is_a?(Array)
-          value.each do |v|
-            url += "&v[#{field_name}][]=#{v}"
-          end
-        else
-          url += "&v[#{field_name}][]=#{value}"
-        end
+        params[:fields] << field[:field_name]
+        params[:operators][field[:field_name]] = field[:operator]
+        params[:values][field[:field_name]] = field[:values]
       end
 
       date_fields.each do |field|
-        field_name = field[:field_name]
-        operator = field[:operator]
-        value = field[:value]
-        url += "&f[]=#{field_name}&op[#{field_name}]=#{operator}"
-        if value.is_a?(Array)
-          value.each do |v|
-            url += "&v[#{field_name}][]=#{v}"
-          end
-        else
-          url += "&v[#{field_name}][]=#{value}"
-        end
+        params[:fields] << field[:field_name]
+        params[:operators][field[:field_name]] = field[:operator]
+        params[:values][field[:field_name]] = field[:values]
       end
 
       time_fields.each do |field|
-        field_name = field[:field_name]
-        operator = field[:operator]
-        value = field[:value]
-        url += "&f[]=#{field_name}&op[#{field_name}]=#{operator}"
-        if value.is_a?(Array)
-          value.each do |v|
-            url += "&v[#{field_name}][]=#{v}"
-          end
-        else
-          url += "&v[#{field_name}][]=#{value}"
-        end
+        params[:fields] << field[:field_name]
+        params[:operators][field[:field_name]] = field[:operator]
+        params[:values][field[:field_name]] = field[:values]
       end
 
       number_fields.each do |field|
-        field_name = field[:field_name]
-        operator = field[:operator]
-        value = field[:value]
-        url += "&f[]=#{field_name}&op[#{field_name}]=#{operator}"
-        if value.is_a?(Array)
-          value.each do |v|
-            url += "&v[#{field_name}][]=#{v}"
-          end
-        else
-          url += "&v[#{field_name}][]=#{value}"
-        end
+        params[:fields] << field[:field_name]
+        params[:operators][field[:field_name]] = field[:operator]
+        params[:values][field[:field_name]] = field[:values].map(&:to_s)
       end
 
       text_fields.each do |field|
-        field_name = field[:field_name]
-        operator = field[:operator]
-        value = field[:value]
-        url += "&f[]=#{field_name}&op[#{field_name}]=#{operator}"
-        if value.is_a?(Array)
-          value.each do |v|
-            url += "&v[#{field_name}][]=#{v}"
-          end
-        else
-          url += "&v[#{field_name}][]=#{value}"
-        end
+        params[:fields] << field[:field_name]
+        params[:operators][field[:field_name]] = field[:operator]
+        params[:values][field[:field_name]] = field[:value]
       end
 
       status_field.each do |field|
-        field_name = field[:field_name]
-        operator = field[:operator]
-        value = field[:value]
-        url += "&f[]=#{field_name}&op[#{field_name}]=#{operator}"
-        if value.is_a?(Array)
-          value.each do |v|
-            url += "&v[#{field_name}][]=#{v}"
-          end
-        else
-          url += "&v[#{field_name}][]=#{value}"
-        end
+        params[:fields] << field[:field_name]
+        params[:operators][field[:field_name]] = field[:operator]
+        params[:values][field[:field_name]] = field[:values].map(&:to_s)
       end
 
+      builder = IssueQueryBuilder.new(params)
       custom_fields.each do |field|
-        field_id = field[:field_id]
-        operator = field[:operator]
-        value = field[:value]
-        url += "&f[]=cf_#{field_id}&op[cf_#{field_id}]=#{operator}"
-        url += "&v[cf_#{field_id}][]=#{value}"
+        builder.add_custom_field_filter(field[:field_id], field[:operator], field[:values].map(&:to_s))
       end
 
-      url
+      url = builder.generate_query_string(project)
+
+      { url: url }
     end
 
     # RedmineのURLをLLMに問い合わせて修正する
@@ -825,6 +545,46 @@ module RedmineAiHelper
         },
       )
       response
+    end
+
+    # Redmineのチケット検索用URLを作成するクラス
+    # # 使用例
+    # params = {
+    #   fields: ["tracker_id", "created_on"],
+    #   operators: { "tracker_id" => "=", "created_on" => "><" },
+    #   values: { "tracker_id" => ["2"], "created_on" => ["2025-01-01", "2025-01-31"] },
+    # }
+    # defaults = {}
+    # builder = IssueQueryBuilder.new(params, defaults)
+    # カスタムフィールドのフィルターを追加
+    # ここでは値を配列として渡します
+    # builder.add_custom_field_filter(1, "=", ["example_value1", "example_value2"])
+    # project = Project.find(1)
+    # puts builder.generate_query_string(project)
+    #
+    class IssueQueryBuilder
+      def initialize(params, defaults = {})
+        @query = IssueQuery.new
+        # @query.add_filter("set_filter", "=", "1")
+        inspect = "Initializing query with params: #{params.inspect}"
+        params[:fields].each do |field|
+          operator = params[:operators][field]
+          values = params[:values][field]
+          @query.add_filter(field, operator, values)
+        end
+      end
+
+      def add_custom_field_filter(custom_field_id, operator, values)
+        field = "cf_#{custom_field_id}"
+        @query.add_filter(field, operator, values)
+      end
+
+      def generate_query_string(project)
+        query_params = @query.as_params
+        query_params.delete(:set_filter)
+        query_string = query_params.to_query
+        "/projects/#{project.identifier}/issues?#{query_string}"
+      end
     end
   end
 end
