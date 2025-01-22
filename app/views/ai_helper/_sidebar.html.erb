@@ -1,3 +1,5 @@
+
+<h1>aaa</h1>
 <% if @project and @project.module_enabled?(:ai_helper) and User.current.allowed_to?({controller: :ai_helper, action: :chat_form}, @project)%>
   <div id="aihelper-sidebar">
     <h3>
@@ -11,10 +13,7 @@
     <span><%= t(:label_ai_helper_input_newline)%></span>
     <hr>
   </div>
-  <% content_for :header_tags do %>
-    <%= stylesheet_link_tag('ai_helper.css', plugin: :redmine_ai_helper) %>
-    <%= javascript_include_tag('ai_helper.js', plugin: :redmine_ai_helper) %>
-  <% end %>
+
   <% 
   content_id = nil
   if controller_name == "issues"
@@ -23,7 +22,18 @@
   %>
   
   <script>
+    const is_sidebar_exist = function() {
+      return $('#sidebar-wrapper').length !== 0;
+    }
+
     $(document).ready(function() {
+      if (!is_sidebar_exist()) {
+        return;
+      }
+
+      // div#aihelper-sidebar を div#sidebar-wrapper の最初に追加
+      $('#aihelper-sidebar').prependTo('#sidebar-wrapper');
+
       ai_helper_urls = {
         chat: '<%= ai_helper_chat_path(@project) %>',
         reload: '<%= ai_helper_reload_path(@project) %>',

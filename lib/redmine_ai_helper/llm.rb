@@ -49,7 +49,7 @@ module RedmineAiHelper
         status: "error",
         error: "Failed to decompose the task",
       }
-      put_log "tasks: #{tasks}"
+      put_log "tasks:", tasks
       if tasks.length > 1 and depth < 4
         depth += 1
         tasks.each do |task|
@@ -168,7 +168,7 @@ tools:
 #{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
       EOS
       messages << { role: "user", content: prompt }
-      put_log "message: #{messages.last[:content]}"
+      put_log "message:", messages.last[:content]
       response = @client.chat(
         parameters: {
           model: @model,
@@ -176,7 +176,7 @@ tools:
         },
       )
       json = response["choices"][0]["message"]["content"]
-      put_log "json: #{json}"
+      put_log "json:", json
       JsonExtractor.extract(json)
     end
 
@@ -203,7 +203,10 @@ tools:
       answer = response["choices"][0]["message"]["content"]
       put_log "answer: #{answer}"
 
-      answer
+      return {
+               status: "success",
+               answer: answer,
+             }
     end
 
     # dispatch the tool
@@ -404,10 +407,16 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
 
     private
 
-    def put_log(message)
+    def put_log(*messages)
       puts "####################################################"
-      puts message
+      puts messages.join(" ")
       puts "####################################################"
+      # 同じメッセージを/tmp/ai_helper.logにも出力
+      File.open("/tmp/ai_helper.log", "a") do |f|
+        f.puts "####################################################"
+        f.puts messages.join(" ")
+        f.puts "####################################################"
+      end
     end
 
     class JsonExtractor
