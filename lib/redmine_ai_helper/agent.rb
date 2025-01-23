@@ -338,7 +338,7 @@ module RedmineAiHelper
         end,
 
       }
-      JSON.pretty_generate issue_json
+      issue_json
     end
 
     # List all projects visible to the current user.
@@ -393,7 +393,7 @@ module RedmineAiHelper
           }
         end,
       }
-      JSON.pretty_generate project_json
+      project_json
     end
 
     # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
@@ -453,8 +453,11 @@ module RedmineAiHelper
           }
         end,
       }
-
-      JSON.pretty_generate properties
+      state = JSON::State.new(
+        space: " ",
+        ascii_only: false,
+      )
+      JSON.pretty_generate(properties, state)
     end
 
     # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
@@ -471,6 +474,9 @@ module RedmineAiHelper
       custom_fields = sym_args[:custom_fields] || []
 
       params = { fields: [], operators: {}, values: {} }
+      params[:fields] << "project_id"
+      params[:operators]["project_id"] = "="
+      params[:values]["project_id"] = [project_id.to_s]
       fields.each do |field|
         params[:fields] << field[:field_name]
         params[:operators][field[:field_name]] = field[:operator]
@@ -514,7 +520,8 @@ module RedmineAiHelper
 
       url = builder.generate_query_string(project)
 
-      { url: url }
+      json = { url: url }
+      json
     end
 
     # RedmineのURLをLLMに問い合わせて修正する
@@ -572,6 +579,8 @@ module RedmineAiHelper
           values = params[:values][field]
           @query.add_filter(field, operator, values)
         end
+        @query.column_names = ["project", "tracker", "status", "subject", "priority", "assigned_to", "updated_on"]
+        @query.sort_criteria = [["priority", "desc"], ["updated_on", "desc"]]
       end
 
       def add_custom_field_filter(custom_field_id, operator, values)
@@ -583,7 +592,7 @@ module RedmineAiHelper
         query_params = @query.as_params
         query_params.delete(:set_filter)
         query_string = query_params.to_query
-        "/projects/#{project.identifier}/issues?#{query_string}"
+        "/projects/#{project.identifier}/issues?set_filter=1&#{query_string}"
       end
     end
   end

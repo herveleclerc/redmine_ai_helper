@@ -227,7 +227,11 @@ tools:
           results[:results] << result
         end
 
-        json_str = results.to_json
+        state = JSON::State.new(
+          space: " ",
+          ascii_only: false,
+        )
+        json_str = JSON.pretty_generate(results, state)
         messages = []
         messages << {
           role: "system",
