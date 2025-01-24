@@ -46,7 +46,7 @@ class AiHelperController < ApplicationController
   end
 
   def clear
-    session[:ai_helper][@project.identifier] = {}
+    session[:ai_helper] = {}
     find_conversation
     render partial: "ai_helper/chat"
   end
@@ -59,15 +59,14 @@ class AiHelperController < ApplicationController
 
   def create_session
     session[:ai_helper] ||= {}
-    session[:ai_helper][@project.identifier] ||= {}
   end
 
   def conversation_id
-    session[:ai_helper][@project.identifier][:conversation_id]
+    session[:ai_helper][:conversation_id]
   end
 
   def set_conversation_id(id)
-    session[:ai_helper][@project.identifier][:conversation_id] = id
+    session[:ai_helper][:conversation_id] = id
   end
 
   def find_conversation
