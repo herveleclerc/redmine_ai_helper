@@ -342,7 +342,7 @@ module RedmineAiHelper
         end,
 
       }
-      AgentRespose.create_success(issue_json)
+      AgentResponse.create_success(issue_json)
     end
 
     # List all projects visible to the current user.
@@ -356,7 +356,7 @@ module RedmineAiHelper
           description: project.description,
         }
       end
-      AgentRespose.create_success(projects)
+      AgentResponse.create_success(projects)
     end
 
     # Read a project from the database and return it as a JSON object.
@@ -398,7 +398,7 @@ module RedmineAiHelper
           }
         end,
       }
-      SAgentRespose.create_success project_json
+      AgentResponse.create_success project_json
     end
 
     # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
@@ -459,7 +459,7 @@ module RedmineAiHelper
         end,
       }
 
-      AgentRespose.create_success properties
+      AgentResponse.create_success properties
     end
 
     # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
@@ -526,7 +526,7 @@ module RedmineAiHelper
       url = builder.generate_query_string(project)
 
       json = { url: url }
-      AgentRespose.create_success json
+      AgentResponse.create_success json
     end
 
     def generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
@@ -535,7 +535,7 @@ module RedmineAiHelper
       fields.each do |field|
         if field[:field_name].match(/_id$/) && field[:values].length > 0
           field[:values].each do |value|
-            unless value.match(/^\d+$/)
+            unless value.to_s.match(/^\d+$/)
               errors << "The #{field[:field_name]} requires a numeric value. But the value is #{value}."
             end
           end
@@ -614,8 +614,10 @@ module RedmineAiHelper
       end
     end
 
-    class AgentRespose
+    class AgentResponse
       attr_reader :status, :value, :error
+      AgentResponse::STATUS_SUCCESS = "success"
+      AgentResponse::STATUS_ERROR = "error"
 
       def initialize(response = {})
         @status = response[:status] || response["status"]
@@ -636,7 +638,7 @@ module RedmineAiHelper
       end
 
       def is_success?
-        status == "success"
+        status == AgentResponse::STATUS_SUCCESS
       end
 
       def is_error?
@@ -644,11 +646,11 @@ module RedmineAiHelper
       end
 
       def self.create_error(error)
-        self.new(status: "error", error: error)
+        self.new(status: AgentResponse::STATUS_ERROR, error: error)
       end
 
       def self.create_success(value)
-        self.new(stauts: "success", value: value)
+        self.new(status: AgentResponse::STATUS_SUCCESS, value: value)
       end
     end
   end
