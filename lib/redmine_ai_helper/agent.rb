@@ -475,6 +475,9 @@ module RedmineAiHelper
       status_field = sym_args[:status_field] || []
       custom_fields = sym_args[:custom_fields] || []
 
+      validate_errors = generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
+      return ErrorResponse.new(validate_errors.join("\n")) if validate_errors.length > 0
+
       params = { fields: [], operators: {}, values: {} }
       params[:fields] << "project_id"
       params[:operators]["project_id"] = "="
@@ -524,6 +527,39 @@ module RedmineAiHelper
 
       json = { url: url }
       SuccessResponse.new json
+    end
+
+    def generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
+      errors = []
+
+      date_fields.each do |field|
+        case field[:operator]
+        when "=", ">=", "<=", "><"
+          if field[:values].length == 0
+            errors << "The #{field[:field_name]} and #{field[:operator]} requires an absolute date value. But no value is specified."
+          end
+          field[:values].each do |value|
+            unless value.match(/\d{4}-\d{2}-\d{2}/)
+              errors << "The #{field[:field_name]} and #{field[:operator]} requires an absolute date value in the format YYYY-MM-DD. But the value is #{value}."
+            end
+          end
+        when "<t+", ">t+", "t+", ">t-", "<t-", "t-"
+          if field[:values].length == 0
+            errors << "The #{field[:field_name]} and #{field[:operator]} requires a relative date value. But no value is specified."
+          end
+          field[:values].each do |value|
+            unless value.match(/\d+/)
+              errors << "The #{field[:field_name]} and #{field[:operator]} requires a relative date value. But the value is #{value}."
+            end
+          end
+        else
+          unless field[:values].length == 0
+            errors << "The #{field[:name]} and #{field[:operator]} does not require a value. But the value is specified."
+          end
+        end
+      end
+
+      errors
     end
 
     # Redmineのチケット検索用URLを作成するクラス

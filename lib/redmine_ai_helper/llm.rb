@@ -224,6 +224,9 @@ tools:
           put_log "tool: #{tool}"
           result = agent.callTool(name: tool["name"], arguments: tool["arguments"]).to_h
           put_log "result: #{result}"
+          if result[:status] == "error"
+            return result
+          end
           results[:results] << result
         end
 
@@ -292,7 +295,7 @@ JSON:
       end
 
       prompt = <<-EOS
-「#{task}」を解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。
+「#{task}」を解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。ツールのリストに無いものは含めないでください。
 ツールは複数選択できます。選択には過去の会話履歴も参考にしてください。
 また、そのツールに渡すのに必要な引数も作成してください。
 
@@ -308,7 +311,7 @@ JSONの例:
       "arguments": {  "id": 1 }
     },
     {
-      "name": "list_issues",
+      "name": "read_project",
       "arguments": {  "project_id": 1 }
     },
   ]
