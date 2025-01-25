@@ -86,7 +86,7 @@ module RedmineAiHelper
                         operator: {
                           type: "string",
                           enum: ["=", "!", "*", "!*", "!p", "cf", "h"],
-                          description: "Operators: = (equal), != (not equal), * (all), !* (none), !p (has nerver been), cf (changed from), h (has been)",
+                          description: "Operators: = (equal), != (not equal), * (all), !* (none), !p (has never been), cf (changed from), h (has been)",
                         },
                         values: {
                           type: "array",
@@ -113,6 +113,11 @@ module RedmineAiHelper
                         values: {
                           type: "array",
                           items: { type: "string" },
+                          description: "Specify absolute dates in YYYY-MM-DD format. For relative dates, specify only the number. Depending on the operator, multiple values may be specified, or no value may be required.
+                          The following operations must specify absolute dates: =, >=, <=, ><
+                          The following operations must specify relative dates: <t+, >t+, t+, >t-, <t-, t-
+                          No value is needed for other operations
+                          ",
                         },
                       },
                       required: ["field_name", "operator", "values"],
@@ -216,7 +221,6 @@ module RedmineAiHelper
                           type: "string",
                           enum: ["=", "!", "!*", "*", "~", "!~", "^", "$", ">=", "<=", "><", "<t", ">", "t+", "t", "w", ">t-", "<t-"],
                           description: "Operators: = (equal), != (not equal), !* (no value set), * (any value set), ~ (contains), !~ (does not contain), ^ (starts with), $ (ends with), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (within the next n days), >t+ (more than n days ahead), t+ (n days in the future), t (today), w (this week), >t- (more than n days ago), <t- (within the past n days)",
-
                         },
                         values: {
                           type: "array",
