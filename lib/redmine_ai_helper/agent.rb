@@ -49,7 +49,7 @@ module RedmineAiHelper
           },
           {
             name: "project_members",
-            description: "List all members of the project.",
+            description: "List all members of the project. It can be used to obtain the ID from the user's name. It can also be used to obtain the roles that the user has in the project.",
             arguments: {
               schema: {
                 type: "object",
