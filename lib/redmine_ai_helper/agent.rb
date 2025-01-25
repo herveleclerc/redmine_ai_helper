@@ -259,10 +259,10 @@ module RedmineAiHelper
       sym_args = args.deep_symbolize_keys
       issue_id = sym_args[:id]
       issue = Issue.find_by(id: issue_id)
-      return { error: "Issue not found" } unless issue
+      return ErrorResponse.new("Issue Not Found.") unless issue
 
       # Check if the issue is visible to the current user
-      return { error: "You don't have permission to view this issue" } unless issue.visible?
+      return ErrorResponse.new("You don't have permission to view this issue") unless issue.visible?
 
       issue_json = {
         id: issue.id,
@@ -342,7 +342,7 @@ module RedmineAiHelper
         end,
 
       }
-      issue_json
+      SuccessResponse.new(issue_json)
     end
 
     # List all projects visible to the current user.
@@ -356,6 +356,7 @@ module RedmineAiHelper
           description: project.description,
         }
       end
+      SuccessResponse.new(projects)
     end
 
     # Read a project from the database and return it as a JSON object.
@@ -372,11 +373,11 @@ module RedmineAiHelper
       elsif project_identifier
         project = Project.find_by(identifier: project_identifier)
       else
-        return { error: "No id or name or Identifier specified." }
+        return ErrorResponse.new "No id or name or Identifier specified."
       end
 
-      return { error: "Project not found" } unless project
-      return { error: "You don't have permission to view this project" } unless project.visible?
+      return ErrorResponse.new "Project not found" unless project
+      return ErrorResponse.new "You don't have permission to view this project" unless project.visible?
       project_json = {
         id: project.id,
         name: project.name,
@@ -397,7 +398,7 @@ module RedmineAiHelper
           }
         end,
       }
-      project_json
+      SuccessResponse.new project_json
     end
 
     # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
@@ -457,11 +458,8 @@ module RedmineAiHelper
           }
         end,
       }
-      state = JSON::State.new(
-        space: " ",
-        ascii_only: false,
-      )
-      JSON.pretty_generate(properties, state)
+
+      SuccessResponse.new properties
     end
 
     # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
@@ -525,37 +523,7 @@ module RedmineAiHelper
       url = builder.generate_query_string(project)
 
       json = { url: url }
-      json
-    end
-
-    # RedmineのURLをLLMに問い合わせて修正する
-    def repair_url(url, project_id)
-      messages = []
-      prompt = <<-EOS
-        以下はRedmineでチケットを検索するためのURLです。
-        このURLの形式が正しいか検証してください。
-        - 間違っている場合は、正しい形式に修正してください。
-        - 正しい場合は、そのまま元のURLを返してください。
-        - 修正方法がわからない場合は、そのまま元のURLを返してください。
-        ** 回答にはURLの文字列のみを返してください。解説は不要です。 **
-        ---
-        URL: #{url}
-        ---
-        参考情報としてこのRedmineでチケットの項目のIDと名前の情報の一部をを以下に示します。
-        #{capable_issue_properties(project_id)}
-      EOS
-      message = {
-        role: "user",
-        content: prompt,
-      }
-      messages << message
-      response = @client.chat(
-        parameters: {
-          model: @model,
-          messages: messages,
-        },
-      )
-      response
+      SuccessResponse.new json
     end
 
     # Redmineのチケット検索用URLを作成するクラス
@@ -597,6 +565,40 @@ module RedmineAiHelper
         query_params.delete(:set_filter)
         query_string = query_params.to_query
         "/projects/#{project.identifier}/issues?set_filter=1&#{query_string}"
+      end
+    end
+
+    class AgentRespose
+      attr_reader :status, :value, :error
+
+      def initialize(response = {})
+        @status = response[:status] || response["status"]
+        @value = response[:value] || response["value"]
+        @error = response[:error] || response["error"]
+      end
+
+      def to_json
+        to_hash().to_json
+      end
+
+      def to_hash
+        { status: status, value: value, error: error }
+      end
+
+      def to_h
+        to_hash
+      end
+    end
+
+    class ErrorResponse < AgentRespose
+      def initialize(error)
+        super(status: "error", error: error)
+      end
+    end
+
+    class SuccessResponse < AgentRespose
+      def initialize(value)
+        super(status: "success", value: value)
       end
     end
   end
