@@ -80,6 +80,7 @@ module RedmineAiHelper
       else
         result = dispatch(goal, task, conversation, pre_tasks, previous_error)
       end
+      put_log "result: #{result}"
       result
     end
 
@@ -132,7 +133,11 @@ EOS
 
       prompt = <<-EOS
 「#{task}」というタスクを解決するために必要なステップに分解してください。#{goal_string}
-ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。それらをまとめてJSONを作成してください。２つ以上のステップに分解ができない場合には元のタスクをそのまま一つのステップとして記述してください。
+ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。
+各ステップでは、前のステップの実行で得られた結果をどのように利用するかを考慮してください。
+それらをまとめてJSONを作成してください。
+
+２つ以上のステップに分解ができない場合には元のタスクをそのまま一つのステップとして記述してください。
 #{pre_task_string}
 #{pre_error_string}
 
