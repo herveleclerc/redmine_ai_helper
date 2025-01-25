@@ -259,10 +259,10 @@ module RedmineAiHelper
       sym_args = args.deep_symbolize_keys
       issue_id = sym_args[:id]
       issue = Issue.find_by(id: issue_id)
-      return ErrorResponse.new("Issue Not Found.") unless issue
+      return AgentResponse.create_error("Issue Not Found.") unless issue
 
       # Check if the issue is visible to the current user
-      return ErrorResponse.new("You don't have permission to view this issue") unless issue.visible?
+      return AgentResponse.create_error("You don't have permission to view this issue") unless issue.visible?
 
       issue_json = {
         id: issue.id,
@@ -342,7 +342,7 @@ module RedmineAiHelper
         end,
 
       }
-      SuccessResponse.new(issue_json)
+      AgentRespose.create_success(issue_json)
     end
 
     # List all projects visible to the current user.
@@ -356,7 +356,7 @@ module RedmineAiHelper
           description: project.description,
         }
       end
-      SuccessResponse.new(projects)
+      AgentRespose.create_success(projects)
     end
 
     # Read a project from the database and return it as a JSON object.
@@ -373,11 +373,11 @@ module RedmineAiHelper
       elsif project_identifier
         project = Project.find_by(identifier: project_identifier)
       else
-        return ErrorResponse.new "No id or name or Identifier specified."
+        return AgentResponse.create_error "No id or name or Identifier specified."
       end
 
-      return ErrorResponse.new "Project not found" unless project
-      return ErrorResponse.new "You don't have permission to view this project" unless project.visible?
+      return AgentResponse.create_error "Project not found" unless project
+      return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
       project_json = {
         id: project.id,
         name: project.name,
@@ -398,7 +398,7 @@ module RedmineAiHelper
           }
         end,
       }
-      SuccessResponse.new project_json
+      SAgentRespose.create_success project_json
     end
 
     # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
@@ -459,7 +459,7 @@ module RedmineAiHelper
         end,
       }
 
-      SuccessResponse.new properties
+      AgentRespose.create_success properties
     end
 
     # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
@@ -476,7 +476,7 @@ module RedmineAiHelper
       custom_fields = sym_args[:custom_fields] || []
 
       validate_errors = generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
-      return ErrorResponse.new(validate_errors.join("\n")) if validate_errors.length > 0
+      return AgentResponse.create_error(validate_errors.join("\n")) if validate_errors.length > 0
 
       params = { fields: [], operators: {}, values: {} }
       params[:fields] << "project_id"
@@ -526,7 +526,7 @@ module RedmineAiHelper
       url = builder.generate_query_string(project)
 
       json = { url: url }
-      SuccessResponse.new json
+      AgentRespose.create_success json
     end
 
     def generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
@@ -634,17 +634,21 @@ module RedmineAiHelper
       def to_h
         to_hash
       end
-    end
 
-    class ErrorResponse < AgentRespose
-      def initialize(error)
-        super(status: "error", error: error)
+      def is_success?
+        status == "success"
       end
-    end
 
-    class SuccessResponse < AgentRespose
-      def initialize(value)
-        super(status: "success", value: value)
+      def is_error?
+        !is_success?
+      end
+
+      def self.create_error(error)
+        self.new(status: "error", error: error)
+      end
+
+      def self.create_success(value)
+        self.new(stauts: "success", value: value)
       end
     end
   end
