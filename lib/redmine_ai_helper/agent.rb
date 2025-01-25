@@ -532,6 +532,16 @@ module RedmineAiHelper
     def generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
       errors = []
 
+      fields.each do |field|
+        if field[:field_name].match(/_id$/) && field[:values].length > 0
+          field[:values].each do |value|
+            unless value.match(/^\d+$/)
+              errors << "The #{field[:field_name]} requires a numeric value. But the value is #{value}."
+            end
+          end
+        end
+      end
+
       date_fields.each do |field|
         case field[:operator]
         when "=", ">=", "<=", "><"
