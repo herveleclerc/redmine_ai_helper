@@ -27,6 +27,8 @@ module RedmineAiHelper
       @content_id = option[:content_id]
       task = conversation.messages.last.content
       goal = task
+      put_log "New message arrived!!!!!!!!!!"
+      put_log "task: #{task}"
       begin
         result = execute_task(goal, task, conversation)
         if result[:status] == "success"
@@ -82,16 +84,10 @@ module RedmineAiHelper
     end
 
     def merge_results(goal, task, conversation, pre_tasks)
-      messages = []
-      messages << {
-        role: "system",
-        content: system_prompt(conversation),
-      }
       goal_string = ""
       if goal != task
         goal_string = "なお、このタスクが最終的に解決したいゴールは「#{goal}」です。"
       end
-      pre_task_string = ""
 
       prompt = <<-EOS
 「 #{task}」というタスクを解決するために今までに実施したステップは以下の通りです。これらの結果の内容をまとめて、最終回答を作成してください。
@@ -100,11 +96,10 @@ module RedmineAiHelper
 ----
 事前のステップ:
 #{pre_tasks.map { |pre_task| "----\n#{pre_task["name"]}: #{pre_task["step"]}\n#{pre_task["result"]}" }.join("\n")}
-----
-過去の会話履歴:
-#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
 
 EOS
+      json = chat_wrapper(prompt, conversation)
+      json
     end
 
     # decompose the task
@@ -115,11 +110,7 @@ EOS
     # @param [String] pre_error
     def decompose_task(goal, task, conversation, pre_tasks = [], pre_error = nil)
       tools = Agent.listTools
-      messages = []
-      messages << {
-        role: "system",
-        content: system_prompt(conversation),
-      }
+
       goal_string = ""
       if goal != task
         goal_string = "なお、このタスクが最終的に解決したいゴールは「#{goal}」です。"
@@ -144,7 +135,7 @@ EOS
 ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。それらをまとめてJSONを作成してください。２つ以上のステップに分解ができない場合には元のタスクをそのまま一つのステップとして記述してください。
 #{pre_task_string}
 #{pre_error_string}
-ステップの作成には過去の会話履歴も参考にしてください。
+
 ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
 ----
 JSONの例:
@@ -163,20 +154,11 @@ JSONの例:
 ----
 tools:
 #{tools}
-----
-過去の会話履歴:
-#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
+("\n")}
       EOS
-      messages << { role: "user", content: prompt }
-      put_log "message:", messages.last[:content]
-      response = @client.chat(
-        parameters: {
-          model: @model,
-          messages: messages,
-        },
-      )
-      json = response["choices"][0]["message"]["content"]
-      put_log "json:", json
+
+      json = chat_wrapper(prompt, conversation)
+
       JsonExtractor.extract(json)
     end
 
@@ -235,11 +217,7 @@ tools:
           ascii_only: false,
         )
         json_str = JSON.pretty_generate(results, state)
-        messages = []
-        messages << {
-          role: "system",
-          content: system_prompt(conversation),
-        }
+
         prompt = <<-EOS
 ツールの実行結果は以下のJSONになります。ユーザーに回答する文章を作成してください。回答は簡潔に要約してください。
 箇条書きで回答可能であれば、箇条書きで回答を作成してください。
@@ -247,21 +225,12 @@ tools:
 ----
 JSON:
 #{json_str}
-----
-過去の会話履歴:
-#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
+
 
         EOS
-        messages << { role: "user", content: prompt }
-        put_log "message: #{messages.last[:content]}"
-        response = @client.chat(
-          parameters: {
-            model: @model,
-            messages: messages,
-          },
-        )
-        answer = response["choices"][0]["message"]["content"]
-        put_log "answer: #{answer}"
+
+        answer = chat_wrapper(prompt, conversation)
+
         result = {
           status: "success",
           answer: answer,
@@ -279,15 +248,6 @@ JSON:
     # select the toos to solve the task
     def select_tools(goal, task, conversation, previous_error = nil)
       tools = Agent.listTools
-      messages = []
-      messages << {
-        role: "system",
-        content: system_prompt(conversation),
-      }
-      conversation_history = ""
-      conversation.messages.each do |message|
-        conversation_history += "----\n#{message.role}: #{message.content}\n"
-      end
 
       previous_error_string = ""
       if previous_error
@@ -320,19 +280,11 @@ JSONの例:
 ----
 ツールのリスト
 #{tools}
-----
-過去の会話履歴:
-#{conversation_history}
+
       EOS
-      messages << { role: "user", content: prompt }
-      put_log "message: #{messages.last[:content]}"
-      response = @client.chat(
-        parameters: {
-          model: @model,
-          messages: messages,
-        },
-      )
-      json = response["choices"][0]["message"]["content"]
+
+      json = chat_wrapper(prompt, conversation)
+
       put_log "json: #{json}"
       JsonExtractor.extract(json)
     end
@@ -415,6 +367,36 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
     end
 
     private
+
+    def chat_wrapper(new_message, conversation)
+      put_log "new_message: #{new_message}"
+      messages = conversation.messages.map do |message|
+        {
+          role: message.role,
+          content: message.content,
+        }
+      end
+      system_message = {
+        role: "system",
+        content: system_prompt(conversation),
+      }
+      messages.prepend(system_message)
+      messages << {
+        role: "user",
+        content: new_message,
+      }
+      put_log "message: #{messages.last[:content]}"
+      response = @client.chat(
+        parameters: {
+          model: @model,
+          messages: messages,
+        },
+      )
+
+      answer = response["choices"][0]["message"]["content"]
+      put_log "answer: #{answer}"
+      answer
+    end
 
     def put_log(*messages)
       location = caller_locations(1, 1)[0]
