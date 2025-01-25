@@ -48,6 +48,19 @@ module RedmineAiHelper
             },
           },
           {
+            name: "project_members",
+            description: "List all members of the project.",
+            arguments: {
+              schema: {
+                type: "object",
+                properties: {
+                  project_id: "integer",
+                },
+                required: ["project_id"],
+              },
+            },
+          },
+          {
             name: "capable_issue_properties",
             description: "Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc. It can be used to obtain the ID of the items to be searched when searching for tickets using generate_issue_search_url.",
             arguments: {
@@ -529,6 +542,31 @@ module RedmineAiHelper
       AgentResponse.create_success json
     end
 
+    # List all members of the project.
+    def project_members(args = {})
+      sym_args = args.deep_symbolize_keys
+      project_id = sym_args[:project_id]
+      project = Project.find(project_id)
+      members = project.members.map do |member|
+        {
+          user_id: member.user_id,
+          user_name: member.user.name,
+          roles: member.roles.map do |role|
+            {
+              id: role.id,
+              name: role.name,
+            }
+          end,
+        }
+      end
+      json = {
+        project_id: project_id,
+        members: members,
+      }
+      AgentResponse.create_success json
+    end
+
+    # Validate the parameters for generate_issue_search_url
     def generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
       errors = []
 
