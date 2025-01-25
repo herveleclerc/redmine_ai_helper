@@ -296,6 +296,7 @@ JSONの例:
         id: User.current.id,
         name: User.current.name,
         mail: User.current.mail,
+        timezone: User.current.time_zone,
       }
       prompt = <<-EOS
 あなたはRedmine AI Helperプラグインです。Redmineにインストールされており、Redmineのユーザーからの問い合わせに答えます。
@@ -310,6 +311,7 @@ JSONの例:
 以下はあなたの参考知識です。
 ----
 参考情報：
+現在の時刻は#{Time.now.iso8601}です。ただしユーザと時間について会話する場合は、ユーザのタイムゾーンを考慮してください。ユーザーのタイムゾーンがわからない場合には、ユーザーが話している言語や会話から推測してください。
 JSONで定義したこのRedmineのサイト情報は以下になります。
 JSONの中のcurrent_projectが現在ユーザーが表示している、このプロジェクトです。ユーザが特にプロジェクトを指定せずにただ「プロジェクト」といった場合にはこのプロジェクトのことです。
 #{site_info_json(project: project)}
