@@ -222,7 +222,7 @@ tools:
         tools.each do |tool|
           agent = Agent.new(@client, @model)
           put_log "tool: #{tool}"
-          result = agent.callTool(name: tool["name"], arguments: tool["arguments"])
+          result = agent.callTool(name: tool["name"], arguments: tool["arguments"]).to_h
           put_log "result: #{result}"
           results[:results] << result
         end
@@ -414,14 +414,15 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
     private
 
     def put_log(*messages)
+      location = caller_locations(1, 1)[0]
+
       puts "####################################################"
       puts messages.join(" ")
       puts "####################################################"
       # 同じメッセージを/tmp/ai_helper.logにも出力
       File.open("/tmp/ai_helper.log", "a") do |f|
-        f.puts "####################################################"
+        f.puts "###### #{Time.now.strftime("%Y-%m-%d %H:%M:%S")} #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}#################################"
         f.puts messages.join(" ")
-        f.puts "####################################################"
       end
     end
 
