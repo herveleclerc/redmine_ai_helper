@@ -259,10 +259,10 @@ module RedmineAiHelper
       sym_args = args.deep_symbolize_keys
       issue_id = sym_args[:id]
       issue = Issue.find_by(id: issue_id)
-      return { error: "Issue not found" } unless issue
+      return AgentResponse.create_error("Issue Not Found.") unless issue
 
       # Check if the issue is visible to the current user
-      return { error: "You don't have permission to view this issue" } unless issue.visible?
+      return AgentResponse.create_error("You don't have permission to view this issue") unless issue.visible?
 
       issue_json = {
         id: issue.id,
@@ -342,7 +342,7 @@ module RedmineAiHelper
         end,
 
       }
-      issue_json
+      AgentRespose.create_success(issue_json)
     end
 
     # List all projects visible to the current user.
@@ -356,6 +356,7 @@ module RedmineAiHelper
           description: project.description,
         }
       end
+      AgentRespose.create_success(projects)
     end
 
     # Read a project from the database and return it as a JSON object.
@@ -372,11 +373,11 @@ module RedmineAiHelper
       elsif project_identifier
         project = Project.find_by(identifier: project_identifier)
       else
-        return { error: "No id or name or Identifier specified." }
+        return AgentResponse.create_error "No id or name or Identifier specified."
       end
 
-      return { error: "Project not found" } unless project
-      return { error: "You don't have permission to view this project" } unless project.visible?
+      return AgentResponse.create_error "Project not found" unless project
+      return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
       project_json = {
         id: project.id,
         name: project.name,
@@ -397,7 +398,7 @@ module RedmineAiHelper
           }
         end,
       }
-      project_json
+      SAgentRespose.create_success project_json
     end
 
     # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
@@ -457,11 +458,8 @@ module RedmineAiHelper
           }
         end,
       }
-      state = JSON::State.new(
-        space: " ",
-        ascii_only: false,
-      )
-      JSON.pretty_generate(properties, state)
+
+      AgentRespose.create_success properties
     end
 
     # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
@@ -476,6 +474,9 @@ module RedmineAiHelper
       text_fields = sym_args[:text_fields] || []
       status_field = sym_args[:status_field] || []
       custom_fields = sym_args[:custom_fields] || []
+
+      validate_errors = generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
+      return AgentResponse.create_error(validate_errors.join("\n")) if validate_errors.length > 0
 
       params = { fields: [], operators: {}, values: {} }
       params[:fields] << "project_id"
@@ -525,37 +526,50 @@ module RedmineAiHelper
       url = builder.generate_query_string(project)
 
       json = { url: url }
-      json
+      AgentRespose.create_success json
     end
 
-    # RedmineのURLをLLMに問い合わせて修正する
-    def repair_url(url, project_id)
-      messages = []
-      prompt = <<-EOS
-        以下はRedmineでチケットを検索するためのURLです。
-        このURLの形式が正しいか検証してください。
-        - 間違っている場合は、正しい形式に修正してください。
-        - 正しい場合は、そのまま元のURLを返してください。
-        - 修正方法がわからない場合は、そのまま元のURLを返してください。
-        ** 回答にはURLの文字列のみを返してください。解説は不要です。 **
-        ---
-        URL: #{url}
-        ---
-        参考情報としてこのRedmineでチケットの項目のIDと名前の情報の一部をを以下に示します。
-        #{capable_issue_properties(project_id)}
-      EOS
-      message = {
-        role: "user",
-        content: prompt,
-      }
-      messages << message
-      response = @client.chat(
-        parameters: {
-          model: @model,
-          messages: messages,
-        },
-      )
-      response
+    def generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
+      errors = []
+
+      fields.each do |field|
+        if field[:field_name].match(/_id$/) && field[:values].length > 0
+          field[:values].each do |value|
+            unless value.match(/^\d+$/)
+              errors << "The #{field[:field_name]} requires a numeric value. But the value is #{value}."
+            end
+          end
+        end
+      end
+
+      date_fields.each do |field|
+        case field[:operator]
+        when "=", ">=", "<=", "><"
+          if field[:values].length == 0
+            errors << "The #{field[:field_name]} and #{field[:operator]} requires an absolute date value. But no value is specified."
+          end
+          field[:values].each do |value|
+            unless value.match(/\d{4}-\d{2}-\d{2}/)
+              errors << "The #{field[:field_name]} and #{field[:operator]} requires an absolute date value in the format YYYY-MM-DD. But the value is #{value}."
+            end
+          end
+        when "<t+", ">t+", "t+", ">t-", "<t-", "t-"
+          if field[:values].length == 0
+            errors << "The #{field[:field_name]} and #{field[:operator]} requires a relative date value. But no value is specified."
+          end
+          field[:values].each do |value|
+            unless value.match(/\d+/)
+              errors << "The #{field[:field_name]} and #{field[:operator]} requires a relative date value. But the value is #{value}."
+            end
+          end
+        else
+          unless field[:values].length == 0
+            errors << "The #{field[:name]} and #{field[:operator]} does not require a value. But the value is specified."
+          end
+        end
+      end
+
+      errors
     end
 
     # Redmineのチケット検索用URLを作成するクラス
@@ -597,6 +611,44 @@ module RedmineAiHelper
         query_params.delete(:set_filter)
         query_string = query_params.to_query
         "/projects/#{project.identifier}/issues?set_filter=1&#{query_string}"
+      end
+    end
+
+    class AgentRespose
+      attr_reader :status, :value, :error
+
+      def initialize(response = {})
+        @status = response[:status] || response["status"]
+        @value = response[:value] || response["value"]
+        @error = response[:error] || response["error"]
+      end
+
+      def to_json
+        to_hash().to_json
+      end
+
+      def to_hash
+        { status: status, value: value, error: error }
+      end
+
+      def to_h
+        to_hash
+      end
+
+      def is_success?
+        status == "success"
+      end
+
+      def is_error?
+        !is_success?
+      end
+
+      def self.create_error(error)
+        self.new(status: "error", error: error)
+      end
+
+      def self.create_success(value)
+        self.new(stauts: "success", value: value)
       end
     end
   end

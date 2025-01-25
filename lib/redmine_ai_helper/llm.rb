@@ -26,9 +26,10 @@ module RedmineAiHelper
       @action_name = option[:action_name]
       @content_id = option[:content_id]
       task = conversation.messages.last.content
-      goal = task
+      put_log "New message arrived!!!!!!!!!!"
+      put_log "task: #{task}"
       begin
-        result = execute_task(goal, task, conversation)
+        result = execute_task(task, conversation)
         if result[:status] == "success"
           answer = result[:answer]
         else
@@ -42,88 +43,61 @@ module RedmineAiHelper
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
 
-    def execute_task(goal, task, conversation, pre_tasks = [], depth = 0, previous_error = nil)
+    def execute_task(task, conversation)
       answer = ""
-      tasks = decompose_task(goal, task, conversation, pre_tasks, previous_error)
       result = {
         status: "error",
         error: "Failed to decompose the task",
       }
+      pre_tasks = []
+      tasks = decompose_task(task, conversation)
       put_log "tasks:", tasks
-      if tasks.length > 1 and depth < 4
-        depth += 1
-        tasks.each do |task|
-          max_retry = 3
-          max_retry.times do |i|
-            result = execute_task(goal, task, conversation, pre_tasks, depth, previous_error)
-            break if result[:status] == "success"
-            if i == max_retry - 1
-              return result
-            end
-            previous_error = result[:error]
-            put_log "retry: #{i}"
-          end
-          pre_task = {
-            "name": task["name"],
-            "step": task["step"],
-            "result": result[:answer],
-          }
-          pre_tasks << pre_task
-        end
-        answer = merge_results(goal, task, conversation, pre_tasks)
-        result = {
-          status: "success",
-          answer: answer,
+
+      tasks["steps"].each do |new_task|
+        put_log "new_task: #{new_task}"
+        result = dispatch(new_task["step"], conversation, pre_tasks)
+        pre_task = {
+          "name": new_task["name"],
+          "step": new_task["step"],
+          "result": result.value,
         }
-      else
-        result = dispatch(goal, task, conversation, pre_tasks, previous_error)
+        pre_tasks << pre_task
+        answer = result.value
       end
+
+      answer = merge_results(task, conversation, pre_tasks) if pre_tasks.length > 1
+      result = {
+        status: "success",
+        answer: answer,
+      }
+      put_log "result: #{result}"
       result
     end
 
-    def merge_results(goal, task, conversation, pre_tasks)
-      messages = []
-      messages << {
-        role: "system",
-        content: system_prompt(conversation),
-      }
-      goal_string = ""
-      if goal != task
-        goal_string = "なお、このタスクが最終的に解決したいゴールは「#{goal}」です。"
-      end
-      pre_task_string = ""
-
+    def merge_results(task, conversation, pre_tasks)
       prompt = <<-EOS
-「 #{task}」というタスクを解決するために今までに実施したステップは以下の通りです。これらの結果の内容をまとめて、最終回答を作成してください。
-#{goal_string}
+「 #{task}」というタスクを解決するために今までに実施したステップは以下の通りです。これらの結果の内容を踏まえて、タスクに対する最終回答を作成してください。
+
+最終回答はタスクに対する自然な会話となる文章です。
+** 最終回答には会話の文章のみ含めてください。解説は不要です。 **
+
 回答の作成には過去の会話履歴も参考にしてください。
 ----
 事前のステップ:
-#{pre_tasks.map { |pre_task| "----\n#{pre_task["name"]}: #{pre_task["step"]}\n#{pre_task["result"]}" }.join("\n")}
-----
-過去の会話履歴:
-#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
+#{pre_tasks}
 
 EOS
+      json = chat_wrapper(prompt, conversation)
+      json
     end
 
     # decompose the task
-    # @param [String] goal
-    # @param [String] task
     # @param [Conversation] conversation
     # @param [Array] pre_tasks
     # @param [String] pre_error
-    def decompose_task(goal, task, conversation, pre_tasks = [], pre_error = nil)
+    def decompose_task(task, conversation, pre_tasks = [], pre_error = nil)
       tools = Agent.listTools
-      messages = []
-      messages << {
-        role: "system",
-        content: system_prompt(conversation),
-      }
-      goal_string = ""
-      if goal != task
-        goal_string = "なお、このタスクが最終的に解決したいゴールは「#{goal}」です。"
-      end
+
       pre_error_string = ""
       if pre_error
         pre_error_string = "\n----\n前回のタスク実行でエラーが発生しました。今回はそのリトライです。前回のエラー内容は以下の通りです。このエラーが再度発生しないようにタスクを作成してください。\n#{pre_error}"
@@ -132,7 +106,7 @@ EOS
       if pre_tasks.length > 0
         pre_task_string = <<-EOS
 ---
-「#{goal}」を解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップを考えてください。
+「#{task}」を解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップを考えてください。
 事前のステップ:
 #{pre_tasks.map { |pre_task| "----\n#{pre_task["name"]}: #{pre_task["step"]}\n#{pre_task["result"]}" }.join("\n")}
 ---
@@ -140,43 +114,42 @@ EOS
       end
 
       prompt = <<-EOS
-「#{task}」というタスクを解決するために必要なステップに分解してください。#{goal_string}
-ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。それらをまとめてJSONを作成してください。２つ以上のステップに分解ができない場合には元のタスクをそのまま一つのステップとして記述してください。
+「#{task}」というタスクを解決するために必要なステップに分解してください。
+ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。
+各ステップでは、前のステップの実行で得られた結果をどのように利用するかを考慮してください。
+それらをまとめてJSONを作成してください。
+
+２つ以上のステップに分解がする必要がない場合には元のタスクをそのまま一つのステップとして記述してください。
+タスクを解決するためにツールの実行が不要な場合にはステップを分解する必要はありません。
+
 #{pre_task_string}
 #{pre_error_string}
-ステップの作成には過去の会話履歴も参考にしてください。
+
 ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
 ----
+タスクの例:
+「トラッカーがサポートのチケットを探す」
 JSONの例:
 {
   "steps": [
     {
           "name": "step1",
-          "step": "プロジェクトの一覧を取得する",
+          "step": "名前がサポートのトラッカーのIDを取得する",
         },
     {
           "name": "step2",
-          "step": "個々のプロジェクトの詳細情報を取得する",
+          "step": "前のステップで取得したトラッカーのIDを使用して、そのトラッカーのチケットを探す",
         },
   ],
 }
 ----
 tools:
 #{tools}
-----
-過去の会話履歴:
-#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
+("\n")}
       EOS
-      messages << { role: "user", content: prompt }
-      put_log "message:", messages.last[:content]
-      response = @client.chat(
-        parameters: {
-          model: @model,
-          messages: messages,
-        },
-      )
-      json = response["choices"][0]["message"]["content"]
-      put_log "json:", json
+
+      json = chat_wrapper(prompt, conversation)
+
       JsonExtractor.extract(json)
     end
 
@@ -203,15 +176,12 @@ tools:
       answer = response["choices"][0]["message"]["content"]
       put_log "answer: #{answer}"
 
-      return {
-               status: "success",
-               answer: answer,
-             }
+      return TaskResponse.create_success answer
     end
 
     # dispatch the tool
-    def dispatch(goal, task, conversation, pre_tasks = [], previous_error = nil)
-      response = select_tools(goal, task, conversation, previous_error)
+    def dispatch(task, conversation, pre_tasks = [], previous_error = nil)
+      response = select_tools(task, conversation, pre_tasks, previous_error)
       tools = response["tools"]
       return simple_llm_chat(conversation) if tools.empty?
 
@@ -222,77 +192,40 @@ tools:
         tools.each do |tool|
           agent = Agent.new(@client, @model)
           put_log "tool: #{tool}"
-          result = agent.callTool(name: tool["name"], arguments: tool["arguments"])
+          result = agent.callTool(name: tool["name"], arguments: tool["arguments"]).to_h
           put_log "result: #{result}"
+          if result[:status] == "error"
+            return result
+          end
           results[:results] << result
         end
 
-        state = JSON::State.new(
-          space: " ",
-          ascii_only: false,
-        )
-        json_str = JSON.pretty_generate(results, state)
-        messages = []
-        messages << {
-          role: "system",
-          content: system_prompt(conversation),
-        }
-        prompt = <<-EOS
-ツールの実行結果は以下のJSONになります。ユーザーに回答する文章を作成してください。回答は簡潔に要約してください。
-箇条書きで回答可能であれば、箇条書きで回答を作成してください。
-また、過去の会話履歴も参考にしてください。
-----
-JSON:
-#{json_str}
-----
-過去の会話履歴:
-#{conversation.messages.map { |message| "----\n#{message.role}: #{message.content}" }.join("\n")}
-
-        EOS
-        messages << { role: "user", content: prompt }
-        put_log "message: #{messages.last[:content]}"
-        response = @client.chat(
-          parameters: {
-            model: @model,
-            messages: messages,
-          },
-        )
-        answer = response["choices"][0]["message"]["content"]
-        put_log "answer: #{answer}"
-        result = {
-          status: "success",
-          answer: answer,
-        }
-        result
-      rescue => e
-        result = {
-          status: "error",
-          error: e.message,
-        }
-        result
+        TaskResponse.create_success results
       end
     end
 
     # select the toos to solve the task
-    def select_tools(goal, task, conversation, previous_error = nil)
+    def select_tools(task, conversation, pre_tasks = [], previous_error = nil)
       tools = Agent.listTools
-      messages = []
-      messages << {
-        role: "system",
-        content: system_prompt(conversation),
-      }
-      conversation_history = ""
-      conversation.messages.each do |message|
-        conversation_history += "----\n#{message.role}: #{message.content}\n"
-      end
 
       previous_error_string = ""
       if previous_error
         previous_error_string = "\n----\n前回のツール実行でエラーが発生しました。今回はそのリトライです。前回のエラー内容は以下の通りです。このエラーが再度発生しないようにツールの選択とパラメータの作成してください。\n#{previous_error}"
       end
 
+      pre_tasks_string = ""
+      if pre_tasks.length > 0
+        pre_tasks_string = <<-EOS
+このタスクを解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップを考えてください。
+事前のステップ:
+#{JSON.pretty_generate(pre_tasks)}
+        EOS
+      end
+
       prompt = <<-EOS
-「#{task}」を解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。
+「#{task}」というタスクを解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。ツールのリストに無いものは含めないでください。
+#{pre_tasks_string}
+
 ツールは複数選択できます。選択には過去の会話履歴も参考にしてください。
 また、そのツールに渡すのに必要な引数も作成してください。
 
@@ -308,7 +241,7 @@ JSONの例:
       "arguments": {  "id": 1 }
     },
     {
-      "name": "list_issues",
+      "name": "read_project",
       "arguments": {  "project_id": 1 }
     },
   ]
@@ -317,19 +250,11 @@ JSONの例:
 ----
 ツールのリスト
 #{tools}
-----
-過去の会話履歴:
-#{conversation_history}
+
       EOS
-      messages << { role: "user", content: prompt }
-      put_log "message: #{messages.last[:content]}"
-      response = @client.chat(
-        parameters: {
-          model: @model,
-          messages: messages,
-        },
-      )
-      json = response["choices"][0]["message"]["content"]
+
+      json = chat_wrapper(prompt, conversation)
+
       put_log "json: #{json}"
       JsonExtractor.extract(json)
     end
@@ -341,6 +266,7 @@ JSONの例:
         id: User.current.id,
         name: User.current.name,
         mail: User.current.mail,
+        timezone: User.current.time_zone,
       }
       prompt = <<-EOS
 あなたはRedmine AI Helperプラグインです。Redmineにインストールされており、Redmineのユーザーからの問い合わせに答えます。
@@ -355,6 +281,7 @@ JSONの例:
 以下はあなたの参考知識です。
 ----
 参考情報：
+現在の時刻は#{Time.now.iso8601}です。ただしユーザと時間について会話する場合は、ユーザのタイムゾーンを考慮してください。ユーザーのタイムゾーンがわからない場合には、ユーザーが話している言語や会話から推測してください。
 JSONで定義したこのRedmineのサイト情報は以下になります。
 JSONの中のcurrent_projectが現在ユーザーが表示している、このプロジェクトです。ユーザが特にプロジェクトを指定せずにただ「プロジェクト」といった場合にはこのプロジェクトのことです。
 #{site_info_json(project: project)}
@@ -413,16 +340,52 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
 
     private
 
+    def chat_wrapper(new_message, conversation)
+      put_log "new_message: #{new_message}"
+      location = caller_locations(1, 1)[0]
+      put_log "caller: #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}"
+      messages = conversation.messages.map do |message|
+        {
+          role: message.role,
+          content: message.content,
+        }
+      end
+      system_message = {
+        role: "system",
+        content: system_prompt(conversation),
+      }
+      messages.prepend(system_message)
+      messages << {
+        role: "user",
+        content: new_message,
+      }
+      put_log "message: #{messages.last[:content]}"
+      response = @client.chat(
+        parameters: {
+          model: @model,
+          messages: messages,
+        },
+      )
+
+      answer = response["choices"][0]["message"]["content"]
+      put_log "answer: #{answer}"
+      answer
+    end
+
     def put_log(*messages)
+      location = caller_locations(1, 1)[0]
+
       puts "####################################################"
       puts messages.join(" ")
       puts "####################################################"
       # 同じメッセージを/tmp/ai_helper.logにも出力
       File.open("/tmp/ai_helper.log", "a") do |f|
-        f.puts "####################################################"
+        f.puts "###### #{Time.now.strftime("%Y-%m-%d %H:%M:%S")} #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}#################################"
         f.puts messages.join(" ")
-        f.puts "####################################################"
       end
+    end
+
+    class TaskResponse < RedmineAiHelper::Agent::AgentRespose
     end
 
     class JsonExtractor
