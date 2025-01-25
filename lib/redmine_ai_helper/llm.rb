@@ -61,6 +61,7 @@ module RedmineAiHelper
           "step": new_task["step"],
           "result": result.value,
         }
+        put_log "pre_task: #{pre_task}"
         pre_tasks << pre_task
         answer = result.value
       end
@@ -181,31 +182,31 @@ tools:
 
     # dispatch the tool
     def dispatch(task, conversation, pre_tasks = [], previous_error = nil)
-      response = select_tools(task, conversation, pre_tasks, previous_error)
-      tools = response["tools"]
-      return simple_llm_chat(conversation) if tools.empty?
+      response = select_tool(task, conversation, pre_tasks, previous_error)
+      tool = response["tool"]
+      return simple_llm_chat(conversation) if tool.blank?
 
       begin
-        results = {
-          results: [],
-        }
-        tools.each do |tool|
-          agent = Agent.new(@client, @model)
-          put_log "tool: #{tool}"
-          result = agent.callTool(name: tool["name"], arguments: tool["arguments"]).to_h
-          put_log "result: #{result}"
-          if result[:status] == "error"
-            return result
-          end
-          results[:results] << result
+        agent = Agent.new(@client, @model)
+        put_log "tool: #{tool}"
+        result = agent.callTool(name: tool["name"], arguments: tool["arguments"])
+        put_log "result: #{result}"
+        if result.is_error?
+          put_log "error!!!!!!!!!!!!: #{result}"
+          return result
         end
 
-        TaskResponse.create_success results
+        res = TaskResponse.create_success result.value
+        put_log "res: #{res}"
+        res
+      rescue => e
+        put_log "error: #{e.full_message}"
+        TaskResponse.create_error e.message
       end
     end
 
     # select the toos to solve the task
-    def select_tools(task, conversation, pre_tasks = [], previous_error = nil)
+    def select_tool(task, conversation, pre_tasks = [], previous_error = nil)
       tools = Agent.listTools
 
       previous_error_string = ""
@@ -216,7 +217,7 @@ tools:
       pre_tasks_string = ""
       if pre_tasks.length > 0
         pre_tasks_string = <<-EOS
-このタスクを解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップを考えてください。
+このタスクを解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップで使用するツールを選んでください。
 事前のステップ:
 #{JSON.pretty_generate(pre_tasks)}
         EOS
@@ -226,25 +227,21 @@ tools:
 「#{task}」というタスクを解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。ツールのリストに無いものは含めないでください。
 #{pre_tasks_string}
 
-ツールは複数選択できます。選択には過去の会話履歴も参考にしてください。
+** ツールは一つだけ選択できます。絶対に2つ以上ツールを選択しないでください。 **
+選択には過去の会話履歴も参考にしてください。
 また、そのツールに渡すのに必要な引数も作成してください。
 
 #{previous_error_string}
 
-回答は以下の形式のJSONで作成してください。最適なツールがない場合は、toolsが空の配列のJSONを返してください。
+回答は以下の形式のJSONで作成してください。最適なツールがない場合は、tool:にnullを設定してください。
 
 JSONの例:
 {
-  tools: [
-    {
-      "name": "read_issue",
-      "arguments": {  "id": 1 }
-    },
+  tool:
     {
       "name": "read_project",
       "arguments": {  "project_id": 1 }
-    },
-  ]
+    }
 }
 ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
 ----
@@ -375,14 +372,19 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
 
     def put_log(*messages)
       location = caller_locations(1, 1)[0]
+      header = "###### #{Time.now.strftime("%Y-%m-%d %H:%M:%S")} #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}"
 
-      puts "####################################################"
-      puts messages.join(" ")
+      message = messages.join(" ")
+
+      #################################"
+
+      puts header
+      puts message
       puts "####################################################"
       # 同じメッセージを/tmp/ai_helper.logにも出力
       File.open("/tmp/ai_helper.log", "a") do |f|
-        f.puts "###### #{Time.now.strftime("%Y-%m-%d %H:%M:%S")} #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}#################################"
-        f.puts messages.join(" ")
+        f.puts header
+        f.puts message
       end
     end
 

@@ -260,10 +260,11 @@ module RedmineAiHelper
       # Use reflection to call the method named 'name' on this instance, passing 'args' as arguments.
       # If the method does not exist, an exception will be raised.
       if respond_to?(name)
-        send(name, args)
+        response = send(name, args)
       else
         raise "Method #{name} not found"
       end
+      response
     end
 
     # Read an issue from the database and return it as a JSON object.
@@ -684,11 +685,11 @@ module RedmineAiHelper
       end
 
       def self.create_error(error)
-        self.new(status: AgentResponse::STATUS_ERROR, error: error)
+        AgentResponse.new(status: AgentResponse::STATUS_ERROR, error: error)
       end
 
       def self.create_success(value)
-        self.new(status: AgentResponse::STATUS_SUCCESS, value: value)
+        AgentResponse.new(status: AgentResponse::STATUS_SUCCESS, value: value)
       end
     end
   end
