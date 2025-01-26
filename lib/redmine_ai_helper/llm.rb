@@ -28,7 +28,7 @@ module RedmineAiHelper
       @content_id = option[:content_id]
       task = conversation.messages.last.content
       put_log "New message arrived!!!!!!!!!!"
-      put_log "task: #{task}"
+      put_log "task: #{task}, option: #{option}"
       begin
         result = execute_task(task, conversation)
         if result[:status] == "success"
@@ -313,6 +313,9 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
         page_name = "チケット ##{issue.id} の詳細\nユーザが特にIDや名前を指定せずにただ「チケット」といった場合にはこのチケットのことです。"
       elsif @controller_name == "issues" && @action_name == "index"
         page_name = "チケット一覧"
+      elsif @controller_name == "wiki" && @action_name == "show"
+        page = WikiPage.find(@content_id)
+        page_name = "「#{page.title}」というタイトルのWikiページを表示しています。\nユーザが特にタイトルを指定せずにただ「Wikiページ」や「ページ」といった場合にはこのWikiページのことです。"
       end
       return "" if page_name.nil?
       string = <<-EOS
