@@ -392,9 +392,9 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
 
       #################################"
 
-      puts header
-      puts message
-      puts "####################################################"
+      # puts header
+      # puts message
+      # puts "####################################################"
       # 同じメッセージを/tmp/ai_helper.logにも出力
       File.open("#{Rails.root}/log/ai_helper.log", "a") do |f|
         f.puts header
