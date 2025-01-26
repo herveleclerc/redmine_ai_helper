@@ -2,207 +2,44 @@ require "redmine_ai_helper/base_agent"
 
 module RedmineAiHelper
   module Agents
-    class IssueAgent < RedmineAiHelper::BaseAgent
+    class ProjectAgent < RedmineAiHelper::BaseAgent
       RedmineAiHelper::BaseAgent.add_agent(name: "issue_agent", class: self)
       def self.list_tools()
         list = {
           tools: [
+
             {
-              name: "read_issue",
-              description: "Read an issue from the database and return it as a JSON object.",
+              name: "list_projects",
+              description: "List all projects visible to the current user.",
+              arguments: {},
+            },
+            {
+              name: "read_project",
+              description: "Read a project from the database and return it as a JSON object.",
               arguments: {
                 schema: {
                   type: "object",
                   properties: {
                     id: "integer",
-                  },
-                  required: ["id"],
-                },
-              },
-            },
-            {
-              name: "capable_issue_properties",
-              description: "Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc. It can be used to obtain the ID of the items to be searched when searching for tickets using generate_issue_search_url.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_id: "integer",
-                    project_name: "string",
-                    project_identifier: "string",
+                    name: "string",
+                    identifier: "string",
                   },
                   "anyOf": [
-                    { required: ["project_id"] },
-                    { required: ["project_name"] },
-                    { required: ["project_identifier"] },
+                    { required: ["id"] },
+                    { required: ["name"] },
+                    { required: ["identifier"] },
                   ],
                 },
               },
             },
             {
-              name: "generate_issue_search_url",
-              description: "Generate a URL for searching issues based on the filter conditions. For search items with '_id', specify the ID instead of the name of the search target. If you do not know the ID, you need to call capable_issue_properties in advance to obtain the ID.",
+              name: "project_members",
+              description: "List all members of the project. It can be used to obtain the ID from the user's name. It can also be used to obtain the roles that the user has in the project.",
               arguments: {
                 schema: {
                   type: "object",
                   properties: {
                     project_id: "integer",
-                    fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["tracker_id", "priority_id", "category_id", "version_id", "assigned_to_id", "author_id", "start_date"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", "!", "*", "!*", "!p", "cf", "h"],
-                            description: "Operators: = (equal), != (not equal), * (all), !* (none), !p (has never been), cf (changed from), h (has been)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "string" },
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    date_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["created_on", "updated_on", "start_date", "due_date"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", ">=", "<=", "><", "<t+", ">t+", "t+", "t", "ld", "w", "lw", "l2w", "m", "lm", "y", ">t-", "<t-", "t-", "!*", "*"],
-                            description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (Within the next n days from today), >t+ (More than n days from today), t+ (n days from today), t (today), ld (last day), w (this week), lw (last week), l2w (last 2 weeks), m (this month), lm (last month), y (this year), >t- (More than n days ago), <t- (Within the past n days), t (today), t- (n days ago), !* (none), * (any)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "string" },
-                            description: "Specify absolute dates in YYYY-MM-DD format. For relative dates, specify only the number. Depending on the operator, multiple values may be specified, or no value may be required.
-                          The following operations must specify absolute dates: =, >=, <=, ><
-                          The following operations must specify relative dates: <t+, >t+, t+, >t-, <t-, t-
-                          No value is needed for other operations
-                          ",
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    time_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["estimated_hours", "spent_hours"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", ">=", "<=", "><", "!*", "*"],
-                            description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), !* (none), * (any)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "string" },
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    number_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["done_ratio"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", ">=", "<=", "><", "!*", "*"],
-                            description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), !* (none), * (any)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "integer" },
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    text_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["subject", "description", "notes"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["~", "!~", "=", "!", "*", "!*"],
-                            description: "Operators: ~ (contains), !~ (does not contain), = (equal), != (not equal), * (any value set), !* (no value set)",
-                          },
-                          value: {
-                            type: "array",
-                            items: { type: "string" },
-                          },
-                        },
-                        required: ["field_name", "operator", "value"],
-                      },
-                    },
-                    status_field: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["status_id"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", "!", "o", "c", "*"],
-                            description: "Operators: = (exact match), ! (not equal), o (open), c (closed), * (any value set)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "integer" },
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    custom_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_id: "integer",
-                          operator: {
-                            type: "string",
-                            enum: ["=", "!", "!*", "*", "~", "!~", "^", "$", ">=", "<=", "><", "<t", ">", "t+", "t", "w", ">t-", "<t-"],
-                            description: "Operators: = (equal), != (not equal), !* (no value set), * (any value set), ~ (contains), !~ (does not contain), ^ (starts with), $ (ends with), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (within the next n days), >t+ (more than n days ahead), t+ (n days in the future), t (today), w (this week), >t- (more than n days ago), <t- (within the past n days)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "integer" },
-                          },
-                        },
-                        required: ["field_id", "operator", "values"],
-                      },
-                    },
                   },
                   required: ["project_id"],
                 },
