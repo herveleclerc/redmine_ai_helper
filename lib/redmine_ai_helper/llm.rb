@@ -55,7 +55,15 @@ module RedmineAiHelper
 
       tasks["steps"].each do |new_task|
         put_log "new_task: #{new_task}"
-        result = dispatch(new_task["step"], conversation, pre_tasks)
+        previous_error = nil
+        max_retry = 3
+        max_retry.times do |i|
+          result = dispatch(new_task["step"], conversation, pre_tasks, previous_error)
+          break if result.is_success?
+
+          previous_error = result.error
+          put_log "retry: #{i}"
+        end
         pre_task = {
           "name": new_task["name"],
           "step": new_task["step"],
