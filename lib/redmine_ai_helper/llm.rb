@@ -106,7 +106,7 @@ EOS
     # @param [Array] pre_tasks
     # @param [String] pre_error
     def decompose_task(task, conversation, pre_tasks = [], pre_error = nil)
-      tools = Agent.listTools
+      tools = Agent.list_tools
 
       pre_error_string = ""
       if pre_error
@@ -216,7 +216,7 @@ tools:
 
     # select the toos to solve the task
     def select_tool(task, conversation, pre_tasks = [], previous_error = nil)
-      tools = Agent.listTools
+      tools = Agent.list_tools
 
       previous_error_string = ""
       if previous_error

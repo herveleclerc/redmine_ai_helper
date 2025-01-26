@@ -7,7 +7,7 @@ module RedmineAiHelper
       @model = model
     end
 
-    def self.listTools()
+    def self.list_tools()
       list = {
         tools: [
           {
