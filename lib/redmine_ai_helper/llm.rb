@@ -1,4 +1,5 @@
 require "redmine_ai_helper/agent"
+require "redmine_ai_helper/agent_response"
 require "openai"
 require "json"
 
@@ -106,7 +107,7 @@ EOS
     # @param [Array] pre_tasks
     # @param [String] pre_error
     def decompose_task(task, conversation, pre_tasks = [], pre_error = nil)
-      tools = Agent.listTools
+      tools = Agent.list_tools
 
       pre_error_string = ""
       if pre_error
@@ -198,7 +199,7 @@ tools:
       begin
         agent = Agent.new(@client, @model)
         put_log "tool: #{tool}"
-        result = agent.callTool(name: tool["name"], arguments: tool["arguments"])
+        result = agent.call_tool(agent_name: tool["agent"], name: tool["tool"], arguments: tool["arguments"])
         put_log "result: #{result}"
         if result.is_error?
           put_log "error!!!!!!!!!!!!: #{result}"
@@ -216,7 +217,7 @@ tools:
 
     # select the toos to solve the task
     def select_tool(task, conversation, pre_tasks = [], previous_error = nil)
-      tools = Agent.listTools
+      tools = Agent.list_tools
 
       previous_error_string = ""
       if previous_error
@@ -248,8 +249,9 @@ JSONの例:
 {
   tool:
     {
-      "name": "read_project",
-      "arguments": {  "project_id": 1 }
+      "agent": "issue_agent",
+      "tool": "read_issue",
+      "arguments": {  "id": 1 }
     }
 }
 ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
@@ -397,7 +399,7 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
       end
     end
 
-    class TaskResponse < RedmineAiHelper::Agent::AgentResponse
+    class TaskResponse < RedmineAiHelper::AgentResponse
     end
 
     class JsonExtractor
