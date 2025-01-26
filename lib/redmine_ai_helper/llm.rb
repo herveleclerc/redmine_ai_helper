@@ -302,7 +302,7 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
 ユーザーの情報を以下に示します。
 #{current_user_info}
       EOS
-
+      put_log "system_prompt:\n#{prompt}"
       prompt
     end
 
