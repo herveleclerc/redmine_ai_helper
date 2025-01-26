@@ -1,4 +1,5 @@
 require "redmine_ai_helper/base_agent"
+require "redmine_ai_helper/agent_response"
 
 module RedmineAiHelper
   module Agents
@@ -20,7 +21,9 @@ module RedmineAiHelper
       # Returns a list of all users who have logged in within the past year
       def list_users(args = {})
         users = User.where("last_login_on >= ?", 1.year.ago)
+        user_list = []
         users.map do |user|
+          user_list <<
           {
             id: user.id,
             login: user.login,
@@ -28,6 +31,8 @@ module RedmineAiHelper
             lastname: user.lastname,
           }
         end
+        json = { users: user_list }
+        AgentResponse.create_success json
       end
     end
   end
