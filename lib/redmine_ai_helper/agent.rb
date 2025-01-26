@@ -489,6 +489,10 @@ module RedmineAiHelper
       status_field = sym_args[:status_field] || []
       custom_fields = sym_args[:custom_fields] || []
 
+      if fields.empty? && date_fields.empty? && time_fields.empty? && number_fields.empty? && text_fields.empty? && status_field.empty? && custom_fields.empty?
+        reutrn AgentResponse.create_success({ url: "/projects/#{project.identifier}/issues" })
+      end
+
       validate_errors = generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
       return AgentResponse.create_error(validate_errors.join("\n")) if validate_errors.length > 0
 
