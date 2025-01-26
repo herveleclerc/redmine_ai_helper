@@ -114,6 +114,7 @@ module RedmineAiHelper
         members = project.members.map do |member|
           {
             user_id: member.user_id,
+            login: member.user.login,
             user_name: member.user.name,
             roles: member.roles.map do |role|
               {
