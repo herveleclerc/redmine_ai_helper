@@ -26,6 +26,7 @@ module RedmineAiHelper
       @controller_name = option[:controller_name]
       @action_name = option[:action_name]
       @content_id = option[:content_id]
+      @project = option[:project]
       task = conversation.messages.last.content
       put_log "New message arrived!!!!!!!!!!"
       put_log "task: #{task}, option: #{option}"
@@ -269,7 +270,6 @@ JSONの例:
 
     # generate system prompt
     def system_prompt(conversation = nil)
-      project = conversation.nil? ? nil : conversation.project
       current_user_info = {
         id: User.current.id,
         name: User.current.name,
@@ -293,7 +293,7 @@ JSONの例:
 現在の時刻は#{Time.now.iso8601}です。ただしユーザと時間について会話する場合は、ユーザのタイムゾーンを考慮してください。ユーザーのタイムゾーンがわからない場合には、ユーザーが話している言語や会話から推測してください。
 JSONで定義したこのRedmineのサイト情報は以下になります。
 JSONの中のcurrent_projectが現在ユーザーが表示している、このプロジェクトです。ユーザが特にプロジェクトを指定せずにただ「プロジェクト」といった場合にはこのプロジェクトのことです。
-#{site_info_json(project: project)}
+#{site_info_json(project: @project)}
 
 #{current_page_info_string()}
 

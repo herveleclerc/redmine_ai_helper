@@ -39,6 +39,7 @@ class AiHelperController < ApplicationController
       controller_name: contoller_name,
       action_name: action_name,
       content_id: content_id,
+      project: @project,
     }
     @conversation.messages << llm.chat(@conversation, option)
     @conversation.save!
