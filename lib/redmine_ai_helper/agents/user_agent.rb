@@ -95,7 +95,11 @@ module RedmineAiHelper
           field_name = date_field[:field_name]
           operator = date_field[:operator]
           value = date_field[:value]
-          users = users.where("#{field_name} #{operator} ?", value)
+          if ["<", "<="].include?(operator)
+            users = users.where("#{field_name} #{operator} ? OR #{field_name} IS NULL", value)
+          else
+            users = users.where("#{field_name} #{operator} ?", value)
+          end
         end
 
         users = users.limit(limit)
