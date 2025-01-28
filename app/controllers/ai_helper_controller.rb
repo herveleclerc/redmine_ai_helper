@@ -2,8 +2,10 @@
 # require 'ai_helper_conversation'
 # require 'ai_helper_message'
 require "redmine_ai_helper/llm"
+require "redmine_ai_helper/logger/logger"
 
 class AiHelperController < ApplicationController
+  include RedmineAiHelper::Logger
   before_action :find_user, :find_project, :authorize, :create_session, :find_conversation
 
   def chat_form
@@ -12,6 +14,7 @@ class AiHelperController < ApplicationController
   end
 
   def reload
+    mylogger.info("reload")
     render partial: "ai_helper/chat"
   end
 

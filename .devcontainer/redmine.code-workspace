@@ -1,16 +1,13 @@
 {
   "folders": [
     {
-      "path": ".."
+      "path": "/usr/local/redmine/plugins/redmine_ai_helper"
     },
     {
-      "path": "../../../usr/local/redmine"
+      "path": "/usr/local/redmine"
     }
   ],
   "settings": {
     "editor.formatOnSave": true,
-    "git.ignoredRepositories": [
-      "/usr/local/redmine/plugins/redmine_ai_helper"
-    ]
   }
 }
