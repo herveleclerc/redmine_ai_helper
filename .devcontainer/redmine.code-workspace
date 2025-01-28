@@ -9,5 +9,8 @@
   ],
   "settings": {
     "editor.formatOnSave": true,
+    "git.ignoredRepositories": [
+      "/workspace/redmine_ai_helper"
+    ]
   }
 }
