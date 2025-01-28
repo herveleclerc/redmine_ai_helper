@@ -22,6 +22,10 @@ module RedmineAiHelper
       to_hash
     end
 
+    def to_s
+      to_hash.to_s
+    end
+
     def is_success?
       status == AgentResponse::STATUS_SUCCESS
     end
