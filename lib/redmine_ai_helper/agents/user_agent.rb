@@ -10,7 +10,8 @@ module RedmineAiHelper
           tools: [
             {
               name: "list_users",
-              description: "Returns a list of all users who have logged in within the past year. Since the assignee or creator of a ticket may not necessarily be a project member, it is necessary to search for user IDs not only from project members but also from here.",
+              description: "Returns a list of all users. Since the assignee or creator of a ticket may not necessarily be a project member, it is necessary to search for user IDs not only from project members but also from here.
+              The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on.",
               arguments: {},
             },
           ],
@@ -20,7 +21,7 @@ module RedmineAiHelper
 
       # Returns a list of all users who have logged in within the past year
       def list_users(args = {})
-        users = User.where("last_login_on >= ?", 1.year.ago)
+        users = User.active.where(type: "User")
         user_list = []
         users.map do |user|
           user_list <<
@@ -29,6 +30,8 @@ module RedmineAiHelper
             login: user.login,
             firstname: user.firstname,
             lastname: user.lastname,
+            created_on: user.created_on,
+            last_login_on: user.last_login_on,
           }
         end
         json = { users: user_list }
