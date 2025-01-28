@@ -54,19 +54,22 @@ module RedmineAiHelper
 
     def initialize
       log_file_path = Rails.root.join("log", "ai_helper.log")
-      puts "Log file path: #{log_file_path}"  # デバッグ用のログ
 
       @logger = ::Logger.new(log_file_path, "daily")
       @logger.formatter = proc do |severity, datetime, progname, msg|
         "[#{datetime}] #{severity} -- #{msg}\n"
       end
 
-      config = YAML.load_file(File.expand_path("../../../../config/config.yaml", __FILE__))
-      config.deep_symbolize_keys!
-      log_level = config[:logger][:log_level]
-      set_log_level(log_level)
+      log_level = "info"
+      config_file_path = Rails.root.join("config", "config.yaml")
 
-      @logger.info("CustomLogger initialized with log level: #{log_level}")
+      if File.exist?(config_file_path)
+        config = YAML.load_file(File.expand_path(config_file_path, __FILE__))
+        config.deep_symbolize_keys!
+        logger = config[:logger] || {}
+        log_level = logger[:log_level] if logger[:log_level]
+      end
+      set_log_level(log_level)
     end
 
     def debug(message)
