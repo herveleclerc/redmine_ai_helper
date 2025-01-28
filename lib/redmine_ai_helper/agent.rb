@@ -1,5 +1,7 @@
 require "redmine_ai_helper/llm"
 require "redmine_ai_helper/base_agent"
+require "redmine_ai_helper/logger"
+require "redmine_ai_helper/agent_response"
 # このソースファイルがあるディレクトリの下のagents/*_agent.rbファイルをrequireする
 Dir[File.join(File.dirname(__FILE__), "agents", "*_agent.rb")].each do |file|
   require file
@@ -7,6 +9,8 @@ end
 
 module RedmineAiHelper
   class Agent
+    include RedmineAiHelper::Logger
+
     def initialize(client, model)
       @client = client
       @model = model
@@ -35,9 +39,15 @@ module RedmineAiHelper
       # Use reflection to call the method named 'name' on this instance, passing 'args' as arguments.
       # If the method does not exist, an exception will be raised.
       if agent.respond_to?(name)
-        response = agent.send(name, args)
+        begin
+          response = agent.send(name, args)
+        rescue => e
+          ai_helper_logger.error e.full_message
+          return AgentResponse.create_error e.message
+        end
       else
-        raise "Method #{name} not found"
+        ai_helper_logger.error "Method #{name} not found"
+        return AgentResponse.create_error "Method #{name} not found"
       end
       response
     end
