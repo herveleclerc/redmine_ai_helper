@@ -68,3 +68,4 @@ yarn-debug.log*
 !/storage/.keep
 /public/uploads
 Gemfile.lock
+config/config.yaml
