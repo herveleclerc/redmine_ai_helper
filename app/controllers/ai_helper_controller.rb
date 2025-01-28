@@ -14,7 +14,7 @@ class AiHelperController < ApplicationController
   end
 
   def reload
-    mylogger.info("reload")
+    ai_helper_logger.info("reload")
     render partial: "ai_helper/chat"
   end
 

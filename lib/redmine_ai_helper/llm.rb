@@ -1,10 +1,12 @@
 require "redmine_ai_helper/agent"
 require "redmine_ai_helper/agent_response"
+require "redmine_ai_helper/logger/logger"
 require "openai"
 require "json"
 
 module RedmineAiHelper
   class Llm
+    include RedmineAiHelper::Logger
     attr_accessor :model
 
     # initialize the client
@@ -19,6 +21,7 @@ module RedmineAiHelper
       @model ||= Setting.plugin_redmine_ai_helper["model"]
 
       @client = OpenAI::Client.new(params)
+      ai_helper_logger = ai_helper_logger
     end
 
     # chat with the AI
@@ -28,8 +31,8 @@ module RedmineAiHelper
       @content_id = option[:content_id]
       @project = option[:project]
       task = conversation.messages.last.content
-      put_log "New message arrived!!!!!!!!!!"
-      put_log "task: #{task}, option: #{option}"
+      ai_helper_logger.info "New message arrived!!!!!!!!!!"
+      ai_helper_logger.info "task: #{task}, option: #{option}"
       begin
         result = execute_task(task, conversation)
         if result[:status] == "success"
@@ -38,10 +41,10 @@ module RedmineAiHelper
           answer = result[:error]
         end
       rescue => e
-        put_log "error: #{e.full_message}"
+        ai_helper_logger.error "error: #{e.full_message}"
         answer = e.message
       end
-
+      ai_helper_logger.info "answer: #{answer}"
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
 
@@ -53,10 +56,10 @@ module RedmineAiHelper
       }
       pre_tasks = []
       tasks = decompose_task(task, conversation)
-      put_log "tasks:", tasks
+      ai_helper_logger.info "tasks: #{tasks}"
 
       tasks["steps"].each do |new_task|
-        put_log "new_task: #{new_task}"
+        ai_helper_logger.debug "new_task: #{new_task}"
         previous_error = nil
         max_retry = 3
         max_retry.times do |i|
@@ -64,14 +67,14 @@ module RedmineAiHelper
           break if result.is_success?
 
           previous_error = result.error
-          put_log "retry: #{i}"
+          ai_helper_logger.debug "retry: #{i}"
         end
         pre_task = {
           "name": new_task["name"],
           "step": new_task["step"],
           "result": result.value,
         }
-        put_log "pre_task: #{pre_task}"
+        ai_helper_logger.info "pre_task: #{pre_task}"
         pre_tasks << pre_task
         answer = result.value
       end
@@ -81,7 +84,7 @@ module RedmineAiHelper
         status: "success",
         answer: answer,
       }
-      put_log "result: #{result}"
+      ai_helper_logger.info "result: #{result}"
       result
     end
 
@@ -177,7 +180,7 @@ tools:
         content: system_prompt(conversation),
       }
       messages.prepend(system_message)
-      put_log "message: #{messages.last[:content]}"
+      ai_helper_logger.info "message: #{messages.last[:content]}"
       response = @client.chat(
         parameters: {
           model: @model,
@@ -186,7 +189,7 @@ tools:
       )
 
       answer = response["choices"][0]["message"]["content"]
-      put_log "answer: #{answer}"
+      ai_helper_logger.debug "answer: #{answer}"
 
       return TaskResponse.create_success answer
     end
@@ -195,23 +198,22 @@ tools:
     def dispatch(task, conversation, pre_tasks = [], previous_error = nil)
       response = select_tool(task, conversation, pre_tasks, previous_error)
       tool = response["tool"]
+      ai_helper_logger.info "tool: #{tool}"
       return simple_llm_chat(conversation) if tool.blank?
 
       begin
         agent = Agent.new(@client, @model)
-        put_log "tool: #{tool}"
         result = agent.call_tool(agent_name: tool["agent"], name: tool["tool"], arguments: tool["arguments"])
-        put_log "result: #{result}"
+        ai_helper_logger.info "result: #{result}"
         if result.is_error?
-          put_log "error!!!!!!!!!!!!: #{result}"
+          ai_helper_logger.error "error!!!!!!!!!!!!: #{result}"
           return result
         end
 
         res = TaskResponse.create_success result.value
-        put_log "res: #{res}"
         res
       rescue => e
-        put_log "error: #{e.full_message}"
+        ai_helper_logger.error "error: #{e.full_message}"
         TaskResponse.create_error e.message
       end
     end
@@ -264,7 +266,7 @@ JSONの例:
 
       json = chat_wrapper(prompt, conversation)
 
-      put_log "json: #{json}"
+      ai_helper_logger.info "json: #{json}"
       JsonExtractor.extract(json)
     end
 
@@ -302,7 +304,6 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
 ユーザーの情報を以下に示します。
 #{current_user_info}
       EOS
-      put_log "system_prompt:\n#{prompt}"
       prompt
     end
 
@@ -353,9 +354,9 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
     private
 
     def chat_wrapper(new_message, conversation)
-      put_log "new_message: #{new_message}"
+      ai_helper_logger.debug "new_message: #{new_message}"
       location = caller_locations(1, 1)[0]
-      put_log "caller: #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}"
+      ai_helper_logger.debug "caller: #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}"
       messages = conversation.messages.map do |message|
         {
           role: message.role,
@@ -371,7 +372,7 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
         role: "user",
         content: new_message,
       }
-      put_log "message: #{messages.last[:content]}"
+      ai_helper_logger.debug "message: #{messages.last[:content]}"
       response = @client.chat(
         parameters: {
           model: @model,
@@ -380,7 +381,7 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
       )
 
       answer = response["choices"][0]["message"]["content"]
-      put_log "answer: #{answer}"
+      ai_helper_logger.debug "answer: #{answer}"
       answer
     end
 
@@ -396,10 +397,10 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
       # puts message
       # puts "####################################################"
       # 同じメッセージを/tmp/ai_helper.logにも出力
-      File.open("#{Rails.root}/log/ai_helper.log", "a") do |f|
-        f.puts header
-        f.puts message
-      end
+      # File.open("#{Rails.root}/log/ai_helper.log", "a") do |f|
+      #   f.puts header
+      #   f.puts message
+      # end
     end
 
     class TaskResponse < RedmineAiHelper::AgentResponse
