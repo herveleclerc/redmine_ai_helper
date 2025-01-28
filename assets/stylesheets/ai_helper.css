@@ -1,0 +1,37 @@
+#ai_helper_chat_submit {
+  /* 右寄せ */
+  float: right;
+}
+
+#ai_helper_chat_form p {
+  margin: 0;
+}
+
+#aihelper-chat-conversation {
+  /* チャットのスクロール */
+  overflow-y: auto;
+  max-height: 500px;
+  padding: 5px;
+}
+
+#aihelper-chat-conversation div.aihelper-message {
+  border-top: 1px solid #ccc;
+  padding-top: 1px;
+}
+
+#aihelper-chat-conversation div.aihelper-message pre {
+  white-space: pre-wrap;
+  margin-top: 0;
+}
+
+.ai-helper-loader {
+  width: 60px;
+  height: 10px;
+  -webkit-mask: radial-gradient(circle closest-side,#000 94%,#0000) left/20% 100%;
+  background: linear-gradient(#000 0 0) left/0% 100% no-repeat #ddd;
+  animation: l17 2s infinite steps(6);
+  margin: 0 auto
+}
+@keyframes l17 {
+    100% {background-size:120% 100%}
+}

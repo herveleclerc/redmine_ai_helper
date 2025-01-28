@@ -1,0 +1,30 @@
+
+  <% @conversation.messages.each do |message| %>
+    <div class="aihelper-message">
+      <%if message.role == 'user' %>
+      <%= avatar(@user) %>
+      <strong><%= link_to_user(@user) %></strong>
+      <% end %>
+      <% if message.role == 'user' %>
+        <pre><%= message.content %></pre>
+      <% else %>
+        <div>
+          <%= CommonMarker.render_html(message.content, :DEFAULT, [:table, :autolink, :strikethrough, :tasklist]).html_safe %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+  <% unless @conversation.messages.empty? %>
+  <script>
+    $('#aihelper-chat-clear').show();
+  </script>
+  <% else %>
+  <script>
+    $('#aihelper-chat-clear').hide();
+  </script>
+  <% end %>
+  <div id="ai-helper-loader-area" style="display: none">
+    <div class="ai-helper-loader"></div>
+  </div>
+
+

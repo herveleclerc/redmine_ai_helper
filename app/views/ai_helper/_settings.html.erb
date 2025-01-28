@@ -1,0 +1,36 @@
+
+<p>
+  <%= label_tag 'settings[access_token]' do %>
+    Access Token<span class="required">*</span>
+  <% end %>
+  <%= password_field_tag 'settings[access_token]', @settings['access_token'], size: 48, required: true %>
+</p>
+<p>
+  <%= label_tag 'settings[organization_id]', 'Organization ID(Optional)' %>
+  <%= text_field_tag 'settings[organization_id]', @settings['organization_id'], size: 48 %>
+</p>
+<p>
+  <%= label_tag 'settings[model]' do %>
+    Model<span class="required">*</span>
+  <% end %>
+  <%= text_field_tag 'settings[model]', @settings['model'] || 'gpt-4o-mini', size: 48, required: true %>
+</p>
+<p>
+  <%= label_tag 'settings[model]' do %>
+    URI Base<span class="required">*</span>
+  <% end %>
+  <%= text_field_tag 'settings[uri_base]', @settings['uri_base'] || 'https://api.openai.com/v1', size: 48, required: true %>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+            var baseUrlField = document.querySelector('input[name="settings[uri_base]"]');
+            baseUrlField.addEventListener('input', function() {
+                    var urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+                    if (baseUrlField.value && !urlPattern.test(baseUrlField.value)) {
+                            baseUrlField.setCustomValidity('Please enter a valid URL.');
+                    } else {
+                            baseUrlField.setCustomValidity('');
+                    }
+            });
+    });
+  </script>
+</p>
