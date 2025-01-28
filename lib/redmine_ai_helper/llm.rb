@@ -1,6 +1,6 @@
 require "redmine_ai_helper/agent"
 require "redmine_ai_helper/agent_response"
-require "redmine_ai_helper/logger/logger"
+require "redmine_ai_helper/logger"
 require "openai"
 require "json"
 

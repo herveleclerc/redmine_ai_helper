@@ -2,7 +2,7 @@
 # require 'ai_helper_conversation'
 # require 'ai_helper_message'
 require "redmine_ai_helper/llm"
-require "redmine_ai_helper/logger/logger"
+require "redmine_ai_helper/logger"
 
 class AiHelperController < ApplicationController
   include RedmineAiHelper::Logger

@@ -7,7 +7,6 @@ module RedmineAiHelper
       def self.list_tools()
         list = {
           tools: [
-
             {
               name: "list_projects",
               description: "List all projects visible to the current user.",
@@ -35,6 +34,19 @@ module RedmineAiHelper
             {
               name: "project_members",
               description: "List all members of the project. It can be used to obtain the ID from the user's name. It can also be used to obtain the roles that the user has in the project.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    project_id: "integer",
+                  },
+                  required: ["project_id"],
+                },
+              },
+            },
+            {
+              name: "project_enabled_modules",
+              description: "List all enabled modules of the project. It shows the functions and plugins enabled in this project.",
               arguments: {
                 schema: {
                   type: "object",
@@ -127,6 +139,24 @@ module RedmineAiHelper
         json = {
           project_id: project_id,
           members: members,
+        }
+        AgentResponse.create_success json
+      end
+
+      # List all modules of the project.
+      # It shows the functions and plugins enabled in this project.
+      def project_enabled_modules(args = {})
+        sym_args = args.deep_symbolize_keys
+        project_id = sym_args[:project_id]
+        project = Project.find(project_id)
+        enabled_modules = project.enabled_modules.map do |enabled_module|
+          {
+            name: enabled_module.name,
+          }
+        end
+        json = {
+          project_id: project_id,
+          enabled_modules: enabled_modules,
         }
         AgentResponse.create_success json
       end
