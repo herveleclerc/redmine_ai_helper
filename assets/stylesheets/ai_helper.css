@@ -35,3 +35,23 @@
 @keyframes l17 {
     100% {background-size:120% 100%}
 }
+
+#aihelper-chat-conversation ul, #aihelper-chat-conversation ol {
+  padding: 5px;
+  margin: 0;
+}
+#aihelper-chat-conversation ul li{
+  list-style-type: disc;
+  padding: 0;
+  margin-left: 10px;
+}
+#aihelper-chat-conversation ol li{
+  padding: 0;
+  margin-left: 10px;
+}
+
+#aihelper-chat-conversation p {
+  padding-top: 2px;
+  padding-bottom: 2px;
+  margin: 0;
+}
