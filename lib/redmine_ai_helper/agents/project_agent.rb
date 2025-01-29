@@ -156,6 +156,9 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
+        return AgentResponse.create_error "Project not found" unless project
+        return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
+
         members = project.members.map do |member|
           {
             user_id: member.user_id,
@@ -182,6 +185,9 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
+        return AgentResponse.create_error "Project not found" unless project
+        return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
+
         enabled_modules = project.enabled_modules.map do |enabled_module|
           {
             name: enabled_module.name,
@@ -199,6 +205,9 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
+        return AgentResponse.create_error "Project not found" unless project
+        return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
+
         author_id = sym_args[:author_id]
         author = author_id ? User.find(author_id) : nil
         limit = sym_args[:limit] || 100
