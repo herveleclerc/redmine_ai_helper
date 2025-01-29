@@ -319,47 +319,6 @@ module RedmineAiHelper
         AgentResponse.create_success(projects)
       end
 
-      # Read a project from the database and return it as a JSON object.
-      def read_project(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:id]
-        project_name = sym_args[:name]
-        project_identifier = sym_args[:identifier]
-        project = nil
-        if project_id
-          project = Project.find(project_id)
-        elsif project_name
-          project = Project.find_by(name: project_name)
-        elsif project_identifier
-          project = Project.find_by(identifier: project_identifier)
-        else
-          return AgentResponse.create_error "No id or name or Identifier specified."
-        end
-
-        return AgentResponse.create_error "Project not found" unless project
-        return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
-        project_json = {
-          id: project.id,
-          name: project.name,
-          identifier: project.identifier,
-          description: project.description,
-          homepage: project.homepage,
-          status: project.status,
-          is_public: project.is_public,
-          inherit_members: project.inherit_members,
-          created_on: project.created_on,
-          updated_on: project.updated_on,
-          subprojects: project.children.select { |p| p.visible? }.map do |child|
-            {
-              id: child.id,
-              name: child.name,
-              identifier: child.identifier,
-              description: child.description,
-            }
-          end,
-        }
-        AgentResponse.create_success project_json
-      end
 
       # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
       def capable_issue_properties(args = {})
