@@ -1,7 +1,9 @@
 require "redmine_ai_helper/agent"
+require "redmine_ai_helper/logger"
 
 module RedmineAiHelper
   class BaseAgent
+    include RedmineAiHelper::Logger
     RedmineAiHelper::BaseAgent::AGENT_LIST = []
 
     # Add an agent to the list of available agents.

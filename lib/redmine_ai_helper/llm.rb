@@ -195,13 +195,13 @@ tools:
     end
 
     # dispatch the tool
-    def dispatch(task, conversation, pre_tasks = [], previous_error = nil)
-      response = select_tool(task, conversation, pre_tasks, previous_error)
-      tool = response["tool"]
-      ai_helper_logger.info "tool: #{tool}"
-      return simple_llm_chat(conversation) if tool.blank?
-
+    def dispatch(task, conversation, pre_tasks = [], previous_error = nil)  
       begin
+        response = select_tool(task, conversation, pre_tasks, previous_error)
+        tool = response["tool"]
+        ai_helper_logger.info "tool: #{tool}"
+        return simple_llm_chat(conversation) if tool.blank?
+      
         agent = Agent.new(@client, @model)
         result = agent.call_tool(agent_name: tool["agent"], name: tool["tool"], arguments: tool["arguments"])
         ai_helper_logger.info "result: #{result}"
@@ -407,6 +407,7 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
     end
 
     class JsonExtractor
+      include RedmineAiHelper::Logger
       def self.extract(input)
         # パターン1: 純粋なJSONテキスト
         # パターン2: Markdownのコードブロックで囲まれたJSON
@@ -425,6 +426,7 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
           # 文字列からRubyのハッシュに変換
           JSON.parse(json_str)
         rescue JSON::ParserError => e
+          RedmineAiHelper::Logger.error "Invalid JSON format: #{e.full_message}: \n###original json\n #{json_str}\n###"
           raise "Invalid JSON format: #{e.message}: \n###original json\n #{json_str}\n###"
         end
       end
