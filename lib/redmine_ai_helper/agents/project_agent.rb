@@ -104,6 +104,8 @@ module RedmineAiHelper
             name: project.name,
             identifier: project.identifier,
             description: project.description,
+            created_on: project.created_on,
+            last_activity_date: project.last_activity_date,
           }
         end
         AgentResponse.create_success(projects)
@@ -147,6 +149,7 @@ module RedmineAiHelper
               description: child.description,
             }
           end,
+          last_activity_date: project.last_activity_date,
         }
         AgentResponse.create_success project_json
       end
