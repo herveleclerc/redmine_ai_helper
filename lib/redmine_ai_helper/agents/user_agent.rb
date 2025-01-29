@@ -102,6 +102,7 @@ module RedmineAiHelper
           end
         end
 
+        count = users.count
         users = users.limit(limit)
         user_list = []
         users.map do |user|
@@ -115,7 +116,7 @@ module RedmineAiHelper
             last_login_on: user.last_login_on,
           }
         end
-        json = { users: user_list }
+        json = { users: user_list, total: count }
         AgentResponse.create_success json
       end
     end
