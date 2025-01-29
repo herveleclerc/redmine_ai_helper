@@ -1,10 +1,8 @@
 require "redmine_ai_helper/base_agent"
-require "redmine_ai_helper/logger"
 
 module RedmineAiHelper
   module Agents
     class ProjectAgent < RedmineAiHelper::BaseAgent
-      include RedmineAiHelper::Logger
       RedmineAiHelper::BaseAgent.add_agent(name: "project_agent", class: self)
       def self.list_tools()
         list = {
