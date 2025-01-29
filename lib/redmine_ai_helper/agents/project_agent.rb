@@ -9,12 +9,12 @@ module RedmineAiHelper
           tools: [
             {
               name: "list_projects",
-              description: "List all projects visible to the current user.",
+              description: "List all projects visible to the current user. It returns the project ID, name, identifier, description, created_on, and last_activity_date.",
               arguments: {},
             },
             {
               name: "read_project",
-              description: "Read a project from the database and return it as a JSON object.",
+              description: "Read a project from the database and return it as a JSON object. It returns the project ID, name, identifier, description, homepage, status, is_public, inherit_members, created_on, updated_on, subprojects, and last_activity_date.",
               arguments: {
                 schema: {
                   type: "object",
