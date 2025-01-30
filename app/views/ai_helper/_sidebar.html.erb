@@ -1,9 +1,24 @@
-
 <% if @project and @project.module_enabled?(:ai_helper) and User.current.allowed_to?({controller: :ai_helper, action: :chat_form}, @project)%>
   <div id="aihelper-sidebar">
     <h3>
       <%= t(:label_ai_helper) %>
     </h3>
+    <div class="aihelper-header">
+      <div class="aihelper-hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="aihelper-dropdown-menu">
+        あああ
+        <ul>
+          <li><a href="#">ホーム</a></li>
+          <li><a href="#">サービス</a></li>
+          <li><a href="#">会社概要</a></li>
+          <li><a href="#">お問い合わせ</a></li>
+        </ul>
+      </div>
+    </div>
     <span id="aihelper-chat-clear" style="display: none;">
       <%= link_to "Clear", 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %>
     </span>
@@ -12,7 +27,6 @@
     <span><%= t(:label_ai_helper_input_newline)%></span>
     <hr>
   </div>
-
   <% 
   content_id = nil
   if controller_name == "issues"
@@ -26,7 +40,6 @@
     content_id = @page.id if @page
   end
   %>
-
   <script>
     const is_sidebar_exist = function() {
       return $('#sidebar-wrapper').length !== 0;
@@ -55,7 +68,21 @@
       ai_helper_page_info['controller_name'] = '<%= controller_name %>';
       ai_helper_page_info['action_name'] = '<%= action_name %>';
       console.log(ai_helper_page_info);
-      
+
+
+      $('.aihelper-hamburger').click(function(event) {
+        event.stopPropagation();
+        $(this).toggleClass('active');
+        $('.aihelper-dropdown-menu').slideToggle(300);
+      });
+
+      $(document).click(function(event) {
+          if (!$(event.target).closest('.aihelper-header').length) {
+              $('.aihelper-hamburger').removeClass('active');
+              $('.aihelper-dropdown-menu').slideUp(300);
+          }
+      });
+
     });
   </script>
 <% end %>

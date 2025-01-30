@@ -55,3 +55,75 @@
   padding-bottom: 2px;
   margin: 0;
 }
+
+.aihelper-header {
+  position: relative;
+}
+
+.aihelper-header {
+  position: relative;
+}
+
+.aihelper-hamburger {
+  cursor: pointer;
+  padding: 8px;
+  display: block;
+  z-index: 2;
+}
+
+.aihelper-hamburger span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  background: #333;
+  margin-bottom: 3px;
+  transition: all 0.3s;
+}
+
+/* 最後の要素のマージンを0に */
+.aihelper-hamburger span:last-child {
+  margin-bottom: 0;
+}
+
+.aihelper-dropdown-menu {
+  display: none;
+  position: absolute;
+  width: 200px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  padding: 20px;
+  z-index: 1;
+}
+
+.aihelper-dropdown-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.aihelper-dropdown-menu li {
+  margin-bottom: 10px;
+}
+
+.aihelper-dropdown-menu a {
+  color: #333;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.aihelper-dropdown-menu a:hover {
+  color: #666;
+}
+
+/* アクティブ時のX変形を調整 */
+.aihelper-hamburger.active span:nth-child(1) {
+  transform: translateY(5px) rotate(45deg);
+}
+
+.aihelper-hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.aihelper-hamburger.active span:nth-child(3) {
+  transform: translateY(-5px) rotate(-45deg);
+}
