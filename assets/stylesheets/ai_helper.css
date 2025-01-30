@@ -55,3 +55,98 @@
   padding-bottom: 2px;
   margin: 0;
 }
+
+.aihelper-header {
+  position: relative;
+}
+
+.aihelper-hamburger {
+  cursor: pointer;
+  padding: 8px;
+  display: inline-block;
+  z-index: 2;
+  width: fit-content; /* ハンバーガーメニューの幅を内容に合わせる */
+  vertical-align: middle;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+
+.aihelper-hamburger span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  background: #333;
+  margin-bottom: 3px;
+  transition: all 0.3s;
+}
+
+.aihelper-hamburger span:last-child {
+  margin-bottom: 0;
+}
+
+.aihelper-dropdown-menu {
+  display: none;
+  position: absolute;
+  width: 200px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  padding: 5px;
+  z-index: 1;
+}
+
+.aihelper-dropdown-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#sidebar .aihelper-dropdown-menu ul li {
+  margin-bottom: 10px;
+  margin-top: 10px;
+  /* border-top: 1px solid #ccc; */
+
+}
+
+.aihelper-dropdown-menu a {
+  /* color: #333;
+  text-decoration: none; */
+}
+
+.aihelper-dropdown-menu a:hover {
+  /* color: #666; */
+}
+
+.aihelper-hamburger.active span:nth-child(1) {
+  transform: translateY(4px) rotate(45deg);
+}
+
+.aihelper-hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.aihelper-hamburger.active span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+span.aihelper-title {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 5px; /* 必要に応じて調整 */
+  font-size: 0.875rem;
+  color: #555;
+  font-weight: bold;
+}
+
+#aihelper-history {
+  margin: 10px;
+}
+
+#aihelper-chat-clear a{
+  padding-top: 20px;
+  margin-left: 10px;
+}
+
+#aihelper-chat-clear hr {
+  margin: 8px;
+  width: 90%;
+}

@@ -1,18 +1,33 @@
-
 <% if @project and @project.module_enabled?(:ai_helper) and User.current.allowed_to?({controller: :ai_helper, action: :chat_form}, @project)%>
   <div id="aihelper-sidebar">
-    <h3>
-      <%= t(:label_ai_helper) %>
-    </h3>
-    <span id="aihelper-chat-clear" style="display: none;">
-      <%= link_to "Clear", 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %>
-    </span>
+    <div class="aihelper-header">
+      <span class="aihelper-hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      <span class="aihelper-title">
+        <%= t(:label_ai_helper) %>
+      </span>
+      <div class="aihelper-dropdown-menu">
+        <div id="aihelper-chat-clear" style="display: none;">
+          <ul>
+            <li></li><%= link_to sprite_icon('add', t(:label_ai_helper_start_new_chat)), 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %></li>
+          </ul>
+ 
+          <hr>
+        </div>
+        <div id="aihelper-history">
+
+        </div>
+
+      </div>
+    </div>
     <div id="aihelper-chat-conversation"></div>
     <div id="aihelper-chat-form-area"></div>
     <span><%= t(:label_ai_helper_input_newline)%></span>
     <hr>
   </div>
-
   <% 
   content_id = nil
   if controller_name == "issues"
@@ -26,7 +41,6 @@
     content_id = @page.id if @page
   end
   %>
-
   <script>
     const is_sidebar_exist = function() {
       return $('#sidebar-wrapper').length !== 0;
@@ -44,7 +58,8 @@
         chat: '<%= ai_helper_chat_path(@project) %>',
         reload: '<%= ai_helper_reload_path(@project) %>',
         clear: '<%= ai_helper_clear_path(@project) %>',
-        call_llm: '<%= ai_helper_call_llm_path(@project) %>'
+        call_llm: '<%= ai_helper_call_llm_path(@project) %>',
+        history: '<%= ai_helper_history_path(@project) %>'
       };
       ai_helper_reload_chat();
 
@@ -55,7 +70,10 @@
       ai_helper_page_info['controller_name'] = '<%= controller_name %>';
       ai_helper_page_info['action_name'] = '<%= action_name %>';
       console.log(ai_helper_page_info);
-      
+
+
+      ai_helper_set_hamberger_menu();
+
     });
   </script>
 <% end %>

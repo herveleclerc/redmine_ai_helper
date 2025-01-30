@@ -31,8 +31,8 @@ module RedmineAiHelper
       @content_id = option[:content_id]
       @project = option[:project]
       task = conversation.messages.last.content
-      ai_helper_logger.info "New message arrived!!!!!!!!!!"
-      ai_helper_logger.info "task: #{task}, option: #{option}"
+      ai_helper_logger.info "#### ai_helper: chat start ####"
+      ai_helper_logger.info "user:#{User.current}, task: #{task}, option: #{option}"
       begin
         result = execute_task(task, conversation)
         if result[:status] == "success"
