@@ -1,0 +1,9 @@
+
+履歴
+
+<ul>
+<% @conversations.each do |conversation| %>
+    <% next if conversation.messages.empty? %>
+    <li><%= conversation.messages.first.content %></li>
+<% end %>
+</ul>

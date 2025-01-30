@@ -33,6 +33,11 @@ class AiHelperController < ApplicationController
     render partial: "ai_helper/chat"
   end
 
+  def history
+    @conversations = AiHelperConversation.where(user: @user).order(updated_at: :desc).limit(10)
+    render partial: "ai_helper/history"
+  end
+
   def call_llm
     contoller_name = params[:controller_name]
     action_name = params[:action_name]

@@ -14,12 +14,10 @@
           <%= link_to "Clear", 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %>
           <hr>
         </span>
-        <ul>
-          <li><a href="#">ホーム</a></li>
-          <li><a href="#">サービス</a></li>
-          <li><a href="#">会社概要</a></li>
-          <li><a href="#">お問い合わせ</a></li>
-        </ul>
+        <div id="aihelper-history">
+
+        </div>
+
       </div>
     </div>
     <div id="aihelper-chat-conversation"></div>
@@ -57,7 +55,8 @@
         chat: '<%= ai_helper_chat_path(@project) %>',
         reload: '<%= ai_helper_reload_path(@project) %>',
         clear: '<%= ai_helper_clear_path(@project) %>',
-        call_llm: '<%= ai_helper_call_llm_path(@project) %>'
+        call_llm: '<%= ai_helper_call_llm_path(@project) %>',
+        history: '<%= ai_helper_history_path(@project) %>'
       };
       ai_helper_reload_chat();
 

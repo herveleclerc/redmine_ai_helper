@@ -97,9 +97,23 @@ var ai_helper_reload_chat = function() {
     success: function(data) {
       chatArea.html(data);
       chatArea.scrollTop(chatArea[0].scrollHeight);
+      ai_helper_load_history();
     },
     error: function(xhr, status, error) {
       console.error("Failed to reload chat conversation:", error);
+    }
+  });
+};
+
+var ai_helper_load_history = function() {
+  $.ajax({
+    url: ai_helper_urls.history,
+    type: "GET",
+    success: function(data) {
+      $("#aihelper-history").html(data);
+    },
+    error: function(xhr, status, error) {
+      console.error("Failed to show chat history:", error);
     }
   });
 };
