@@ -10,7 +10,10 @@
         <span></span>
       </span>
       <div class="aihelper-dropdown-menu">
-        あああ
+        <span id="aihelper-chat-clear" style="display: none;">
+          <%= link_to "Clear", 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %>
+          <hr>
+        </span>
         <ul>
           <li><a href="#">ホーム</a></li>
           <li><a href="#">サービス</a></li>
@@ -19,9 +22,6 @@
         </ul>
       </div>
     </div>
-    <span id="aihelper-chat-clear" style="display: none;">
-      <%= link_to "Clear", 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %>
-    </span>
     <div id="aihelper-chat-conversation"></div>
     <div id="aihelper-chat-form-area"></div>
     <span><%= t(:label_ai_helper_input_newline)%></span>
@@ -70,23 +70,7 @@
       console.log(ai_helper_page_info);
 
 
-         // ハンバーガーメニューのクリックイベント
-      $('.aihelper-hamburger').click(function(event) {
-          event.stopPropagation();
-          $(this).toggleClass('active');
-          $('.aihelper-dropdown-menu').slideToggle(300);
-      });
-      
-      // ドロップダウンメニュー内のクリックイベントの伝播を停止
-      $('.aihelper-dropdown-menu').click(function(event) {
-          event.stopPropagation();
-      });
-      
-      // ドキュメント全体のクリックイベント
-      $(document).click(function() {
-          $('.aihelper-hamburger').removeClass('active');
-          $('.aihelper-dropdown-menu').slideUp(300);
-      });
+      ai_helper_set_hamberger_menu();
 
     });
   </script>

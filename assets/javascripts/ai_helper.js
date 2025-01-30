@@ -109,10 +109,35 @@ var ai_helper_clear_chat = function() {
     url: ai_helper_urls.clear,
     type: "GET",
     success: function(data) {
+      ai_helper_close_dropdown_menu();
       ai_helper_reload_chat();
     },
     error: function(xhr, status, error) {
       console.error("Failed to clear chat conversation:", error);
     }
   });
+};
+
+var ai_helper_set_hamberger_menu = function() {
+  // ハンバーガーメニューのクリックイベント
+  $(".aihelper-hamburger").click(function(event) {
+    event.stopPropagation();
+    $(this).toggleClass("active");
+    $(".aihelper-dropdown-menu").slideToggle(300);
+  });
+
+  // ドロップダウンメニュー内のクリックイベントの伝播を停止
+  $(".aihelper-dropdown-menu").click(function(event) {
+    event.stopPropagation();
+  });
+
+  // ドキュメント全体のクリックイベント
+  $(document).click(function() {
+    ai_helper_close_dropdown_menu();
+  });
+};
+
+var ai_helper_close_dropdown_menu = function() {
+  $(".aihelper-hamburger").removeClass("active");
+  $(".aihelper-dropdown-menu").slideUp(300);
 };
