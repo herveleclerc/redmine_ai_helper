@@ -264,6 +264,7 @@ module RedmineAiHelper
             created_on: issue.created_on,
             updated_on: issue.updated_on,
             closed_on: issue.closed_on,
+            issue_url: issue_url(issue, only_path: true),
             children: issue.children.map do |child|
               {
                 id: child.id,
@@ -272,6 +273,7 @@ module RedmineAiHelper
                   name: child.tracker.name,
                 },
                 subject: child.subject,
+                issue_url: issue_url(child, only_path: true),
               }
             end,
             relations: issue.relations.map do |relation|
@@ -307,13 +309,11 @@ module RedmineAiHelper
             end,
 
           }
-          
         end
 
-        issues_json = {issues: issues}
+        issues_json = { issues: issues }
         AgentResponse.create_success(issues_json)
       end
-
 
       # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
       def capable_issue_properties(args = {})
@@ -507,6 +507,8 @@ module RedmineAiHelper
       # puts builder.generate_query_string(project)
       #
       class IssueQueryBuilder
+        include Rails.application.routes.url_helpers
+
         def initialize(params, defaults = {})
           @query = IssueQuery.new
           # @query.add_filter("set_filter", "=", "1")
@@ -529,7 +531,8 @@ module RedmineAiHelper
           query_params = @query.as_params
           query_params.delete(:set_filter)
           query_string = query_params.to_query
-          "/projects/#{project.identifier}/issues?set_filter=1&#{query_string}"
+          # "/projects/#{project.identifier}/issues?set_filter=1&#{query_string}"
+          "#{project_issues_path(project)}?set_filter=1&#{query_string}"
         end
       end
     end
