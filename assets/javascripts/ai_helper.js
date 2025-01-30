@@ -104,15 +104,72 @@ var ai_helper_reload_chat = function() {
   });
 };
 
+var ai_helper_load_history = function() {
+  $.ajax({
+    url: ai_helper_urls.history,
+    type: "GET",
+    success: function(data) {
+      $("#aihelper-history").html(data);
+    },
+    error: function(xhr, status, error) {
+      console.error("Failed to show chat history:", error);
+    }
+  });
+};
+
 var ai_helper_clear_chat = function() {
   $.ajax({
     url: ai_helper_urls.clear,
     type: "GET",
     success: function(data) {
+      ai_helper_close_dropdown_menu();
       ai_helper_reload_chat();
     },
     error: function(xhr, status, error) {
       console.error("Failed to clear chat conversation:", error);
+    }
+  });
+};
+
+var ai_helper_set_hamberger_menu = function() {
+  // ハンバーガーメニューのクリックイベント
+  $(".aihelper-hamburger").click(function(event) {
+    ai_helper_load_history();
+    event.stopPropagation();
+    $(this).toggleClass("active");
+    $(".aihelper-dropdown-menu").slideToggle(300);
+  });
+
+  // ドロップダウンメニュー内のクリックイベントの伝播を停止
+  $(".aihelper-dropdown-menu").click(function(event) {
+    event.stopPropagation();
+  });
+
+  // ドキュメント全体のクリックイベント
+  $(document).click(function() {
+    ai_helper_close_dropdown_menu();
+  });
+};
+
+var ai_helper_close_dropdown_menu = function() {
+  $(".aihelper-hamburger").removeClass("active");
+  $(".aihelper-dropdown-menu").slideUp(300);
+};
+
+var ai_helper_jump_to_history = function(event) {
+  event.preventDefault(); // デフォルトの遷移を防ぐ
+  const url = event.target.href;
+  var chatArea = $("#aihelper-chat-conversation");
+  $.ajax({
+    url: url,
+    type: "GET",
+    success: function(data) {
+      ai_helper_close_dropdown_menu();
+      chatArea.html(data);
+      chatArea.scrollTop(0);
+    },
+    error: function(xhr, status, error) {
+      console.error("Failed to jump to history:", error);
     }
   });
 };

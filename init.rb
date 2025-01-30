@@ -10,7 +10,7 @@ Redmine::Plugin.register :redmine_ai_helper do
   requires_redmine :version_or_higher => "6.0.0"
 
   project_module :ai_helper do
-    permission :view_ai_helper, { ai_helper: [:chat, :chat_form, :reload, :clear, :call_llm] }
+    permission :view_ai_helper, { ai_helper: [:chat, :chat_form, :reload, :clear, :call_llm, :history, :conversation] }
   end
 
   settings default: { 'model': "gpt-4o-mini" }, partial: "ai_helper/settings"
