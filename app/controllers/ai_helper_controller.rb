@@ -14,7 +14,6 @@ class AiHelperController < ApplicationController
   end
 
   def reload
-    ai_helper_logger.info("reload")
     render partial: "ai_helper/chat"
   end
 
@@ -31,6 +30,12 @@ class AiHelperController < ApplicationController
     @message.save!
     @conversation = AiHelperConversation.find(@conversation.id)
     render partial: "ai_helper/chat"
+  end
+
+  def conversation
+    @conversation = AiHelperConversation.find(params[:conversation_id])
+    set_conversation_id(@conversation.id)
+    reload
   end
 
   def history

@@ -97,7 +97,6 @@ var ai_helper_reload_chat = function() {
     success: function(data) {
       chatArea.html(data);
       chatArea.scrollTop(chatArea[0].scrollHeight);
-      ai_helper_load_history();
     },
     error: function(xhr, status, error) {
       console.error("Failed to reload chat conversation:", error);
@@ -135,6 +134,7 @@ var ai_helper_clear_chat = function() {
 var ai_helper_set_hamberger_menu = function() {
   // ハンバーガーメニューのクリックイベント
   $(".aihelper-hamburger").click(function(event) {
+    ai_helper_load_history();
     event.stopPropagation();
     $(this).toggleClass("active");
     $(".aihelper-dropdown-menu").slideToggle(300);
@@ -154,4 +154,22 @@ var ai_helper_set_hamberger_menu = function() {
 var ai_helper_close_dropdown_menu = function() {
   $(".aihelper-hamburger").removeClass("active");
   $(".aihelper-dropdown-menu").slideUp(300);
+};
+
+var ai_helper_jump_to_history = function(event) {
+  event.preventDefault(); // デフォルトの遷移を防ぐ
+  const url = event.target.href;
+  var chatArea = $("#aihelper-chat-conversation");
+  $.ajax({
+    url: url,
+    type: "GET",
+    success: function(data) {
+      ai_helper_close_dropdown_menu();
+      chatArea.html(data);
+      chatArea.scrollTop(chatArea[0].scrollHeight);
+    },
+    error: function(xhr, status, error) {
+      console.error("Failed to jump to history:", error);
+    }
+  });
 };
