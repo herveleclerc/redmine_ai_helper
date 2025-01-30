@@ -63,9 +63,12 @@
 .aihelper-hamburger {
   cursor: pointer;
   padding: 8px;
-  display: block;
+  display: inline-block;
   z-index: 2;
   width: fit-content; /* ハンバーガーメニューの幅を内容に合わせる */
+  vertical-align: middle;
+  border-radius: 3px;
+  border: 1px solid #ccc;
 }
 
 .aihelper-hamburger span {
@@ -121,4 +124,13 @@
 
 .aihelper-hamburger.active span:nth-child(3) {
   transform: translateY(-6px) rotate(-45deg);
+}
+
+span.aihelper-title {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 5px; /* 必要に応じて調整 */
+  font-size: 0.875rem;
+  color: #555;
+  font-weight: bold;
 }
