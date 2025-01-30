@@ -4,6 +4,7 @@ require "redmine_ai_helper/logger"
 module RedmineAiHelper
   class BaseAgent
     include RedmineAiHelper::Logger
+    include Rails.application.routes.url_helpers
     RedmineAiHelper::BaseAgent::AGENT_LIST = []
 
     # Add an agent to the list of available agents.

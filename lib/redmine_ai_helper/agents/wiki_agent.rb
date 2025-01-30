@@ -115,7 +115,8 @@ module RedmineAiHelper
         title = sym_args[:title]
         wiki = Wiki.find_by(project_id: project_id)
         page = wiki.pages.find_by(title: title)
-        url = "/projects/#{wiki.project.identifier}/wiki/#{page.title}"
+        # url = "/projects/#{wiki.project.identifier}/wiki/#{page.title}"
+        url = "#{project_wiki_page_path(wiki.project, page.title)}"
         AgentResponse.create_success url: url
       end
     end
