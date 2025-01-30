@@ -156,9 +156,8 @@ var ai_helper_close_dropdown_menu = function() {
   $(".aihelper-dropdown-menu").slideUp(300);
 };
 
-var ai_helper_jump_to_history = function(event) {
+var ai_helper_jump_to_history = function(event, url) {
   event.preventDefault(); // デフォルトの遷移を防ぐ
-  const url = event.target.href;
   var chatArea = $("#aihelper-chat-conversation");
   $.ajax({
     url: url,

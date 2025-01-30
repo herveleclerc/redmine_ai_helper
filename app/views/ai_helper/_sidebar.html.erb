@@ -10,10 +10,13 @@
         <%= t(:label_ai_helper) %>
       </span>
       <div class="aihelper-dropdown-menu">
-        <span id="aihelper-chat-clear" style="display: none;">
-          <%= link_to "Clear", 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %>
+        <div id="aihelper-chat-clear" style="display: none;">
+          <ul>
+            <li></li><%= link_to "Clear", 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %></li>
+          </ul>
+ 
           <hr>
-        </span>
+        </div>
         <div id="aihelper-history">
 
         </div>

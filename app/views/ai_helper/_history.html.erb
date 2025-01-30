@@ -4,6 +4,6 @@
 <ul>
 <% @conversations.each do |conversation| %>
     <% next if conversation.messages.empty? %>
-    <li><%= link_to conversation.messages.first.content, ai_helper_conversation_path(@project, conversation.id), onclick: "ai_helper_jump_to_history(event)" %></li>
+    <li><%= link_to sprite_icon('comment',conversation.messages.first.content), ai_helper_conversation_path(@project, conversation.id), onclick: "ai_helper_jump_to_history(event, '#{ai_helper_conversation_path(@project, conversation.id)}')" %></li>
 <% end %>
 </ul>
