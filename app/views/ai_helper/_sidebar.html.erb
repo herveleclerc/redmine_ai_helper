@@ -4,11 +4,11 @@
       <%= t(:label_ai_helper) %>
     </h3>
     <div class="aihelper-header">
-      <div class="aihelper-hamburger">
+      <span class="aihelper-hamburger">
         <span></span>
         <span></span>
         <span></span>
-      </div>
+      </span>
       <div class="aihelper-dropdown-menu">
         あああ
         <ul>
@@ -70,17 +70,22 @@
       console.log(ai_helper_page_info);
 
 
+         // ハンバーガーメニューのクリックイベント
       $('.aihelper-hamburger').click(function(event) {
-        event.stopPropagation();
-        $(this).toggleClass('active');
-        $('.aihelper-dropdown-menu').slideToggle(300);
+          event.stopPropagation();
+          $(this).toggleClass('active');
+          $('.aihelper-dropdown-menu').slideToggle(300);
       });
-
-      $(document).click(function(event) {
-          if (!$(event.target).closest('.aihelper-header').length) {
-              $('.aihelper-hamburger').removeClass('active');
-              $('.aihelper-dropdown-menu').slideUp(300);
-          }
+      
+      // ドロップダウンメニュー内のクリックイベントの伝播を停止
+      $('.aihelper-dropdown-menu').click(function(event) {
+          event.stopPropagation();
+      });
+      
+      // ドキュメント全体のクリックイベント
+      $(document).click(function() {
+          $('.aihelper-hamburger').removeClass('active');
+          $('.aihelper-dropdown-menu').slideUp(300);
       });
 
     });
