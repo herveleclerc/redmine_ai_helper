@@ -166,7 +166,7 @@ var ai_helper_jump_to_history = function(event) {
     success: function(data) {
       ai_helper_close_dropdown_menu();
       chatArea.html(data);
-      chatArea.scrollTop(chatArea[0].scrollHeight);
+      chatArea.scrollTop(0);
     },
     error: function(xhr, status, error) {
       console.error("Failed to jump to history:", error);
