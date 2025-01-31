@@ -33,6 +33,13 @@ class AiHelperController < ApplicationController
   end
 
   def conversation
+    if request.delete?
+      conversation = AiHelperConversation.find(params[:conversation_id])
+      need_reload = conversation.id == @conversation.id
+      conversation.destroy!
+      session[:ai_helper] = {} if need_reload
+      return render json: { status: "ok", reload: need_reload }
+    end
     @conversation = AiHelperConversation.find(params[:conversation_id])
     set_conversation_id(@conversation.id)
     reload

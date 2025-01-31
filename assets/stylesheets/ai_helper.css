@@ -27,25 +27,31 @@
 .ai-helper-loader {
   width: 60px;
   height: 10px;
-  -webkit-mask: radial-gradient(circle closest-side,#000 94%,#0000) left/20% 100%;
+  -webkit-mask: radial-gradient(circle closest-side, #000 94%, #0000) left/20% 100%;
   background: linear-gradient(#000 0 0) left/0% 100% no-repeat #ddd;
   animation: l17 2s infinite steps(6);
   margin: 0 auto
 }
+
 @keyframes l17 {
-    100% {background-size:120% 100%}
+  100% {
+    background-size: 120% 100%
+  }
 }
 
-#aihelper-chat-conversation ul, #aihelper-chat-conversation ol {
+#aihelper-chat-conversation ul,
+#aihelper-chat-conversation ol {
   padding: 5px;
   margin: 0;
 }
-#aihelper-chat-conversation ul li{
+
+#aihelper-chat-conversation ul li {
   list-style-type: disc;
   padding: 0;
   margin-left: 10px;
 }
-#aihelper-chat-conversation ol li{
+
+#aihelper-chat-conversation ol li {
   padding: 0;
   margin-left: 10px;
 }
@@ -65,7 +71,8 @@
   padding: 8px;
   display: inline-block;
   z-index: 2;
-  width: fit-content; /* ハンバーガーメニューの幅を内容に合わせる */
+  width: fit-content;
+  /* ハンバーガーメニューの幅を内容に合わせる */
   vertical-align: middle;
   border-radius: 3px;
   border: 1px solid #ccc;
@@ -87,9 +94,9 @@
 .aihelper-dropdown-menu {
   display: none;
   position: absolute;
-  width: 200px;
+  width: 90%;
   background: #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   padding: 5px;
   z-index: 1;
 }
@@ -101,9 +108,10 @@
 }
 
 #sidebar .aihelper-dropdown-menu ul li {
-  margin-bottom: 10px;
-  margin-top: 10px;
+  padding-bottom: 10px;
+  padding-top: 10px;
   /* border-top: 1px solid #ccc; */
+  /* position: relative; */
 
 }
 
@@ -131,7 +139,8 @@
 span.aihelper-title {
   display: inline-block;
   vertical-align: middle;
-  margin-left: 5px; /* 必要に応じて調整 */
+  margin-left: 5px;
+  /* 必要に応じて調整 */
   font-size: 0.875rem;
   color: #555;
   font-weight: bold;
@@ -141,7 +150,7 @@ span.aihelper-title {
   margin: 10px;
 }
 
-#aihelper-chat-clear a{
+#aihelper-chat-clear a {
   padding-top: 20px;
   margin-left: 10px;
 }
@@ -149,4 +158,25 @@ span.aihelper-title {
 #aihelper-chat-clear hr {
   margin: 8px;
   width: 90%;
+
+}
+
+li.aihelper-history-item .delete-button {
+  display: none;
+  /* margin-left: 20px; */
+  position: absolute;
+  right: 10px;
+  /* top: 50%; */
+}
+
+li.aihelper-history-item:hover {
+  background-color: #f5f5f5;
+}
+
+li.aihelper-history-item:hover .delete-button {
+  display: inline-block;
+}
+
+li.aihelper-history-item a {
+  margin-right: 20px;
 }

@@ -1,11 +1,14 @@
-
 <span>
-    <%= sprite_icon('history', t(:label_history)) %>
+  <%= sprite_icon('history', t(:label_history)) %>
 </span>
-
 <ul>
-<% @conversations.each do |conversation| %>
+  <% @conversations.each do |conversation| %>
     <% next if conversation.messages.empty? %>
-    <li><%= link_to sprite_icon('comment',conversation.messages.first.content), ai_helper_conversation_path(@project, conversation.id), onclick: "ai_helper_jump_to_history(event, '#{ai_helper_conversation_path(@project, conversation.id)}')" %></li>
-<% end %>
+    <li class="aihelper-history-item">
+      <%= link_to sprite_icon('comment',conversation.messages.first.content), ai_helper_conversation_path(@project, conversation.id), onclick: "ai_helper_jump_to_history(event, '#{ai_helper_conversation_path(@project, conversation.id)}')" %>
+      <span class="delete-button">
+        <%=  link_to sprite_icon('del'), ai_helper_delete_conversation_path(@project, conversation.id), onclick: "ai_helper_delete_history(event, '#{ai_helper_delete_conversation_path(@project, conversation.id)}')" %>
+      </span>
+    </li>
+  <% end %>
 </ul>
