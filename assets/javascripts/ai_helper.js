@@ -157,13 +157,14 @@ var ai_helper_close_dropdown_menu = function() {
 };
 
 var ai_helper_jump_to_history = function(event, url) {
-  event.preventDefault(); // デフォルトの遷移を防ぐ
+  event.preventDefault();
   var chatArea = $("#aihelper-chat-conversation");
   $.ajax({
     url: url,
     type: "GET",
     success: function(data) {
       ai_helper_close_dropdown_menu();
+      ai_helper_fold_chat(false);
       chatArea.html(data);
       chatArea.scrollTop(0);
     },
