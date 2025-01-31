@@ -1,5 +1,6 @@
 var ai_helper_urls = {};
 var ai_helper_page_info = {};
+const local_storage_key = "aihelper-fold-flag";
 
 var set_ai_helper_form_handlers = function() {
   // フォームのデフォルトのsubmit動作を防ぐ
@@ -214,11 +215,11 @@ var ai_helper_fold_chat = function(flag, disable_animation = false) {
     arrow_left.hide();
   }
   // フラグの値をローカルストレージに保存
-  localStorage.setItem("aihelper-fold-flag", flag);
+  localStorage.setItem(local_storage_key, flag);
 };
 
 var ai_helper_init_fold_flag = function() {
-  var flag = localStorage.getItem("aihelper-fold-flag");
+  var flag = localStorage.getItem(local_storage_key);
   if (flag === "true") {
     ai_helper_fold_chat(true, true);
   } else {
