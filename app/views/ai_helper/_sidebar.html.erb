@@ -9,26 +9,32 @@
       <span class="aihelper-title">
         <%= t(:label_ai_helper) %>
       </span>
+      <span class="aihelper-arrow-button">
+        <span class="aihelper-arrow-container">
+          <%= link_to "", "#", onclick: "ai_helper_fold_chat(true)", class: "aihelper-arrow down", id: "aihelper-arrow-down"%>
+          <%= link_to "", "#", onclick: "ai_helper_fold_chat(false)", class: "aihelper-arrow left", id: "aihelper-arrow-left", style: "display: none" %>
+        </span>
+      </span>
       <div class="aihelper-dropdown-menu">
         <div id="aihelper-chat-clear" style="display: none;">
           <ul>
-            <li></li><%= link_to sprite_icon('add', t(:label_ai_helper_start_new_chat)), 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %></li>
-          </ul>
- 
-          <hr>
-        </div>
-        <div id="aihelper-history">
-
-        </div>
-
+            <li></li>
+            <%= link_to sprite_icon('add', t(:label_ai_helper_start_new_chat)), 'javascript:void(0);',onclick: "ai_helper_clear_chat();" %></li>
+        </ul>
+        <hr>
+      </div>
+      <div id="aihelper-history">
       </div>
     </div>
+  </div>
+  <div id="aihelper-foldable-area">
     <div id="aihelper-chat-conversation"></div>
     <div id="aihelper-chat-form-area"></div>
     <span><%= t(:label_ai_helper_input_newline)%></span>
     <hr>
   </div>
-  <% 
+</div>
+<% 
   content_id = nil
   if controller_name == "issues"
     content_id = @issue.id if @issue
@@ -41,39 +47,40 @@
     content_id = @page.id if @page
   end
   %>
-  <script>
-    const is_sidebar_exist = function() {
-      return $('#sidebar-wrapper').length !== 0;
+<script>
+  const is_sidebar_exist = function() {
+    return $('#sidebar-wrapper').length !== 0;
+  }
+
+  $(document).ready(function() {
+    if (!is_sidebar_exist()) {
+      return;
     }
 
-    $(document).ready(function() {
-      if (!is_sidebar_exist()) {
-        return;
-      }
+    // div#aihelper-sidebar を div#sidebar-wrapper の最初に追加
+    $('#aihelper-sidebar').prependTo('#sidebar-wrapper');
+    ai_helper_init_fold_flag();
 
-      // div#aihelper-sidebar を div#sidebar-wrapper の最初に追加
-      $('#aihelper-sidebar').prependTo('#sidebar-wrapper');
+    ai_helper_urls = {
+      chat: '<%= ai_helper_chat_path(@project) %>',
+      reload: '<%= ai_helper_reload_path(@project) %>',
+      clear: '<%= ai_helper_clear_path(@project) %>',
+      call_llm: '<%= ai_helper_call_llm_path(@project) %>',
+      history: '<%= ai_helper_history_path(@project) %>'
+    };
+    ai_helper_reload_chat();
 
-      ai_helper_urls = {
-        chat: '<%= ai_helper_chat_path(@project) %>',
-        reload: '<%= ai_helper_reload_path(@project) %>',
-        clear: '<%= ai_helper_clear_path(@project) %>',
-        call_llm: '<%= ai_helper_call_llm_path(@project) %>',
-        history: '<%= ai_helper_history_path(@project) %>'
-      };
-      ai_helper_reload_chat();
+    var chatForm = $('#aihelper-chat-form-area');
+    var form_url = '<%= ai_helper_chat_form_path(@project) %>';
+    chatForm.load(form_url);
+    ai_helper_page_info['content_id'] = '<%= content_id %>';
+    ai_helper_page_info['controller_name'] = '<%= controller_name %>';
+    ai_helper_page_info['action_name'] = '<%= action_name %>';
+    console.log(ai_helper_page_info);
 
-      var chatForm = $('#aihelper-chat-form-area');
-      var form_url = '<%= ai_helper_chat_form_path(@project) %>';
-      chatForm.load(form_url);
-      ai_helper_page_info['content_id'] = '<%= content_id %>';
-      ai_helper_page_info['controller_name'] = '<%= controller_name %>';
-      ai_helper_page_info['action_name'] = '<%= action_name %>';
-      console.log(ai_helper_page_info);
+    ai_helper_set_hamberger_menu();
 
 
-      ai_helper_set_hamberger_menu();
-
-    });
-  </script>
+  });
+</script>
 <% end %>
