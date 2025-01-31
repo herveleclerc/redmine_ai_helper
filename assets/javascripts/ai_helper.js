@@ -172,3 +172,18 @@ var ai_helper_jump_to_history = function(event, url) {
     }
   });
 };
+
+var ai_helper_delete_history = function(event, url) {
+  event.preventDefault(); // デフォルトの遷移を防ぐ
+  var chatArea = $("#aihelper-chat-conversation");
+  $.ajax({
+    url: url,
+    type: "DELETE",
+    success: function(data) {
+      ai_helper_load_history();
+    },
+    error: function(xhr, status, error) {
+      console.error("Failed to jump to history:", error);
+    }
+  });
+};
