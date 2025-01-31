@@ -16,7 +16,7 @@
 
 #aihelper-chat-conversation div.aihelper-message {
   border-top: 1px solid #ccc;
-  padding-top: 1px;
+  padding-top: 5px;
 }
 
 #aihelper-chat-conversation div.aihelper-message pre {
@@ -219,4 +219,9 @@ li.aihelper-history-item a {
   border-color: #0066cc;
   cursor: pointer;
   transition: border-color 0.3s ease;
+}
+
+.aihelper-message-user {
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
