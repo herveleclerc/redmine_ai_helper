@@ -8,7 +8,7 @@ Redmine::Plugin.register :redmine_ai_helper do
   author_url "https://github.com/haru"
   requires_redmine :version_or_higher => "6.0.0"
 
-  version "0.0.8"
+  version "0.0.9"
 
   project_module :ai_helper do
     permission :view_ai_helper, { ai_helper: [:chat, :chat_form, :reload, :clear, :call_llm, :history, :conversation] }
