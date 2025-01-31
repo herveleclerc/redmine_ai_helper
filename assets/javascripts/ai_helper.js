@@ -190,3 +190,37 @@ var ai_helper_delete_history = function(event, url) {
     }
   });
 };
+
+var ai_helper_fold_chat = function(flag, disable_animation = false) {
+  var chatArea = $("#aihelper-foldable-area");
+  var arrow_down = $("#aihelper-arrow-down");
+  var arrow_left = $("#aihelper-arrow-left");
+  if (flag) {
+    if (disable_animation) {
+      chatArea.hide();
+    } else {
+      chatArea.slideUp();
+    }
+    arrow_down.hide();
+    arrow_left.show();
+  } else {
+    if (disable_animation) {
+      chatArea.show();
+    } else {
+      chatArea.slideDown();
+    }
+    arrow_down.show();
+    arrow_left.hide();
+  }
+  // フラグの値をローカルストレージに保存
+  localStorage.setItem("aihelper-fold-flag", flag);
+};
+
+var ai_helper_init_fold_flag = function() {
+  var flag = localStorage.getItem("aihelper-fold-flag");
+  if (flag === "true") {
+    ai_helper_fold_chat(true, true);
+  } else {
+    ai_helper_fold_chat(false, true);
+  }
+};

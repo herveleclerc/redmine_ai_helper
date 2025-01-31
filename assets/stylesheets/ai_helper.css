@@ -180,3 +180,43 @@ li.aihelper-history-item:hover .delete-button {
 li.aihelper-history-item a {
   margin-right: 20px;
 }
+
+.aihelper-arrow-button {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+.aihelper-arrow-container {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  align-items: center;
+}
+
+.aihelper-arrow {
+  width: 7px;
+  height: 7px;
+  border-left: 2px solid #333;
+  border-bottom: 2px solid #333;
+  position: relative;
+}
+
+.aihelper-arrow.up {
+  transform: rotate(135deg);
+}
+
+.aihelper-arrow.down {
+  transform: rotate(-45deg);
+}
+
+.aihelper-arrow.left {
+  transform: rotate(45deg);
+}
+
+/* Optional hover effect */
+.aihelper-arrow:hover {
+  border-color: #0066cc;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
