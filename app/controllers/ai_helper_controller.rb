@@ -35,8 +35,10 @@ class AiHelperController < ApplicationController
   def conversation
     if request.delete?
       conversation = AiHelperConversation.find(params[:conversation_id])
-      conversation.destroy
-      return render json: { status: "ok" }
+      need_reload = conversation.id == @conversation.id
+      conversation.destroy!
+      session[:ai_helper] = {} if need_reload
+      return render json: { status: "ok", reload: need_reload }
     end
     @conversation = AiHelperConversation.find(params[:conversation_id])
     set_conversation_id(@conversation.id)
@@ -44,7 +46,7 @@ class AiHelperController < ApplicationController
   end
 
   def history
-    @conversations = AiHelperConversation.where(user: @user).where.not(id: @conversation.id).order(updated_at: :desc).limit(10)
+    @conversations = AiHelperConversation.where(user: @user).order(updated_at: :desc).limit(10)
     render partial: "ai_helper/history"
   end
 

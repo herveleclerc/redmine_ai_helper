@@ -181,6 +181,9 @@ var ai_helper_delete_history = function(event, url) {
     type: "DELETE",
     success: function(data) {
       ai_helper_load_history();
+      if (data["reload"]) {
+        ai_helper_reload_chat();
+      }
     },
     error: function(xhr, status, error) {
       console.error("Failed to jump to history:", error);
