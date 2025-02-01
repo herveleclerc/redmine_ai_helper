@@ -63,6 +63,7 @@ module RedmineAiHelper
         title = sym_args[:title]
         wiki = Wiki.find_by(project_id: project_id)
         page = wiki.pages.find_by(title: title)
+        return AgentResponse.create_error("Page not found: title = #{title}") unless page
         json = {
           title: page.title,
           text: page.text,

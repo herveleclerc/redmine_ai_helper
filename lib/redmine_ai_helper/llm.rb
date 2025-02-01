@@ -30,6 +30,7 @@ module RedmineAiHelper
       @action_name = option[:action_name]
       @content_id = option[:content_id]
       @project = option[:project]
+      @additional_info = option[:additional_info]
       task = conversation.messages.last.content
       ai_helper_logger.info "#### ai_helper: chat start ####"
       ai_helper_logger.info "user:#{User.current}, task: #{task}, option: #{option}"
@@ -333,15 +334,40 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
 
     def current_page_info_string()
       page_name = nil
-      if @controller_name == "issues" && @action_name == "show"
-        issue = Issue.find(@content_id)
-        page_name = "チケット ##{issue.id} の詳細\nユーザが特にIDや名前を指定せずにただ「チケット」といった場合にはこのチケットのことです。"
-      elsif @controller_name == "issues" && @action_name == "index"
-        page_name = "チケット一覧"
-      elsif @controller_name == "wiki" && @action_name == "show"
-        page = WikiPage.find(@content_id)
-        page_name = "「#{page.title}」というタイトルのWikiページを表示しています。\nユーザが特にタイトルを指定せずにただ「Wikiページ」や「ページ」といった場合にはこのWikiページのことです。"
+      case @controller_name
+      when "projects"
+        page_name = "プロジェクト「#{@project.name}」の情報ページです"
+      when "issues"
+        case @action_name
+        when "show"
+          issue = Issue.find(@content_id)
+          page_name = "チケット ##{issue.id} の詳細\nユーザが特にIDや名前を指定せずにただ「チケット」といった場合にはこのチケットのことです。"
+        when "index"
+          page_name = "チケット一覧"
+        else
+          page_name = "チケットの#{@action_name}ページです"
+        end
+      when "wiki"
+        case @action_name
+        when "show"
+          page = WikiPage.find(@content_id)
+          page_name = "「#{page.title}」というタイトルのWikiページを表示しています。\nユーザが特にタイトルを指定せずにただ「Wikiページ」や「ページ」といった場合にはこのWikiページのことです。"
+        end
+      when "repositories"
+        case @action_name
+        when "show"
+          repo = Repository.find(@content_id)
+          page_name = "リポジトリ「#{repo.name}」の情報ページです。リポジトリのIDは #{repo.id} です。"
+        when "entry"
+          repo = Repository.find(@content_id)
+          page_name = "リポジトリのファイル情報のページです。表示しているファイルパスは #{@additional_info["path"]} です。リビジョンは #{@additional_info["rev"]} です。リポジトリは「 #{repo.name}」です。リポジトリのIDは #{repo.id} です。"
+        else
+          page_name = "リポジトリの情報ページです"
+        end
+      else
+        page_name = "{@controller_name}の{@action_name}ページです"
       end
+
       return "" if page_name.nil?
       string = <<-EOS
 ----

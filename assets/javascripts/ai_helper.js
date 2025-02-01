@@ -1,5 +1,8 @@
 var ai_helper_urls = {};
-var ai_helper_page_info = {};
+var ai_helper_page_info = {
+  additional_info: {}
+};
+const local_storage_key = "aihelper-fold-flag";
 
 var set_ai_helper_form_handlers = function() {
   // フォームのデフォルトのsubmit動作を防ぐ
@@ -65,16 +68,10 @@ var set_ai_helper_form_handlers = function() {
 };
 
 var call_llm = function() {
-  data = {
-    controller_name: ai_helper_page_info["controller_name"],
-    action_name: ai_helper_page_info["action_name"],
-    content_id: ai_helper_page_info["content_id"]
-  };
-  console.log(data);
   $.ajax({
     url: ai_helper_urls.call_llm,
     type: "POST",
-    data: JSON.stringify(data),
+    data: JSON.stringify(ai_helper_page_info),
     processData: false,
     contentType: "application/json",
     success: function(response) {
@@ -157,13 +154,14 @@ var ai_helper_close_dropdown_menu = function() {
 };
 
 var ai_helper_jump_to_history = function(event, url) {
-  event.preventDefault(); // デフォルトの遷移を防ぐ
+  event.preventDefault();
   var chatArea = $("#aihelper-chat-conversation");
   $.ajax({
     url: url,
     type: "GET",
     success: function(data) {
       ai_helper_close_dropdown_menu();
+      ai_helper_fold_chat(false);
       chatArea.html(data);
       chatArea.scrollTop(0);
     },
@@ -213,11 +211,11 @@ var ai_helper_fold_chat = function(flag, disable_animation = false) {
     arrow_left.hide();
   }
   // フラグの値をローカルストレージに保存
-  localStorage.setItem("aihelper-fold-flag", flag);
+  localStorage.setItem(local_storage_key, flag);
 };
 
 var ai_helper_init_fold_flag = function() {
-  var flag = localStorage.getItem("aihelper-fold-flag");
+  var flag = localStorage.getItem(local_storage_key);
   if (flag === "true") {
     ai_helper_fold_chat(true, true);
   } else {
