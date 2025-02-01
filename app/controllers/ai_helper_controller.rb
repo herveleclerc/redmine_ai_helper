@@ -54,12 +54,17 @@ class AiHelperController < ApplicationController
     contoller_name = params[:controller_name]
     action_name = params[:action_name]
     content_id = params[:content_id].to_i unless params[:content_id].blank?
+    additional_info = {}
+    params[:additional_info].each do |key, value|
+      additional_info[key] = value
+    end
     llm = RedmineAiHelper::Llm.new
     option = {
       controller_name: contoller_name,
       action_name: action_name,
       content_id: content_id,
       project: @project,
+      additional_info: additional_info,
     }
     @conversation.messages << llm.chat(@conversation, option)
     @conversation.save!

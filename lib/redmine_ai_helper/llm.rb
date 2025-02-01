@@ -30,6 +30,7 @@ module RedmineAiHelper
       @action_name = option[:action_name]
       @content_id = option[:content_id]
       @project = option[:project]
+      @additional_info = option[:additional_info]
       task = conversation.messages.last.content
       ai_helper_logger.info "#### ai_helper: chat start ####"
       ai_helper_logger.info "user:#{User.current}, task: #{task}, option: #{option}"
@@ -357,6 +358,9 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
         when "show"
           repo = Repository.find(@content_id)
           page_name = "リポジトリ「#{repo.name}」の情報ページです。リポジトリのIDは #{repo.id} です。"
+        when "entry"
+          repo = Repository.find(@content_id)
+          page_name = "リポジトリのファイル情報のページです。表示しているファイルパスは #{@additional_info["path"]} です。リビジョンは #{@additional_info["rev"]} です。リポジトリは「 #{repo.name}」です。リポジトリのIDは #{repo.id} です。"
         else
           page_name = "リポジトリの情報ページです"
         end

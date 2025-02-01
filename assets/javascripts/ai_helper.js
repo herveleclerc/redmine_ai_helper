@@ -1,5 +1,7 @@
 var ai_helper_urls = {};
-var ai_helper_page_info = {};
+var ai_helper_page_info = {
+  additional_info: {}
+};
 const local_storage_key = "aihelper-fold-flag";
 
 var set_ai_helper_form_handlers = function() {
@@ -66,16 +68,10 @@ var set_ai_helper_form_handlers = function() {
 };
 
 var call_llm = function() {
-  data = {
-    controller_name: ai_helper_page_info["controller_name"],
-    action_name: ai_helper_page_info["action_name"],
-    content_id: ai_helper_page_info["content_id"]
-  };
-  console.log(data);
   $.ajax({
     url: ai_helper_urls.call_llm,
     type: "POST",
-    data: JSON.stringify(data),
+    data: JSON.stringify(ai_helper_page_info),
     processData: false,
     contentType: "application/json",
     success: function(response) {
