@@ -353,7 +353,13 @@ JSONの中のcurrent_projectが現在ユーザーが表示している、この�
           page_name = "「#{page.title}」というタイトルのWikiページを表示しています。\nユーザが特にタイトルを指定せずにただ「Wikiページ」や「ページ」といった場合にはこのWikiページのことです。"
         end
       when "repositories"
-        page_name = "リポジトリの情報ページです"
+        case @action_name
+        when "show"
+          repo = Repository.find(@content_id)
+          page_name = "リポジトリ「#{repo.name}」の情報ページです。リポジトリのIDは #{repo.id} です。"
+        else
+          page_name = "リポジトリの情報ページです"
+        end
       else
         page_name = "{@controller_name}の{@action_name}ページです"
       end
