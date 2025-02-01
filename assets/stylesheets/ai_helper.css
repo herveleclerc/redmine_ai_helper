@@ -142,7 +142,7 @@ span.aihelper-title {
   margin-left: 5px;
   /* 必要に応じて調整 */
   font-size: 0.875rem;
-  color: #555;
+  /* color: #555; */
   font-weight: bold;
 }
 
@@ -151,7 +151,7 @@ span.aihelper-title {
 }
 
 #aihelper-chat-clear a {
-  padding-top: 20px;
+  padding-top: 5px;
   margin-left: 10px;
 }
 
@@ -224,4 +224,16 @@ li.aihelper-history-item a {
 .aihelper-message-user {
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+@media screen and (max-width: 899px) {
+  .aihelper-hamburger span {
+    background-color: #ccc;
+  }
+
+  #aihelper-history,
+  #aihelper-history .icon-label,
+  #aihelper-chat-clear .icon-label {
+    color: #333;
+  }
 }
