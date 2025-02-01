@@ -87,8 +87,8 @@ module RedmineAiHelper
         return AgentResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
         json = {
           size: entry.size,
-          mime_type: entry.mime_type,
-          revision: entry.revision,
+          type: entry.is_file? ? "file" : "directory",
+          is_text: entry.is_text?,
           url: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, revision: revision, only_path: true),
         }
         AgentResponse.create_success(json)
@@ -101,10 +101,19 @@ module RedmineAiHelper
         path = sym_args[:path]
         revision = sym_args[:revision] || "main"
         repository = Repository.find(repository_id)
+        return AgentResponse.create_error("Repository not found.") if repository.nil?
+
+        entry = repository.entry(path, revision)
+        return AgentResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
+
+        return AgentResponse.create_error("File is not text: path = #{path}, revision = #{revision}") unless entry.is_text?
+
+        return AgentResponse.create_error("#{path} is a directory.") if entry.is_dir?
 
         content = repository.cat(path, revision)
         json = {
           content: content,
+          url: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, revision: revision, only_path: true),
         }
         AgentResponse.create_success(json)
       end
