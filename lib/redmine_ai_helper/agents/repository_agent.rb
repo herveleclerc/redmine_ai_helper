@@ -85,11 +85,29 @@ module RedmineAiHelper
         return AgentResponse.create_error("Repository not found.") if repository.nil?
         entry = repository.entry(path, revision)
         return AgentResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
+        changeset = repository.find_changeset_by_name(revision)
+        author_info = nil
+        if changeset
+          author = changeset.author
+          author_info = {
+            id: author.id,
+            name: author.name,
+          } if author
+          author_info = changeset.committer if author_info.nil?
+        end
+        commit_info = {
+          author: author_info,
+          committed_on: changeset.committed_on,
+          comments: changeset.comments,
+          revision: changeset.revision,
+
+        } unless changeset.nil?
         json = {
           size: entry.size,
           type: entry.is_file? ? "file" : "directory",
           is_text: entry.is_text?,
-          url: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, revision: revision, only_path: true),
+          url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
+          commit: commit_info,
         }
         AgentResponse.create_success(json)
       end
@@ -113,7 +131,7 @@ module RedmineAiHelper
         content = repository.cat(path, revision)
         json = {
           content: content,
-          url: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, revision: revision, only_path: true),
+          url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
         }
         AgentResponse.create_success(json)
       end
