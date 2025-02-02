@@ -38,9 +38,10 @@ class UserAgentTest < ActiveSupport::TestCase
     assert_equal 3, result.value[:users].size
 
     @users.update_all(last_login_on: 1.days.ago)
-    3.times { |i| @users[i].update_attribute(:last_login_on, (i + 1).years.ago) }
-    @users[4].update_attribute(:last_login_on, nil)
-    result = @agent.list_users(query: { date_fields: [{ field_name: "last_login_on", operator: "<", value: 1.year.ago.to_s }] })
+    3.times { |i| @users[i].update_attribute(:last_login_on, (i + 2).years.ago) }
+    @users[4].last_login_on = nil
+    @users.each { |u| u.save! }
+    result = @agent.list_users(query: { date_fields: [{ field_name: "last_login_on", operator: "<=", value: 1.year.ago.to_s }] })
     assert_equal 4, result.value[:users].size
   end
 
