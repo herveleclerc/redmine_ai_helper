@@ -28,9 +28,9 @@ SimpleCov.start do
   add_group "Plugin Features", "lib/redmine_ai_helper"
 end
 
-require_relative "../../../test/test_helper"
+require File.expand_path(File.dirname(__FILE__) + "/../../../test/test_helper")
 
-require "shoulda"
+require File.expand_path(File.dirname(__FILE__) + "/model_factory")
 
 # このファイルと同じフォルダにあるmodel_factory.rbを読み込む
 require_relative "./model_factory"
