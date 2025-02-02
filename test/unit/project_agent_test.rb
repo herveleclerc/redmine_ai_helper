@@ -39,10 +39,26 @@ class ProjectAgentTest < ActiveSupport::TestCase
     assert_equal project.name, response.value[:name]
   end
 
+  def test_read_project_by_identifier
+    project = Project.find(1)
+    project.stubs(:visible?).returns(true)
+
+    response = @agent.read_project(identifier: project.identifier)
+    assert response.is_success?
+    assert_equal project.id, response.value[:id]
+    assert_equal project.name, response.value[:name]
+  end
+
   def test_read_project_not_found
     response = @agent.read_project(id: 999)
     assert response.is_error?
     assert_equal "Project not found", response.error
+  end
+
+  def test_read_project_no_args
+    response = @agent.read_project
+    assert response.is_error?
+    assert_equal "No id or name or Identifier specified.", response.error
   end
 
   def test_project_members
@@ -74,5 +90,15 @@ class ProjectAgentTest < ActiveSupport::TestCase
     response = @agent.list_project_activities(project_id: project.id, author_id: author.id)
     assert response.is_success?
     # assert_equal project.list_project_activities.size, response.value[:activities].size
+  end
+
+  def test_self_list_tools
+    response = RedmineAiHelper::Agents::ProjectAgent.list_tools
+    assert_equal 5, response[:tools].size
+    assert_equal "list_projects", response[:tools].first[:name]
+    assert_equal "read_project", response[:tools].second[:name]
+    assert_equal "project_members", response[:tools].third[:name]
+    assert_equal "project_enabled_modules", response[:tools].fourth[:name]
+    assert_equal "list_project_activities", response[:tools].fifth[:name]
   end
 end
