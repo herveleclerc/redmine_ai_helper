@@ -81,4 +81,12 @@ class RepositoryAgentTest < ActiveSupport::TestCase
     assert response.is_error?
     assert_equal "File is not text: path = test_dir/hello.zip, revision = main", response.error
   end
+
+  def test_list_tools
+    tools = RedmineAiHelper::Agents::RepositoryAgent.list_tools
+    assert_not_nil tools
+    assert_equal "repository_info", tools[:tools].first[:name]
+    assert_equal "get_file_info", tools[:tools].second[:name]
+    assert_equal "read_file", tools[:tools].third[:name]
+  end
 end
