@@ -30,5 +30,7 @@ end
 
 require_relative "../../../test/test_helper"
 
-require "factory_bot"
 require "shoulda"
+
+# このファイルと同じフォルダにあるmodel_factory.rbを読み込む
+require_relative "./model_factory"
