@@ -1,7 +1,7 @@
 require File.expand_path("../../test_helper", __FILE__)
 
 class UserAgentTest < ActiveSupport::TestCase
-  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
   include RedmineAiHelper::Agents
 
   def setup
@@ -33,9 +33,9 @@ class UserAgentTest < ActiveSupport::TestCase
   end
 
   def test_list_users_with_date_fields
-    3.times { |i| @users[i].update_attribute(:last_login_on, (i + 1).days.ago) }
+    2.times { |i| @users[i].last_login_on = (i + 1).days.ago; @users[i].save! }
     result = @agent.list_users(query: { date_fields: [{ field_name: "last_login_on", operator: ">=", value: 1.year.ago.to_s }] })
-    assert_equal 3, result.value[:users].size
+    assert_equal 2, result.value[:users].size
 
     @users.update_all(last_login_on: 1.days.ago)
     3.times { |i| @users[i].update_attribute(:last_login_on, (i + 2).years.ago) }

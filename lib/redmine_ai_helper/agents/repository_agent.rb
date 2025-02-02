@@ -61,7 +61,7 @@ module RedmineAiHelper
       def repository_info(args = {})
         sym_args = args.deep_symbolize_keys
         repository_id = sym_args[:repository_id]
-        repository = Repository.find(repository_id)
+        repository = Repository.find_by(id: repository_id)
         return AgentResponse.create_error("Repository not found.") if repository.nil?
         json = {
           id: repository.id,
@@ -118,7 +118,7 @@ module RedmineAiHelper
         repository_id = sym_args[:repository_id]
         path = sym_args[:path]
         revision = sym_args[:revision] || "main"
-        repository = Repository.find(repository_id)
+        repository = Repository.find_by(id: repository_id)
         return AgentResponse.create_error("Repository not found.") if repository.nil?
 
         entry = repository.entry(path, revision)
