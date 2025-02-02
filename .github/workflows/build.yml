@@ -50,7 +50,7 @@ jobs:
         uses: rtCamp/action-slack-notify@v2.0.2
         if: failure()
         env:
-          SLACK_CHANNEL: plugin-code_review
+          SLACK_CHANNEL: general
           SLACK_TITLE: Test Failure
           SLACK_COLOR: danger
 
