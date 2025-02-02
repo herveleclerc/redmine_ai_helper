@@ -12,6 +12,7 @@
     "editor.wordWrap": "on",
     "git.ignoredRepositories": [
       "/workspace/redmine_ai_helper"
-    ]
+    ],
+    "liveServer.settings.multiRootWorkspaceName": "redmine_ai_helper"
   }
 }

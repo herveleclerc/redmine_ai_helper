@@ -1,60 +1,99 @@
-require_relative "../test_helper"
+require File.expand_path("../../test_helper", __FILE__)
 require "redmine_ai_helper/agent"
-require "redmine_ai_helper/llm"
 
-class AgentTest < ActiveSupport::TestCase
+class RedmineAiHelper::AgentTest < ActiveSupport::TestCase
   def setup
-    @llm = RedmineAiHelper::Llm.new
-    @agent = RedmineAiHelper::Agent.new(@llm)
+    @client = mock("client")
+    @model = mock("model")
+    @agent = RedmineAiHelper::Agent.new(@client, @model)
   end
 
-  def test_callTool
-    assert_raise(RuntimeError) { @agent.callTool(name: "not_exist") }
-    issue_json = @agent.callTool(name: "read_issue", arguments: { 'id': Issue.first.id })
-    assert_equal Issue.first.id, issue_json[:id]
-    project_json = @agent.callTool(name: "read_project", arguments: { 'id': Project.first.id })
-    assert_equal Project.first.id, project_json[:id]
+  def test_initialize
+    assert_not_nil @agent
+    assert_equal @client, @agent.instance_variable_get(:@client)
+    assert_equal @model, @agent.instance_variable_get(:@model)
   end
 
-  def test_read_issue
-    issue = Issue.first
-    issue_json = @agent.read_issue({ 'id': issue.id })
-    assert_equal issue.id, issue_json[:id]
-    assert_equal issue.subject, issue_json[:subject]
-    assert_equal issue.project.id, issue_json[:project][:id]
-    assert_equal issue.project.name, issue_json[:project][:name]
-    assert_equal issue.tracker.id, issue_json[:tracker][:id]
-    assert_equal issue.tracker.name, issue_json[:tracker][:name]
-    assert_equal issue.status.id, issue_json[:status][:id]
-    assert_equal issue.status.name, issue_json[:status][:name]
-    assert_equal issue.priority.id, issue_json[:priority][:id]
-    assert_equal issue.priority.name, issue_json[:priority][:name]
-    assert_equal issue.author.id, issue_json[:author][:id]
-    assert_equal issue.author.name, issue_json[:author][:name]
-    assert_equal issue.description, issue_json[:description]
-    assert_equal issue.start_date, issue_json[:start_date]
-    assert_equal issue.due_date, issue_json[:due_date]
-    assert_equal issue.done_ratio, issue_json[:done_ratio]
-    assert_equal issue.is_private, issue_json[:is_private]
-    assert_equal issue.estimated_hours, issue_json[:estimated_hours]
-    assert_equal issue.total_estimated_hours, issue_json[:total_estimated_hours]
-    assert_equal issue.spent_hours, issue_json[:spent_hours]
-    assert_equal issue.total_spent_hours, issue_json[:total_spent_hours]
-    assert_equal issue.created_on, issue_json[:created_on]
-    assert_equal issue.updated_on, issue_json[:updated_on]
-    assert_equal issue.closed_on, issue_json[:closed_on]
+  def test_list_tools
+    RedmineAiHelper::BaseAgent.stubs(:agent_list).returns([
+      { name: "TestAgent", class: TestAgent },
+    ])
+    TestAgent.stubs(:list_tools).returns(["tool1", "tool2"])
+
+    expected_output = JSON.pretty_generate({
+      agents: [
+        {
+          name: "TestAgent",
+          tools: ["tool1", "tool2"],
+        },
+      ],
+    })
+
+    assert_equal expected_output, RedmineAiHelper::Agent.list_tools
   end
 
-  def test_read_project
-    project = Project.first
-    project_json = @agent.read_project({ 'id': project.id })
-    assert_equal project.id, project_json[:id]
-    assert_equal project.name, project_json[:name]
-    assert_equal project.description, project_json[:description]
-    assert_equal project.homepage, project_json[:homepage]
-    assert_equal project.is_public, project_json[:is_public]
-    assert_equal project.parent_id, project_json[:parent_id]
-    assert_equal project.created_on, project_json[:created_on]
-    assert_equal project.updated_on, project_json[:updated_on]
+  def test_call_tool_success
+    params = {
+      agent_name: "TestAgent",
+      name: "test_method",
+      arguments: { key: "value" },
+    }
+
+    agent_instance = mock("agent_instance")
+    agent_instance.expects(:respond_to?).with("test_method").returns(true)
+    agent_instance.expects(:send).with("test_method", { key: "value" }).returns("success")
+
+    RedmineAiHelper::BaseAgent.stubs(:agent_class).with("TestAgent").returns(TestAgent)
+    TestAgent.stubs(:new).returns(agent_instance)
+
+    response = @agent.call_tool(params)
+    assert_equal "success", response
+  end
+
+  def test_call_tool_method_not_found
+    params = {
+      agent_name: "TestAgent",
+      name: "non_existent_method",
+      arguments: { key: "value" },
+    }
+
+    agent_instance = mock("agent_instance")
+    agent_instance.expects(:respond_to?).with("non_existent_method").returns(false)
+
+    RedmineAiHelper::BaseAgent.stubs(:agent_class).with("TestAgent").returns(TestAgent)
+    TestAgent.stubs(:new).returns(agent_instance)
+
+    response = @agent.call_tool(params)
+    assert response.is_a?(RedmineAiHelper::AgentResponse)
+    assert_equal "Method non_existent_method not found", response.error
+  end
+
+  def test_call_tool_exception
+    params = {
+      agent_name: "TestAgent",
+      name: "test_method",
+      arguments: { key: "value" },
+    }
+
+    agent_instance = mock("agent_instance")
+    agent_instance.expects(:respond_to?).with("test_method").returns(true)
+    agent_instance.expects(:send).with("test_method", { key: "value" }).raises(StandardError.new("test error"))
+
+    RedmineAiHelper::BaseAgent.stubs(:agent_class).with("TestAgent").returns(TestAgent)
+    TestAgent.stubs(:new).returns(agent_instance)
+
+    response = @agent.call_tool(params)
+    assert response.is_a?(RedmineAiHelper::AgentResponse)
+    assert_equal "test error", response.error
+  end
+end
+
+class TestAgent
+  def self.list_tools
+    ["tool1", "tool2"]
+  end
+
+  def test_method(args)
+    "success"
   end
 end

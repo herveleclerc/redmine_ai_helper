@@ -222,7 +222,7 @@ module RedmineAiHelper
       def read_issues(args = {})
         sym_args = args.deep_symbolize_keys
         issue_ids = sym_args[:id]
-        retrun AgentResponse.create_error("Issue ID array is required.") if issue_ids.empty?
+        return AgentResponse.create_error("Issue ID array is required.") if issue_ids.empty?
         issues = []
         Issue.where(id: issue_ids).each do |issue|
 
@@ -323,14 +323,17 @@ module RedmineAiHelper
         project_identifier = sym_args[:project_identifier]
         project = nil
         if project_id
-          project = Project.find(project_id)
+          project = Project.find_by(id: project_id)
         elsif project_name
           project = Project.find_by(name: project_name)
         elsif project_identifier
           project = Project.find_by(identifier: project_identifier)
         else
-          return { error: "No id or name or Identifier specified." }
+          return AgentResponse.create_error("No id or name or Identifier specified.")
         end
+
+        return AgentResponse.create_error("Project not found.") unless project
+
         properties = {
           trackers: project.trackers.map do |tracker|
             {
