@@ -4,8 +4,12 @@ require "redmine_ai_helper/logger"
 class LoggerTest < ActiveSupport::TestCase
   include RedmineAiHelper::Logger
 
+  def self.setup
+    remove_log
+  end
+
   def setup
-    @logger = ai_helper_logger
+    @logger = RedmineAiHelper::CustomLogger.instance
   end
 
   def test_debug_logging
@@ -51,5 +55,10 @@ class LoggerTest < ActiveSupport::TestCase
   def read_log
     log_file_path = Rails.root.join("log", "ai_helper.log")
     File.read(log_file_path)
+  end
+
+  def remove_log
+    log_file_path = Rails.root.join("log", "ai_helper.log")
+    File.delete(log_file_path) if File.exist?(log_file_path)
   end
 end
