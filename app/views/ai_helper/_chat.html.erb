@@ -10,7 +10,7 @@
       <pre><%= message.content %></pre>
     <% else %>
       <div>
-        <%= CommonMarker.render_html(message.content, :DEFAULT, [:table, :autolink, :strikethrough, :tasklist]).html_safe %>
+        <%= md_to_html(message.content) %>
       </div>
     <% end %>
   </div>
