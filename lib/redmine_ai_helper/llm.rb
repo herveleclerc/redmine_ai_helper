@@ -2,6 +2,7 @@ require "redmine_ai_helper/agent"
 require "redmine_ai_helper/agent_response"
 require "redmine_ai_helper/logger"
 require "redmine_ai_helper/util/system_prompt"
+require "redmine_ai_helper/util/json_extractor"
 require "openai"
 require "json"
 
@@ -188,7 +189,7 @@ tools:
 
       json = chat_wrapper(prompt, conversation)
 
-      JsonExtractor.extract(json)
+      RedmineAiHelper::Util::JsonExtractor.extract(json)
     end
 
     def simple_llm_chat(conversation)
@@ -290,7 +291,7 @@ JSONの例:
       json = chat_wrapper(prompt, conversation)
 
       ai_helper_logger.info "json: #{json}"
-      JsonExtractor.extract(json)
+      RedmineAiHelper::Util::JsonExtractor.extract(json)
     end
 
     private
@@ -327,57 +328,7 @@ JSONの例:
       answer
     end
 
-    def put_log(*messages)
-      location = caller_locations(1, 1)[0]
-      header = "###### #{Time.now.strftime("%Y-%m-%d %H:%M:%S")} #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}"
-
-      message = messages.join(" ")
-
-      #################################"
-
-      # puts header
-      # puts message
-      # puts "####################################################"
-      # 同じメッセージを/tmp/ai_helper.logにも出力
-      # File.open("#{Rails.root}/log/ai_helper.log", "a") do |f|
-      #   f.puts header
-      #   f.puts message
-      # end
-    end
-
     class TaskResponse < RedmineAiHelper::AgentResponse
-    end
-
-    class JsonExtractor
-      include RedmineAiHelper::Logger
-      def self.extract(input)
-        # パターン1: 純粋なJSONテキスト
-        # パターン2: Markdownのコードブロックで囲まれたJSON
-
-        # Markdownのコードブロックを処理
-        if input.start_with?("```json") && input.end_with?("```")
-          # ```json と ``` を削除
-          json_str = input.gsub(/^```json\n/, "").gsub(/```$/, "")
-        else
-          # 純粋なJSONテキストとして扱う
-          json_str = input
-        end
-
-        # JSONとして解析できるか確認
-        begin
-          # 文字列からRubyのハッシュに変換
-          JSON.parse(json_str)
-        rescue JSON::ParserError => e
-          ai_helper_logger.error "Invalid JSON format: #{e.full_message}: \n###original json\n #{json_str}\n###"
-          raise "Invalid JSON format: #{e.message}: \n###original json\n #{json_str}\n###"
-        end
-      end
-
-      # 文字列として整形されたJSONを取得するメソッド
-      def self.extract_pretty(input)
-        hash = extract(input)
-        JSON.pretty_generate(hash)
-      end
     end
   end
 end
