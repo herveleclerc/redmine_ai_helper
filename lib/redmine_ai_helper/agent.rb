@@ -46,6 +46,7 @@ module RedmineAiHelper
 
       begin
         agent_class_name = RedmineAiHelper::BaseAgent.agent_class_name(agent_name)
+        return AgentResponse.create_error "Agent not found." if agent_class_name.nil?
         agent = Object.const_get(agent_class_name).new()
       rescue => e
         ai_helper_logger.error "agent_name = #{agent_name}: #{e.full_message}"
