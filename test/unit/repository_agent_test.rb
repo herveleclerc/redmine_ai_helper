@@ -50,7 +50,6 @@ class RepositoryAgentTest < ActiveSupport::TestCase
 
   def test_get_file_info_not_found
     repository = @repository
-    repository.stubs(:entry).returns(nil)
     args = { repository_id: repository.id, path: "nonexistent.txt", revision: "main" }
     response = @agent.get_file_info(args)
     assert response.is_error?
@@ -67,7 +66,6 @@ class RepositoryAgentTest < ActiveSupport::TestCase
 
   def test_read_file_not_found
     repository = @repository
-    repository.stubs(:entry).returns(nil)
     args = { repository_id: repository.id, path: "nonexistent.txt", revision: "main" }
     response = @agent.read_file(args)
     assert response.is_error?

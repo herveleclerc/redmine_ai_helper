@@ -9,7 +9,6 @@ class ProjectAgentTest < ActiveSupport::TestCase
 
   def test_list_projects
     projects = Project.all
-    projects.each { |p| p.stubs(:visible?).returns(true) }
 
     response = @agent.list_projects
     assert response.is_success?
@@ -31,7 +30,6 @@ class ProjectAgentTest < ActiveSupport::TestCase
 
   def test_read_project_by_name
     project = Project.find(1)
-    project.stubs(:visible?).returns(true)
 
     response = @agent.read_project(name: project.name)
     assert response.is_success?
@@ -41,7 +39,6 @@ class ProjectAgentTest < ActiveSupport::TestCase
 
   def test_read_project_by_identifier
     project = Project.find(1)
-    project.stubs(:visible?).returns(true)
 
     response = @agent.read_project(identifier: project.identifier)
     assert response.is_success?

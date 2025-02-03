@@ -3,7 +3,6 @@ require "redmine_ai_helper/base_agent"
 module RedmineAiHelper
   module Agents
     class RepositoryAgent < RedmineAiHelper::BaseAgent
-      RedmineAiHelper::BaseAgent.add_agent(name: "repository_agent", class: self)
       def self.list_tools()
         list = {
           tools: [
