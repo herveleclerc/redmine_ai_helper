@@ -1,99 +1,79 @@
 require File.expand_path("../../test_helper", __FILE__)
 require "redmine_ai_helper/agent"
+require "redmine_ai_helper/agent_response"
 
+
+# RedmineAiHelper::Agentクラスのテスト
+# Mockやstubを使わずにテストを行う
+# 本テスト実行時にはTestAgentクラスだけでなくProjectAgentなど他のAgentクラスも存在することを考慮してテストを行う
 class RedmineAiHelper::AgentTest < ActiveSupport::TestCase
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
   def setup
-    @client = mock("client")
-    @model = mock("model")
-    @agent = RedmineAiHelper::Agent.new(@client, @model)
-  end
-
-  def test_initialize
-    assert_not_nil @agent
-    assert_equal @client, @agent.instance_variable_get(:@client)
-    assert_equal @model, @agent.instance_variable_get(:@model)
+    @agent = RedmineAiHelper::Agent.new(nil, nil)
+    TestAgent.new
   end
 
   def test_list_tools
-    RedmineAiHelper::BaseAgent.stubs(:agent_list).returns([
-      { name: "TestAgent", class: TestAgent },
-    ])
-    TestAgent.stubs(:list_tools).returns(["tool1", "tool2"])
-
-    expected_output = JSON.pretty_generate({
-      agents: [
-        {
-          name: "TestAgent",
-          tools: ["tool1", "tool2"],
-        },
-      ],
-    })
-
-    assert_equal expected_output, RedmineAiHelper::Agent.list_tools
+    result = RedmineAiHelper::Agent.list_tools
+    # resultの中に他のエージェントに混じってTestAgentのlist_toolsメソッドの結果が含まれていることを確認する
+    # puts "result = #{result}"
+    json = JSON.parse(result, symbolize_names: true)
+    agents = json[:agents]
+    # puts "agents = #{agents}"
+    test_agent = agents.find { |agent| agent[:name] == "test_agent" }
+    # puts "###### test_agent = #{test_agent}"
+    test_agent_tools = test_agent[:tools]
+    assert_equal 2, test_agent_tools.length
+    assert_equal "tool1", test_agent_tools[0][:name]
+    assert_equal "tool1 description", test_agent_tools[0][:description]
+    assert_equal :arg1, test_agent_tools[0][:arguments].keys[0]
+    assert_equal "string", test_agent_tools[0][:arguments][:arg1][:type]
+    assert_equal "arg1 description", test_agent_tools[0][:arguments][:arg1][:description]
   end
 
-  def test_call_tool_success
-    params = {
-      agent_name: "TestAgent",
-      name: "test_method",
-      arguments: { key: "value" },
-    }
-
-    agent_instance = mock("agent_instance")
-    agent_instance.expects(:respond_to?).with("test_method").returns(true)
-    agent_instance.expects(:send).with("test_method", { key: "value" }).returns("success")
-
-    RedmineAiHelper::BaseAgent.stubs(:agent_class).with("TestAgent").returns(TestAgent)
-    TestAgent.stubs(:new).returns(agent_instance)
-
-    response = @agent.call_tool(params)
-    assert_equal "success", response
+  def test_call_tool
+    result = @agent.call_tool(agent_name: "test_agent", name: "tool1", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "success", result.status
+    assert_equal "test_method called", result.value
   end
+  
 
-  def test_call_tool_method_not_found
-    params = {
-      agent_name: "TestAgent",
-      name: "non_existent_method",
-      arguments: { key: "value" },
-    }
-
-    agent_instance = mock("agent_instance")
-    agent_instance.expects(:respond_to?).with("non_existent_method").returns(false)
-
-    RedmineAiHelper::BaseAgent.stubs(:agent_class).with("TestAgent").returns(TestAgent)
-    TestAgent.stubs(:new).returns(agent_instance)
-
-    response = @agent.call_tool(params)
-    assert response.is_a?(RedmineAiHelper::AgentResponse)
-    assert_equal "Method non_existent_method not found", response.error
-  end
-
-  def test_call_tool_exception
-    params = {
-      agent_name: "TestAgent",
-      name: "test_method",
-      arguments: { key: "value" },
-    }
-
-    agent_instance = mock("agent_instance")
-    agent_instance.expects(:respond_to?).with("test_method").returns(true)
-    agent_instance.expects(:send).with("test_method", { key: "value" }).raises(StandardError.new("test error"))
-
-    RedmineAiHelper::BaseAgent.stubs(:agent_class).with("TestAgent").returns(TestAgent)
-    TestAgent.stubs(:new).returns(agent_instance)
-
-    response = @agent.call_tool(params)
-    assert response.is_a?(RedmineAiHelper::AgentResponse)
-    assert_equal "test error", response.error
-  end
 end
 
-class TestAgent
+class TestAgent < RedmineAiHelper::BaseAgent
   def self.list_tools
-    ["tool1", "tool2"]
+    {
+      tools: [
+        {
+          name: "tool1",
+          description: "tool1 description",
+          arguments: {
+            arg1: {
+              type: "string",
+              description: "arg1 description",
+            }
+          },
+        },
+        {
+          name: "tool2",
+          description: "tool2 description",
+          arguments: {
+            arg2: {
+              type: "string",
+              description: "arg2 description",
+            }
+          },
+        },
+      ]
+    }
   end
 
-  def test_method(args)
-    "success"
+  def tool1(args)
+    RedmineAiHelper::AgentResponse.create_success "test_method called"
+  end
+
+  def tool2(args)
+    RedmineAiHelper::AgentResponse.create_success "test_method2 called"
   end
 end

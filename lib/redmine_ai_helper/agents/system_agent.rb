@@ -4,7 +4,6 @@ require "redmine_ai_helper/agent_response"
 module RedmineAiHelper
   module Agents
     class SystemAgent < RedmineAiHelper::BaseAgent
-      RedmineAiHelper::BaseAgent.add_agent(name: "system_agent", class: self)
       def self.list_tools()
         list = {
           tools: [

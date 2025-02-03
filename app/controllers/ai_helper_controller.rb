@@ -6,6 +6,7 @@ require "redmine_ai_helper/logger"
 
 class AiHelperController < ApplicationController
   include RedmineAiHelper::Logger
+  include AiHelperHelper
   before_action :find_user, :find_project, :authorize, :create_session, :find_conversation
 
   def chat_form
