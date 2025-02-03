@@ -23,7 +23,7 @@ class RedmineAiHelper::AgentTest < ActiveSupport::TestCase
     test_agent = agents.find { |agent| agent[:name] == "test_agent" }
     # puts "###### test_agent = #{test_agent}"
     test_agent_tools = test_agent[:tools]
-    assert_equal 2, test_agent_tools.length
+    assert_equal 3, test_agent_tools.length
     assert_equal "tool1", test_agent_tools[0][:name]
     assert_equal "tool1 description", test_agent_tools[0][:description]
     assert_equal :arg1, test_agent_tools[0][:arguments].keys[0]
@@ -38,7 +38,33 @@ class RedmineAiHelper::AgentTest < ActiveSupport::TestCase
     assert_equal "test_method called", result.value
   end
   
+  def test_call_tool_with_invalid_agent
+    result = @agent.call_tool(agent_name: "invalid_agent", name: "tool1", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "error", result.status
+    assert_equal "Agent not found.", result.error
+  end
 
+  def test_call_tool_with_invalid_tool
+    result = @agent.call_tool(agent_name: "test_agent", name: "invalid_tool", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "error", result.status
+    assert result.is_error?
+  end
+
+  def test_call_tool_with_error
+    result = @agent.call_tool(agent_name: "test_agent", name: "tool2", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "error", result.status
+    assert result.is_error?
+  end
+
+  def test_call_tool_with_exception
+    result = @agent.call_tool(agent_name: "test_agent", name: "tool3", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "error", result.status
+    assert result.is_error?
+  end
 end
 
 class TestAgent < RedmineAiHelper::BaseAgent
@@ -65,6 +91,16 @@ class TestAgent < RedmineAiHelper::BaseAgent
             }
           },
         },
+        {
+          name: "tool3",
+          description: "tool3 description",
+          arguments: {
+            arg3: {
+              type: "string",
+              description: "arg3 description",
+            }
+          },
+        }
       ]
     }
   end
@@ -74,6 +110,10 @@ class TestAgent < RedmineAiHelper::BaseAgent
   end
 
   def tool2(args)
-    RedmineAiHelper::AgentResponse.create_success "test_method2 called"
+    RedmineAiHelper::AgentResponse.create_error "error occurred"
+  end
+
+  def tool3(args)
+    raise "exception occurred"
   end
 end
