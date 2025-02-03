@@ -1,9 +1,8 @@
 module AiHelperHelper
+  include Redmine::WikiFormatting::CommonMark
+
   def md_to_html(text)
-    pipeline = HTML::Pipeline.new [
-      HTML::Pipeline::MarkdownFilter,
-      HTML::Pipeline::SanitizationFilter,
-    ]
-    pipeline.call(text)[:output].to_s.html_safe
+    text = text.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+    MarkdownPipeline.call(text)[:output].to_s.html_safe
   end
 end
