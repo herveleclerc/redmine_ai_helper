@@ -52,6 +52,12 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
     assert_equal [{ "name" => "step1", "step" => "do something" }], result["steps"]
   end
 
+  def test_decompose_task_with_pre_tasks_and_pre_error
+    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
+    result = @llm.decompose_task("test task", @conversation, pre_tasks, "error")
+    assert_equal [{ "name" => "step1", "step" => "do something" }], result["steps"]
+  end
+
   def test_simple_llm_chat
 
     response = @llm.simple_llm_chat(@conversation)
@@ -77,6 +83,15 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
     assert_equal "project_agent", result["tool"]["agent"]
     assert_equal "read_project", result["tool"]["tool"]
     assert_equal ["1"], result["tool"]["arguments"]["id"]
+  end
+
+  def test_select_tool_with_pre_error
+    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
+    result = @llm.select_tool("test task", @conversation, pre_tasks, "error")
+    assert_equal "project_agent", result["tool"]["agent"]
+    assert_equal "read_project", result["tool"]["tool"]
+    assert_equal ["1"], result["tool"]["arguments"]["id"]
+    
   end
 
   private

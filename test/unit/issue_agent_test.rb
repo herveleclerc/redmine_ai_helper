@@ -28,9 +28,25 @@ class IssueAgentTest < ActiveSupport::TestCase
     assert_equal "Issue ID array is required.", response.error
   end
 
-  def test_capable_issue_properties
+  def test_capable_issue_properties_with_id
     project = Project.find(1)
     response = @agent.capable_issue_properties(project_id: 1)
+    assert response.is_success?
+    assert_equal project.trackers.size, response.value[:trackers].size
+    assert_equal project.issue_categories.size, response.value[:categories].size
+  end
+
+  def test_capable_issue_properties_with_name
+    project = Project.find(1)
+    response = @agent.capable_issue_properties(project_name: project.name)
+    assert response.is_success?
+    assert_equal project.trackers.size, response.value[:trackers].size
+    assert_equal project.issue_categories.size, response.value[:categories].size
+  end
+
+  def test_capable_issue_properties_with_identifier
+    project = Project.find(1)
+    response = @agent.capable_issue_properties(project_identifier: project.identifier)
     assert response.is_success?
     assert_equal project.trackers.size, response.value[:trackers].size
     assert_equal project.issue_categories.size, response.value[:categories].size
