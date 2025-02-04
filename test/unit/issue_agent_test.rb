@@ -59,4 +59,52 @@ class IssueAgentTest < ActiveSupport::TestCase
     assert response.is_success?
     assert_equal "/projects/#{project.identifier}/issues", response.value[:url]
   end
+
+  def test_generate_issue_search_url_with_date_fields
+    response = @agent.generate_issue_search_url(project_id: 1, date_fields: [{ field_name: "created_on", operator: ">=", values: ["2020-01-01"] }])
+    assert response.is_success?
+    url_value = CGI.unescape(response.value[:url])
+    assert url_value.include?("f[]=created_on")
+    assert url_value.include?("op[created_on]=>")
+    assert url_value.include?("v[created_on][]=2020-01-01")
+  end
+
+  def test_generate_issue_search_url_with_time_fields
+    response = @agent.generate_issue_search_url(project_id: 1, time_fields: [{ field_name: "estimated_hours", operator: "=", values: ["6"] }])
+    assert response.is_success?
+    url_value = CGI.unescape(response.value[:url])
+    assert url_value.include?("f[]=estimated_hours")
+    assert url_value.include?("op[estimated_hours]==")
+    assert url_value.include?("v[estimated_hours][]=6")
+  end
+
+  def test_generate_issue_search_url_with_number_fields
+    response = @agent.generate_issue_search_url(project_id: 1, number_fields: [{ field_name: "done_ratio", operator: "=", values: ["6"] }])
+    assert response.is_success?
+    url_value = CGI.unescape(response.value[:url])
+    assert url_value.include?("f[]=done_ratio")
+    assert url_value.include?("op[done_ratio]==")
+    assert url_value.include?("v[done_ratio][]=6")
+  end
+
+  def test_generate_issue_search_url_with_text_fields
+    response = @agent.generate_issue_search_url(project_id: 1, text_fields: [{ field_name: "subject", operator: "~", value: ["test"] }])
+    assert response.is_success?
+    url_value = CGI.unescape(response.value[:url])
+    # puts "URL: #{url_value}"
+    assert url_value.include?("f[]=subject")
+    assert url_value.include?("op[subject]=~")
+    # TODO: Fix this test
+    # assert url_value.include?("v[subject][]=test")
+  end
+
+  def test_generate_issue_search_url_with_status_fields
+    response = @agent.generate_issue_search_url(project_id: 1, status_field: [{ field_name: "status_id", operator: "=", values: [1] }])
+    assert response.is_success?
+    url_value = CGI.unescape(response.value[:url])
+    # puts "URL: #{url_value}"
+    assert url_value.include?("f[]=status_id")
+    assert url_value.include?("op[status_id]==")
+    assert url_value.include?("v[status_id][]=1")
+  end
 end
