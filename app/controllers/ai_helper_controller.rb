@@ -71,8 +71,7 @@ class AiHelperController < ApplicationController
       project: @project,
       additional_info: additional_info,
     }
-    @conversation.messages << llm.chat(@conversation, option)
-    @conversation.save!
+
 
     response_id = "chatcmpl-#{SecureRandom.hex(12)}"
 
@@ -90,11 +89,8 @@ class AiHelperController < ApplicationController
       }]
     })
 
-    buffer = ""
-    @conversation.messages.last.content.each_char do |char|
-      buffer += char
-      if buffer.length >= 10 # 10文字ごとにチャンクを送信
-        write_chunk({
+    proc = Proc.new do |content|
+      write_chunk({
           id: response_id,
           object: "chat.completion.chunk",
           created: Time.now.to_i,
@@ -102,32 +98,17 @@ class AiHelperController < ApplicationController
           choices: [{
             index: 0,
             delta: {
-              content: buffer
+              content: content
             },
             finish_reason: nil
           }]
         })
-        buffer = ""
-      end
-      sleep 0.1 # Add a small delay between chunks
+      
     end
 
-    # 残りのバッファを送信
-    unless buffer.empty?
-      write_chunk({
-        id: response_id,
-        object: "chat.completion.chunk",
-        created: Time.now.to_i,
-        model: "gpt-3.5-turbo-0613",
-        choices: [{
-          index: 0,
-          delta: {
-            content: buffer
-          },
-          finish_reason: nil
-        }]
-      })
-    end
+    @conversation.messages << llm.chat(@conversation, proc, option)
+    @conversation.save!
+
 
     write_chunk({
       id: response_id,
