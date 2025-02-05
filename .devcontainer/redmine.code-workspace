@@ -13,6 +13,9 @@
     "git.ignoredRepositories": [
       "/workspace/redmine_ai_helper"
     ],
-    "liveServer.settings.multiRootWorkspaceName": "redmine_ai_helper"
+    "liveServer.settings.multiRootWorkspaceName": "redmine_ai_helper",
+    "ruby.rubocop.onSave": true,
+    "ruby.rubocop.useBundler": false,
+    "rubyLsp.formatter": "rubocop"
   }
 }
