@@ -50,7 +50,8 @@
 		"ritwickdey.LiveServer",
 		"aliariff.vscode-erb-beautify",
 		"bysabi.prettier-vscode-standard",
-		"GitHub.copilot"
+		"GitHub.copilot",
+		"Shunqian.prettier-plus"
 	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [3000, 5432],
