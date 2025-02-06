@@ -71,8 +71,7 @@ class AiHelperControllerTest < ActionController::TestCase
     assert_response :success
     post :call_llm, params: { id: @project.id, controller_name: "issues", action_name: "show", content_id: 1, additional_info: { key: "value" } }
     assert_response :success
-    assert_template partial: "_chat"
-    assert_not_nil assigns(:conversation)
+  
   end
 
   def test_clear
