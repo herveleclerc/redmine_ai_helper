@@ -237,3 +237,10 @@ li.aihelper-history-item a {
     color: #333;
   }
 }
+
+#aihelper-chat-conversation div.aihelper-message pre:has(code.syntaxhl) {
+  /* background-color: #f5f5f5; */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 4px;
+}
