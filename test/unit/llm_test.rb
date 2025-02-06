@@ -29,13 +29,13 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
   def test_chat_success
     message = AiHelperMessage.new(content: "test task", role: "user")
     @conversation.messages << message
-    response = @llm.chat(@conversation, { controller_name: "issues", action_name: "show", content_id: 1 })
+    response = @llm.chat(@conversation, nil, { controller_name: "issues", action_name: "show", content_id: 1 })
     assert_equal "assistant", response.role
     assert_equal "merged result", response.content
   end
 
   def test_execute_task_success
-    result = @llm.execute_task("test task", @conversation)
+    result = @llm.execute_task("test task", @conversation, nil)
     assert_equal "success", result[:status]
     assert_equal "merged result", result[:answer]
   end
@@ -43,12 +43,12 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
 
   def test_merge_results
     pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
-    result = @llm.merge_results("merge_results_test", @conversation, pre_tasks)
+    result = @llm.merge_results("merge_results_test", @conversation, pre_tasks, nil)
     assert_equal "merged result ok", result
   end
 
   def test_decompose_task
-    result = @llm.decompose_task("test task", @conversation)
+    result = @llm.decompose_task("test task",  @conversation)
     assert_equal [{ "name" => "step1", "step" => "do something" }], result["steps"]
   end
 
@@ -67,7 +67,6 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
   def test_dispatch_success
 
     result = @llm.dispatch("dispatch_success_test", @conversation)
-    #puts "result = #{result}"
     assert result.is_success?
     assert_equal 1, result.value[:id]
   end
@@ -102,12 +101,12 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
 
   class DummyOpenAIClient
     def chat(params = {})
+      proc = params[:parameters][:stream]
       messages = params[:parameters][:messages]
       message = messages.last[:content]
 
       answer = "test answer"
       if message.include?("タスクに対する最終回答を作成してください")
-        #puts message
         answer = "merged result"
         if message.include?("merge_results_test")
           answer = "merged result ok"
@@ -126,8 +125,23 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         #puts "DummyOpenAIClient#chat prams = #{message} called!!!!!!!!!!!!!!!!"
       end
 
+      chunk = { 
+        "id": "response_id", 
+        "object": "chat.completion.chunk", 
+        "created": Time.now.to_i, 
+        "model": "gpt-3.5-turbo-0613", 
+        "choices": [
+          { "index": 0, 
+          "delta": { "content": answer }, 
+          "finish_reason": nil 
+          }
+          ]
+         
+        }.deep_stringify_keys
+
+      proc.call(chunk, nil) if proc
+
       response = { "choices": [{ "message": { "content": answer } }] }.deep_stringify_keys
-      #puts answer
       response
     end
   end

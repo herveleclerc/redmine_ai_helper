@@ -28,13 +28,13 @@ module RedmineAiHelper
     end
 
     # chat with the AI
-    def chat(conversation, option = {})
+    def chat(conversation, proc, option = {})
       @system_prompt = RedmineAiHelper::Util::SystemPrompt.new(option)
       task = conversation.messages.last.content
       ai_helper_logger.info "#### ai_helper: chat start ####"
       ai_helper_logger.info "user:#{User.current}, task: #{task}, option: #{option}"
       begin
-        result = execute_task(task, conversation)
+        result = execute_task(task, conversation, proc)
         if result[:status] == "success"
           answer = result[:answer]
         else
@@ -48,7 +48,7 @@ module RedmineAiHelper
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
 
-    def execute_task(task, conversation)
+    def execute_task(task, conversation, proc)
       answer = ""
       result = {
         status: "error",
@@ -79,7 +79,7 @@ module RedmineAiHelper
         answer = result.value
       end
 
-      answer = merge_results(task, conversation, pre_tasks) if pre_tasks.length
+      answer = merge_results(task, conversation, pre_tasks, proc) if pre_tasks.length
       result = {
         status: "success",
         answer: answer,
@@ -88,7 +88,7 @@ module RedmineAiHelper
       result
     end
 
-    def merge_results(task, conversation, pre_tasks)
+    def merge_results(task, conversation, pre_tasks, proc )
       prompt = <<-EOS
 「 #{task}」というタスクを解決するために今までに実施したステップは以下の通りです。これらの結果の内容を踏まえて、タスクに対する最終回答を作成してください。
 
@@ -102,7 +102,7 @@ module RedmineAiHelper
 #{pre_tasks}
 
 EOS
-      json = chat_wrapper(prompt, conversation)
+      json = chat_wrapper(prompt, conversation, proc)
       json
     end
 
@@ -296,7 +296,7 @@ JSONの例:
 
     private
 
-    def chat_wrapper(new_message, conversation)
+    def chat_wrapper(new_message, conversation, proc = nil)
       ai_helper_logger.debug "new_message: #{new_message}"
       location = caller_locations(1, 1)[0]
       ai_helper_logger.debug "caller: #{location.base_label}::#{location.path}:#{location.lineno}:#{location.base_label}"
@@ -316,14 +316,24 @@ JSONの例:
         content: new_message,
       }
       ai_helper_logger.debug "message: #{messages.last[:content]}"
-      response = @client.chat(
+      answer = ""
+      @client.chat(
         parameters: {
           model: @model,
           messages: messages,
+          stream: proc do |chunk, bytesize|
+            content = chunk.dig("choices", 0, "delta", "content")
+            # print content if content
+            # $stdout.flush
+            if proc
+              proc.call(content)
+            end
+            answer += content if content
+          end
         },
       )
 
-      answer = response["choices"][0]["message"]["content"]
+      # answer = response["choices"][0]["message"]["content"]
       ai_helper_logger.debug "answer: #{answer}"
       answer
     end

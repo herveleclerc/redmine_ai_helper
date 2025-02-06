@@ -15,6 +15,9 @@
     <% end %>
   </div>
 <% end %>
+<div class="aihelper-message">
+  <div id="aihelper_last_message"></div>
+</div>
 <% unless @conversation.messages.empty? %>
   <script>
     $('#aihelper-chat-clear').show();

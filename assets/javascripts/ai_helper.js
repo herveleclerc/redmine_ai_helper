@@ -68,22 +68,79 @@ var set_ai_helper_form_handlers = function() {
 };
 
 var call_llm = function() {
-  $.ajax({
-    url: ai_helper_urls.call_llm,
-    type: "POST",
-    data: JSON.stringify(ai_helper_page_info),
-    processData: false,
-    contentType: "application/json",
-    success: function(response) {
-      $("#aihelper-chat-conversation").html(response);
-      $("#aihelper-chat-conversation").scrollTop(
-        $("#aihelper-chat-conversation")[0].scrollHeight
-      );
-    },
-    error: function(xhr, status, error) {
-      console.error("Error:", error);
-    }
-  });
+  const url = ai_helper_urls.call_llm;
+  const data = JSON.stringify(ai_helper_page_info);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  const csrfToken = $('meta[name="csrf-token"]').attr('content');
+  xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+  
+  // responseTypeを'text'に設定
+  xhr.responseType = 'text';
+
+  const parser = new AiHelperMarkdownParser();
+
+
+  let fullResponse = '';
+  let buffer = '';
+  let lastProcessedIndex = 0;
+
+  xhr.onprogress = function(event) {
+      const text = xhr.responseText.substring(lastProcessedIndex);
+      lastProcessedIndex = xhr.responseText.length;
+      // console.log('onprogress:', text);
+      buffer += text;
+      
+      // Server-Sent Eventsからデータを抽出
+      const matches = buffer.match(/^data: (.+?)\n\n/gm);
+      if (matches) {
+          matches.forEach(match => {
+              try {
+                  const dataStr = match.replace(/^data: /, '').trim();
+                  const data = JSON.parse(dataStr);
+                  
+                  // チャンクからコンテンツを取得
+                  const content = data.choices[0]?.delta?.content;
+                  if (content) {
+                      fullResponse += content;
+                      $('#aihelper_last_message').html(parser.parse(fullResponse));
+                      $("#aihelper-chat-conversation").scrollTop(
+                        $("#aihelper-chat-conversation")[0].scrollHeight
+                      );
+                  }
+                  if (data.choices[0]?.finish_reason === 'stop') {
+                      // $('#aihelper_last_message').text('AIが返信しました');
+                      $("#ai-helper-loader-area").hide();
+                      ai_helper_reload_chat();
+                  }
+              } catch (e) {
+                  console.error('パースエラー:', e);
+              }
+              
+              // バッファから処理済みデータを削除
+              buffer = buffer.replace(match, '');
+          });
+          // buffer = '';
+      }
+  };
+
+  xhr.onerror = function() {
+      $('#aihelper_last_message').text('エラーが発生しました');
+  };
+
+  xhr.onload = function() {
+      if (xhr.status !== 200) {
+          $('#aihelper_last_message').text(`エラー: ${xhr.status} ${xhr.statusText}`);
+      }
+  };
+
+  // リクエストボディの準備
+  const requestBody = data;
+
+  // リクエスト送信
+  xhr.send(requestBody);
+
 };
 
 var ai_helper_reload_chat = function() {
