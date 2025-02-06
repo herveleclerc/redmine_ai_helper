@@ -10,11 +10,14 @@
       <pre><%= message.content %></pre>
     <% else %>
       <div>
-        <%= CommonMarker.render_html(message.content, :DEFAULT, [:table, :autolink, :strikethrough, :tasklist]).html_safe %>
+        <%= md_to_html(message.content) %>
       </div>
     <% end %>
   </div>
 <% end %>
+<div class="aihelper-message">
+  <div id="aihelper_last_message"></div>
+</div>
 <% unless @conversation.messages.empty? %>
   <script>
     $('#aihelper-chat-clear').show();

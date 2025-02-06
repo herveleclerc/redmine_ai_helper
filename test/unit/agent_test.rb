@@ -1,60 +1,119 @@
-require_relative "../test_helper"
+require File.expand_path("../../test_helper", __FILE__)
 require "redmine_ai_helper/agent"
-require "redmine_ai_helper/llm"
+require "redmine_ai_helper/agent_response"
 
-class AgentTest < ActiveSupport::TestCase
+
+# RedmineAiHelper::Agentクラスのテスト
+# Mockやstubを使わずにテストを行う
+# 本テスト実行時にはTestAgentクラスだけでなくProjectAgentなど他のAgentクラスも存在することを考慮してテストを行う
+class RedmineAiHelper::AgentTest < ActiveSupport::TestCase
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
   def setup
-    @llm = RedmineAiHelper::Llm.new
-    @agent = RedmineAiHelper::Agent.new(@llm)
+    @agent = RedmineAiHelper::Agent.new(nil, nil)
+    TestAgent.new
   end
 
-  def test_callTool
-    assert_raise(RuntimeError) { @agent.callTool(name: "not_exist") }
-    issue_json = @agent.callTool(name: "read_issue", arguments: { 'id': Issue.first.id })
-    assert_equal Issue.first.id, issue_json[:id]
-    project_json = @agent.callTool(name: "read_project", arguments: { 'id': Project.first.id })
-    assert_equal Project.first.id, project_json[:id]
+  def test_list_tools
+    result = RedmineAiHelper::Agent.list_tools
+    # resultの中に他のエージェントに混じってTestAgentのlist_toolsメソッドの結果が含まれていることを確認する
+    # puts "result = #{result}"
+    json = JSON.parse(result, symbolize_names: true)
+    agents = json[:agents]
+    # puts "agents = #{agents}"
+    test_agent = agents.find { |agent| agent[:name] == "test_agent" }
+    # puts "###### test_agent = #{test_agent}"
+    test_agent_tools = test_agent[:tools]
+    assert_equal 3, test_agent_tools.length
+    assert_equal "tool1", test_agent_tools[0][:name]
+    assert_equal "tool1 description", test_agent_tools[0][:description]
+    assert_equal :arg1, test_agent_tools[0][:arguments].keys[0]
+    assert_equal "string", test_agent_tools[0][:arguments][:arg1][:type]
+    assert_equal "arg1 description", test_agent_tools[0][:arguments][:arg1][:description]
   end
 
-  def test_read_issue
-    issue = Issue.first
-    issue_json = @agent.read_issue({ 'id': issue.id })
-    assert_equal issue.id, issue_json[:id]
-    assert_equal issue.subject, issue_json[:subject]
-    assert_equal issue.project.id, issue_json[:project][:id]
-    assert_equal issue.project.name, issue_json[:project][:name]
-    assert_equal issue.tracker.id, issue_json[:tracker][:id]
-    assert_equal issue.tracker.name, issue_json[:tracker][:name]
-    assert_equal issue.status.id, issue_json[:status][:id]
-    assert_equal issue.status.name, issue_json[:status][:name]
-    assert_equal issue.priority.id, issue_json[:priority][:id]
-    assert_equal issue.priority.name, issue_json[:priority][:name]
-    assert_equal issue.author.id, issue_json[:author][:id]
-    assert_equal issue.author.name, issue_json[:author][:name]
-    assert_equal issue.description, issue_json[:description]
-    assert_equal issue.start_date, issue_json[:start_date]
-    assert_equal issue.due_date, issue_json[:due_date]
-    assert_equal issue.done_ratio, issue_json[:done_ratio]
-    assert_equal issue.is_private, issue_json[:is_private]
-    assert_equal issue.estimated_hours, issue_json[:estimated_hours]
-    assert_equal issue.total_estimated_hours, issue_json[:total_estimated_hours]
-    assert_equal issue.spent_hours, issue_json[:spent_hours]
-    assert_equal issue.total_spent_hours, issue_json[:total_spent_hours]
-    assert_equal issue.created_on, issue_json[:created_on]
-    assert_equal issue.updated_on, issue_json[:updated_on]
-    assert_equal issue.closed_on, issue_json[:closed_on]
+  def test_call_tool
+    result = @agent.call_tool(agent_name: "test_agent", name: "tool1", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "success", result.status
+    assert_equal "test_method called", result.value
+  end
+  
+  def test_call_tool_with_invalid_agent
+    result = @agent.call_tool(agent_name: "invalid_agent", name: "tool1", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "error", result.status
+    assert_equal "Agent not found.", result.error
   end
 
-  def test_read_project
-    project = Project.first
-    project_json = @agent.read_project({ 'id': project.id })
-    assert_equal project.id, project_json[:id]
-    assert_equal project.name, project_json[:name]
-    assert_equal project.description, project_json[:description]
-    assert_equal project.homepage, project_json[:homepage]
-    assert_equal project.is_public, project_json[:is_public]
-    assert_equal project.parent_id, project_json[:parent_id]
-    assert_equal project.created_on, project_json[:created_on]
-    assert_equal project.updated_on, project_json[:updated_on]
+  def test_call_tool_with_invalid_tool
+    result = @agent.call_tool(agent_name: "test_agent", name: "invalid_tool", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "error", result.status
+    assert result.is_error?
+  end
+
+  def test_call_tool_with_error
+    result = @agent.call_tool(agent_name: "test_agent", name: "tool2", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "error", result.status
+    assert result.is_error?
+  end
+
+  def test_call_tool_with_exception
+    result = @agent.call_tool(agent_name: "test_agent", name: "tool3", arguments: {})
+    # puts "#### result = #{result}"
+    assert_equal "error", result.status
+    assert result.is_error?
+  end
+end
+
+class TestAgent < RedmineAiHelper::BaseAgent
+  def self.list_tools
+    {
+      tools: [
+        {
+          name: "tool1",
+          description: "tool1 description",
+          arguments: {
+            arg1: {
+              type: "string",
+              description: "arg1 description",
+            }
+          },
+        },
+        {
+          name: "tool2",
+          description: "tool2 description",
+          arguments: {
+            arg2: {
+              type: "string",
+              description: "arg2 description",
+            }
+          },
+        },
+        {
+          name: "tool3",
+          description: "tool3 description",
+          arguments: {
+            arg3: {
+              type: "string",
+              description: "arg3 description",
+            }
+          },
+        }
+      ]
+    }
+  end
+
+  def tool1(args)
+    RedmineAiHelper::AgentResponse.create_success "test_method called"
+  end
+
+  def tool2(args)
+    RedmineAiHelper::AgentResponse.create_error "error occurred"
+  end
+
+  def tool3(args)
+    raise "exception occurred"
   end
 end

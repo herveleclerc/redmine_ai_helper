@@ -18,15 +18,25 @@ module RedmineAiHelper
 
     def self.list_tools()
       list = {}
-      agents = []
-      RedmineAiHelper::BaseAgent.agent_list.each do |agent|
-        agents << {
-          name: agent[:name],
-          tools: agent[:class].list_tools(),
-        }
+
+      # puts "#### BaseAgent.agent_list: #{RedmineAiHelper::BaseAgent.agent_list}"
+      agents = RedmineAiHelper::BaseAgent.agent_list.map do |agent|
+        # puts "#### agent: #{agent}"
+        begin
+          agent_class = Object.const_get(agent[:class])
+          {
+            name: agent[:name],
+            tools: agent_class.send(:list_tools)[:tools],
+          }
+        rescue => e
+          ai_helper_logger.error "agent_name = #{agent[:name]}: #{e.full_message}"
+        end
       end
+      # puts "#### agents: #{agents}"
       list = { agents: agents }
-      JSON.pretty_generate(list)
+      json = JSON.pretty_generate(list)
+      # puts "#### list_tools: #{json}"
+      json
     end
 
     def call_tool(params = {})
@@ -34,7 +44,14 @@ module RedmineAiHelper
       name = params[:name]
       args = params[:arguments]
 
-      agent = RedmineAiHelper::BaseAgent.agent_class(agent_name).new
+      begin
+        agent_class_name = RedmineAiHelper::BaseAgent.agent_class_name(agent_name)
+        return AgentResponse.create_error "Agent not found." if agent_class_name.nil?
+        agent = Object.const_get(agent_class_name).new()
+      rescue => e
+        ai_helper_logger.error "agent_name = #{agent_name}: #{e.full_message}"
+        return AgentResponse.create_error "agent_name = #{agent_name}: #{e.message}"
+      end
 
       # Use reflection to call the method named 'name' on this instance, passing 'args' as arguments.
       # If the method does not exist, an exception will be raised.
@@ -46,8 +63,8 @@ module RedmineAiHelper
           return AgentResponse.create_error e.message
         end
       else
-        ai_helper_logger.error "Method #{name} not found"
-        return AgentResponse.create_error "Method #{name} not found"
+        ai_helper_logger.error "agent_name = #{agent_name}: Method #{name} not found"
+        return AgentResponse.create_error "agent_name = #{agent_name}: Method #{name} not found"
       end
       response
     end

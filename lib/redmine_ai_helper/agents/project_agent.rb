@@ -3,7 +3,6 @@ require "redmine_ai_helper/base_agent"
 module RedmineAiHelper
   module Agents
     class ProjectAgent < RedmineAiHelper::BaseAgent
-      RedmineAiHelper::BaseAgent.add_agent(name: "project_agent", class: self)
       def self.list_tools()
         list = {
           tools: [
@@ -86,10 +85,10 @@ module RedmineAiHelper
                       description: "The end date of the activities to return. If not specified, it will return all activities.",
                     },
                     required: ["project_id"],
-                  }
+                  },
                 },
               },
-            }
+            },
           ],
         }
         list
@@ -119,7 +118,7 @@ module RedmineAiHelper
         project_identifier = sym_args[:identifier]
         project = nil
         if project_id
-          project = Project.find(project_id)
+          project = Project.find_by(id: project_id)
         elsif project_name
           project = Project.find_by(name: project_name)
         elsif project_identifier
@@ -219,7 +218,7 @@ module RedmineAiHelper
 
         current_user = User.current
         fetcher = Redmine::Activity::Fetcher.new(
-          current_user, 
+          current_user,
           project: project,
           author: author,
         )
@@ -238,7 +237,7 @@ module RedmineAiHelper
             event_url: event.event_url,
           }
         end
-        json = {"activities": list}
+        json = { "activities": list }
         AgentResponse.create_success json
       end
     end
