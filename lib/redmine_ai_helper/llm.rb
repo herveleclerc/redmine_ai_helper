@@ -1,4 +1,4 @@
-require "redmine_ai_helper/agent"
+require "redmine_ai_helper/tool_provider"
 require "redmine_ai_helper/agent_response"
 require "redmine_ai_helper/logger"
 require "redmine_ai_helper/util/system_prompt"
@@ -111,7 +111,7 @@ EOS
     # @param [Array] pre_tasks
     # @param [String] pre_error
     def decompose_task(task, conversation, pre_tasks = [], pre_error = nil)
-      tools = Agent.list_tools
+      tools = ToolProvider.list_tools
 
       pre_error_string = ""
       if pre_error
@@ -226,7 +226,7 @@ tools:
         ai_helper_logger.info "tool: #{tool}"
         return simple_llm_chat(conversation) if tool.blank?
 
-        agent = Agent.new(@client, @model)
+        agent = ToolProvider.new(@client, @model)
         result = agent.call_tool(agent_name: tool["agent"], name: tool["tool"], arguments: tool["arguments"])
         ai_helper_logger.info "result: #{result}"
         if result.is_error?
@@ -244,7 +244,7 @@ tools:
 
     # select the toos to solve the task
     def select_tool(task, conversation, pre_tasks = [], previous_error = nil)
-      tools = Agent.list_tools
+      tools = ToolProvider.list_tools
 
       previous_error_string = ""
       if previous_error

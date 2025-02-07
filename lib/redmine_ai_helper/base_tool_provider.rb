@@ -1,5 +1,4 @@
 require "singleton"
-require "redmine_ai_helper/agent"
 require "redmine_ai_helper/logger"
 
 module RedmineAiHelper

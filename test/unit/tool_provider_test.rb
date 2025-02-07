@@ -1,20 +1,20 @@
 require File.expand_path("../../test_helper", __FILE__)
-require "redmine_ai_helper/agent"
+require "redmine_ai_helper/tool_provider"
 require "redmine_ai_helper/agent_response"
 
 
 # RedmineAiHelper::Agentクラスのテスト
 # Mockやstubを使わずにテストを行う
 # 本テスト実行時にはTestAgentクラスだけでなくProjectAgentなど他のAgentクラスも存在することを考慮してテストを行う
-class RedmineAiHelper::AgentTest < ActiveSupport::TestCase
+class RedmineAiHelper::ToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
   def setup
-    @agent = RedmineAiHelper::Agent.new(nil, nil)
+    @agent = RedmineAiHelper::ToolProvider.new(nil, nil)
     TestAgent.new
   end
 
   def test_list_tools
-    result = RedmineAiHelper::Agent.list_tools
+    result = RedmineAiHelper::ToolProvider.list_tools
     # resultの中に他のエージェントに混じってTestAgentのlist_toolsメソッドの結果が含まれていることを確認する
     # puts "result = #{result}"
     json = JSON.parse(result, symbolize_names: true)

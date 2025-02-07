@@ -8,7 +8,7 @@ Dir[File.join(File.dirname(__FILE__), "agents", "*_agent.rb")].each do |file|
 end
 
 module RedmineAiHelper
-  class Agent
+  class ToolProvider
     include RedmineAiHelper::Logger
 
     def initialize(client, model)
