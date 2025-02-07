@@ -1,5 +1,4 @@
 require "redmine_ai_helper/base_tool_provider"
-require "redmine_ai_helper/agent_response"
 
 module RedmineAiHelper
   module ToolProviders
@@ -116,7 +115,7 @@ module RedmineAiHelper
           }
         end
         json = { users: user_list, total: count }
-        AgentResponse.create_success json
+        ToolResponse.create_success json
       end
     end
   end

@@ -1,5 +1,5 @@
 require "redmine_ai_helper/tool_provider"
-require "redmine_ai_helper/agent_response"
+require "redmine_ai_helper/tool_response"
 require "redmine_ai_helper/logger"
 require "redmine_ai_helper/util/system_prompt"
 require "redmine_ai_helper/util/json_extractor"
@@ -338,7 +338,7 @@ JSONの例:
       answer
     end
 
-    class TaskResponse < RedmineAiHelper::AgentResponse
+    class TaskResponse < RedmineAiHelper::ToolResponse
     end
   end
 end

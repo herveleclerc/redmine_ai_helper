@@ -1,6 +1,5 @@
 require File.expand_path("../../test_helper", __FILE__)
 require "redmine_ai_helper/tool_provider"
-require "redmine_ai_helper/agent_response"
 
 
 # RedmineAiHelper::Agentクラスのテスト
@@ -106,11 +105,11 @@ class TestAgent < RedmineAiHelper::BaseToolProvider
   end
 
   def tool1(args)
-    RedmineAiHelper::AgentResponse.create_success "test_method called"
+    RedmineAiHelper::ToolResponse.create_success "test_method called"
   end
 
   def tool2(args)
-    RedmineAiHelper::AgentResponse.create_error "error occurred"
+    RedmineAiHelper::ToolResponse.create_error "error occurred"
   end
 
   def tool3(args)

@@ -62,7 +62,7 @@ module RedmineAiHelper
         title = sym_args[:title]
         wiki = Wiki.find_by(project_id: project_id)
         page = wiki.pages.find_by(title: title)
-        return AgentResponse.create_error("Page not found: title = #{title}") unless page
+        return ToolResponse.create_error("Page not found: title = #{title}") unless page
         json = {
           title: page.title,
           text: page.text,
@@ -82,7 +82,7 @@ module RedmineAiHelper
 
         }
 
-        AgentResponse.create_success json
+        ToolResponse.create_success json
       end
 
       # List all wiki pages in the project.
@@ -103,7 +103,7 @@ module RedmineAiHelper
             updated_on: page.updated_on,
           }
         end
-        AgentResponse.create_success json
+        ToolResponse.create_success json
       end
 
       # Generate a URL for a wiki page.
@@ -117,7 +117,7 @@ module RedmineAiHelper
         page = wiki.pages.find_by(title: title)
         # url = "/projects/#{wiki.project.identifier}/wiki/#{page.title}"
         url = "#{project_wiki_page_path(wiki.project, page.title)}"
-        AgentResponse.create_success url: url
+        ToolResponse.create_success url: url
       end
     end
   end
