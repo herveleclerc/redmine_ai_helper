@@ -1,10 +1,10 @@
 require File.expand_path("../../test_helper", __FILE__)
 
-class ProjectAgentTest < ActiveSupport::TestCase
+class ProjectToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :users, :repositories, :changesets, :changes, :issues, :issue_statuses, :enumerations, :issue_categories, :trackers
 
   def setup
-    @agent = RedmineAiHelper::Agents::ProjectAgent.new
+    @agent = RedmineAiHelper::ToolProviders::ProjectToolProvider.new
   end
 
   def test_list_projects
@@ -90,7 +90,7 @@ class ProjectAgentTest < ActiveSupport::TestCase
   end
 
   def test_self_list_tools
-    response = RedmineAiHelper::Agents::ProjectAgent.list_tools
+    response = RedmineAiHelper::ToolProviders::ProjectToolProvider.list_tools
     assert_equal 5, response[:tools].size
     assert_equal "list_projects", response[:tools].first[:name]
     assert_equal "read_project", response[:tools].second[:name]

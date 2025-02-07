@@ -1,8 +1,8 @@
 require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module Agents
-    class RepositoryAgent < RedmineAiHelper::BaseToolProvider
+  module ToolProviders
+    class RepositoryToolProvider < RedmineAiHelper::BaseToolProvider
       def self.list_tools()
         list = {
           tools: [

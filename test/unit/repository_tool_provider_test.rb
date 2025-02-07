@@ -1,10 +1,10 @@
 require File.expand_path("../../test_helper", __FILE__)
 
-class RepositoryAgentTest < ActiveSupport::TestCase
+class RepositoryToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :repositories, :changesets, :changes
 
   def setup
-    @agent = RedmineAiHelper::Agents::RepositoryAgent.new
+    @agent = RedmineAiHelper::ToolProviders::RepositoryToolProvider.new
     repo_dir = Rails.root.join("plugins/redmine_ai_helper/tmp", "redmine_ai_helper_test_repo.git").to_s
     @project = Project.find(1)
     # @repository = Repository::Git.new(
@@ -81,7 +81,7 @@ class RepositoryAgentTest < ActiveSupport::TestCase
   end
 
   def test_list_tools
-    tools = RedmineAiHelper::Agents::RepositoryAgent.list_tools
+    tools = RedmineAiHelper::ToolProviders::RepositoryToolProvider.list_tools
     assert_not_nil tools
     assert_equal "repository_info", tools[:tools].first[:name]
     assert_equal "get_file_info", tools[:tools].second[:name]

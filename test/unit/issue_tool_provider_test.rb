@@ -1,10 +1,10 @@
 require File.expand_path("../../test_helper", __FILE__)
 
-class IssueAgentTest < ActiveSupport::TestCase
+class IssueToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields
 
   def setup
-    @agent = RedmineAiHelper::Agents::IssueAgent.new
+    @agent = RedmineAiHelper::ToolProviders::IssueToolProvider.new
   end
 
   def test_list_tools

@@ -1,16 +1,16 @@
 require File.expand_path("../../test_helper", __FILE__)
 
-class UserAgentTest < ActiveSupport::TestCase
+class UserToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
-  include RedmineAiHelper::Agents
+  include RedmineAiHelper::ToolProviders
 
   def setup
-    @agent = UserAgent.new
+    @agent = UserToolProvider.new
     @users = User.where(status: User::STATUS_ACTIVE)
   end
 
   def test_list_tools
-    tools = UserAgent.list_tools
+    tools = UserToolProvider.list_tools
     assert_not_nil tools
     assert_equal "list_users", tools[:tools].first[:name]
   end
