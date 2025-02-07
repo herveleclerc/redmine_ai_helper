@@ -3,7 +3,7 @@ require "redmine_ai_helper/agent"
 require "redmine_ai_helper/logger"
 
 module RedmineAiHelper
-  class BaseAgent
+  class BaseToolProvider
     include RedmineAiHelper::Logger
     include Rails.application.routes.url_helpers
 
@@ -34,7 +34,7 @@ module RedmineAiHelper
     end
 
 
-    class AgentList 
+    class AgentList
       include Singleton
 
       def initialize

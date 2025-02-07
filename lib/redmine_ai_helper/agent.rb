@@ -1,5 +1,5 @@
 require "redmine_ai_helper/llm"
-require "redmine_ai_helper/base_agent"
+require "redmine_ai_helper/base_tool_provider"
 require "redmine_ai_helper/logger"
 require "redmine_ai_helper/agent_response"
 # このソースファイルがあるディレクトリの下のagents/*_agent.rbファイルをrequireする
@@ -20,7 +20,7 @@ module RedmineAiHelper
       list = {}
 
       # puts "#### BaseAgent.agent_list: #{RedmineAiHelper::BaseAgent.agent_list}"
-      agents = RedmineAiHelper::BaseAgent.agent_list.map do |agent|
+      agents = RedmineAiHelper::BaseToolProvider.agent_list.map do |agent|
         # puts "#### agent: #{agent}"
         begin
           agent_class = Object.const_get(agent[:class])
@@ -45,7 +45,7 @@ module RedmineAiHelper
       args = params[:arguments]
 
       begin
-        agent_class_name = RedmineAiHelper::BaseAgent.agent_class_name(agent_name)
+        agent_class_name = RedmineAiHelper::BaseToolProvider.agent_class_name(agent_name)
         return AgentResponse.create_error "Agent not found." if agent_class_name.nil?
         agent = Object.const_get(agent_class_name).new()
       rescue => e

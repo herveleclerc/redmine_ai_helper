@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_agent"
+require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
   module Agents
-    class WikiAgent < RedmineAiHelper::BaseAgent
+    class WikiAgent < RedmineAiHelper::BaseToolProvider
       def self.list_tools()
         list = {
           tools: [

@@ -37,7 +37,7 @@ class RedmineAiHelper::AgentTest < ActiveSupport::TestCase
     assert_equal "success", result.status
     assert_equal "test_method called", result.value
   end
-  
+
   def test_call_tool_with_invalid_agent
     result = @agent.call_tool(agent_name: "invalid_agent", name: "tool1", arguments: {})
     # puts "#### result = #{result}"
@@ -67,7 +67,7 @@ class RedmineAiHelper::AgentTest < ActiveSupport::TestCase
   end
 end
 
-class TestAgent < RedmineAiHelper::BaseAgent
+class TestAgent < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
