@@ -27,7 +27,7 @@ module RedmineAiHelper
             tools: provider_class.send(:list_tools)[:tools],
           }
         rescue => e
-          ai_helper_logger.error "provider_name = #{provider[:name]}: #{e.full_message}"
+          ai_helper_logger.error "provider = #{provider[:name]}: #{e.full_message}"
         end
       end
       list = { providers: providers }
@@ -37,31 +37,31 @@ module RedmineAiHelper
     end
 
     def call_tool(params = {})
-      provider_name = params[:provider_name]
+      provider = params[:provider]
       name = params[:name]
       args = params[:arguments]
 
       begin
-        provider_class_name = RedmineAiHelper::BaseToolProvider.provider_class_name(provider_name)
-        return ToolResponse.create_error "Provider not found.: #{provider_name}" if provider_class_name.nil?
-        provider = Object.const_get(provider_class_name).new()
+        provider_class_name = RedmineAiHelper::BaseToolProvider.provider_class_name(provider)
+        return ToolResponse.create_error "Provider not found.: #{provider}" if provider_class_name.nil?
+        provider_instance = Object.const_get(provider_class_name).new()
       rescue => e
-        ai_helper_logger.error "provider_name = #{provider_name}: #{e.full_message}"
-        return ToolResponse.create_error "provider_name = #{provider_name}: #{e.message}"
+        ai_helper_logger.error "provider = #{provider}: #{e.full_message}"
+        return ToolResponse.create_error "provider = #{provider}: #{e.message}"
       end
 
       # Use reflection to call the method named 'name' on this instance, passing 'args' as arguments.
       # If the method does not exist, an exception will be raised.
-      if provider.respond_to?(name)
+      if provider_instance.respond_to?(name)
         begin
-          response = provider.send(name, args)
+          response = provider_instance.send(name, args)
         rescue => e
           ai_helper_logger.error e.full_message
           return ToolResponse.create_error e.message
         end
       else
-        ai_helper_logger.error "provider_name = #{provider_name}: Method #{name} not found"
-        return ToolResponse.create_error "provider_name = #{provider_name}: Method #{name} not found"
+        ai_helper_logger.error "provider = #{provider}: Method #{name} not found"
+        return ToolResponse.create_error "provider = #{provider}: Method #{name} not found"
       end
       response
     end

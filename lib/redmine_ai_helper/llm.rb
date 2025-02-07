@@ -227,7 +227,7 @@ tools:
         return simple_llm_chat(conversation) if tool.blank?
 
         provider = ToolProvider.new(@client, @model)
-        result = provider.call_tool(provider_name: tool["provider_name"], name: tool["tool"], arguments: tool["arguments"])
+        result = provider.call_tool(provider: tool["provider"], name: tool["tool"], arguments: tool["arguments"])
         ai_helper_logger.info "result: #{result}"
         if result.is_error?
           ai_helper_logger.error "error!!!!!!!!!!!!: #{result}"
@@ -276,7 +276,7 @@ JSONの例:
 {
   tool:
     {
-      "provider_name": "issue_provider",
+      "provider": "issue_provider",
       "tool": "read_issue",
       "arguments": {  "id": 1 }
     }

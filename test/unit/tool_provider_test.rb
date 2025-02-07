@@ -31,35 +31,35 @@ class RedmineAiHelper::ToolProviderTest < ActiveSupport::TestCase
   end
 
   def test_call_tool
-    result = @provider.call_tool(provider_name: "test_provider", name: "tool1", arguments: {})
+    result = @provider.call_tool(provider: "test_provider", name: "tool1", arguments: {})
     # puts "#### result = #{result}"
     assert_equal "success", result.status
     assert_equal "test_method called", result.value
   end
 
   def test_call_tool_with_invalid_provider
-    result = @provider.call_tool(provider_name: "invalid_provider", name: "tool1", arguments: {})
+    result = @provider.call_tool(provider: "invalid_provider", name: "tool1", arguments: {})
     # puts "#### result = #{result}"
     assert_equal "error", result.status
     assert_equal "Provider not found.: invalid_provider", result.error
   end
 
   def test_call_tool_with_invalid_tool
-    result = @provider.call_tool(provider_name: "test_provider", name: "invalid_tool", arguments: {})
+    result = @provider.call_tool(provider: "test_provider", name: "invalid_tool", arguments: {})
     # puts "#### result = #{result}"
     assert_equal "error", result.status
     assert result.is_error?
   end
 
   def test_call_tool_with_error
-    result = @provider.call_tool(provider_name: "test_provider", name: "tool2", arguments: {})
+    result = @provider.call_tool(provider: "test_provider", name: "tool2", arguments: {})
     # puts "#### result = #{result}"
     assert_equal "error", result.status
     assert result.is_error?
   end
 
   def test_call_tool_with_exception
-    result = @provider.call_tool(provider_name: "test_provider", name: "tool3", arguments: {})
+    result = @provider.call_tool(provider: "test_provider", name: "tool3", arguments: {})
     # puts "#### result = #{result}"
     assert_equal "error", result.status
     assert result.is_error?
