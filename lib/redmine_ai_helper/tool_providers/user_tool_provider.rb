@@ -1,9 +1,8 @@
-require "redmine_ai_helper/base_agent"
-require "redmine_ai_helper/agent_response"
+require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module Agents
-    class UserAgent < RedmineAiHelper::BaseAgent
+  module ToolProviders
+    class UserToolProvider < RedmineAiHelper::BaseToolProvider
       def self.list_tools()
         list = {
           tools: [
@@ -116,7 +115,7 @@ module RedmineAiHelper
           }
         end
         json = { users: user_list, total: count }
-        AgentResponse.create_success json
+        ToolResponse.create_success json
       end
     end
   end

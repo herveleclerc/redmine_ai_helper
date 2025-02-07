@@ -1,8 +1,8 @@
 require File.expand_path("../../test_helper", __FILE__)
 
-class SystemAgentTest < ActiveSupport::TestCase
+class SystemToolProviderTest < ActiveSupport::TestCase
   def setup
-    @agent = RedmineAiHelper::Agents::SystemAgent.new
+    @provider = RedmineAiHelper::ToolProviders::SystemToolProvider.new
   end
 
   def test_list_tools
@@ -15,13 +15,13 @@ class SystemAgentTest < ActiveSupport::TestCase
         },
       ],
     }
-    assert_equal expected_tools, RedmineAiHelper::Agents::SystemAgent.list_tools
+    assert_equal expected_tools, RedmineAiHelper::ToolProviders::SystemToolProvider.list_tools
   end
 
   def test_list_plugins
 
 
-    response = @agent.list_plugins
+    response = @provider.list_plugins
 
     assert response.is_success?
     assert response.value[:plugins].any?

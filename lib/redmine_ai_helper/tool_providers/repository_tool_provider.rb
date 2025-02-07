@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_agent"
+require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module Agents
-    class RepositoryAgent < RedmineAiHelper::BaseAgent
+  module ToolProviders
+    class RepositoryToolProvider < RedmineAiHelper::BaseToolProvider
       def self.list_tools()
         list = {
           tools: [
@@ -61,7 +61,7 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         repository_id = sym_args[:repository_id]
         repository = Repository.find_by(id: repository_id)
-        return AgentResponse.create_error("Repository not found.") if repository.nil?
+        return ToolResponse.create_error("Repository not found.") if repository.nil?
         json = {
           id: repository.id,
           type: repository.scm_name,
@@ -71,7 +71,7 @@ module RedmineAiHelper
           default_branch: repository.default_branch,
           url: url_for(controller: "repositories", action: "show", id: repository.project, repository_id: repository, only_path: true),
         }
-        AgentResponse.create_success(json)
+        ToolResponse.create_success(json)
       end
 
       # Get information about a file in a repository.
@@ -81,9 +81,9 @@ module RedmineAiHelper
         path = sym_args[:path]
         revision = sym_args[:revision] || "main"
         repository = Repository.find(repository_id)
-        return AgentResponse.create_error("Repository not found.") if repository.nil?
+        return ToolResponse.create_error("Repository not found.") if repository.nil?
         entry = repository.entry(path, revision)
-        return AgentResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
+        return ToolResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
         changeset = repository.find_changeset_by_name(revision)
         author_info = nil
         if changeset
@@ -108,7 +108,7 @@ module RedmineAiHelper
           url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
           commit: commit_info,
         }
-        AgentResponse.create_success(json)
+        ToolResponse.create_success(json)
       end
 
       # Read a file in a repository.
@@ -118,21 +118,21 @@ module RedmineAiHelper
         path = sym_args[:path]
         revision = sym_args[:revision] || "main"
         repository = Repository.find_by(id: repository_id)
-        return AgentResponse.create_error("Repository not found.") if repository.nil?
+        return ToolResponse.create_error("Repository not found.") if repository.nil?
 
         entry = repository.entry(path, revision)
-        return AgentResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
+        return ToolResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
 
-        return AgentResponse.create_error("File is not text: path = #{path}, revision = #{revision}") unless entry.is_text?
+        return ToolResponse.create_error("File is not text: path = #{path}, revision = #{revision}") unless entry.is_text?
 
-        return AgentResponse.create_error("#{path} is a directory.") if entry.is_dir?
+        return ToolResponse.create_error("#{path} is a directory.") if entry.is_dir?
 
         content = repository.cat(path, revision)
         json = {
           content: content,
           url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
         }
-        AgentResponse.create_success(json)
+        ToolResponse.create_success(json)
       end
     end
   end

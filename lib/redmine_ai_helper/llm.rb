@@ -1,5 +1,5 @@
-require "redmine_ai_helper/agent"
-require "redmine_ai_helper/agent_response"
+require "redmine_ai_helper/tool_provider"
+require "redmine_ai_helper/tool_response"
 require "redmine_ai_helper/logger"
 require "redmine_ai_helper/util/system_prompt"
 require "redmine_ai_helper/util/json_extractor"
@@ -111,7 +111,7 @@ EOS
     # @param [Array] pre_tasks
     # @param [String] pre_error
     def decompose_task(task, conversation, pre_tasks = [], pre_error = nil)
-      tools = Agent.list_tools
+      tools = ToolProvider.list_tools
 
       pre_error_string = ""
       if pre_error
@@ -226,8 +226,8 @@ tools:
         ai_helper_logger.info "tool: #{tool}"
         return simple_llm_chat(conversation) if tool.blank?
 
-        agent = Agent.new(@client, @model)
-        result = agent.call_tool(agent_name: tool["agent"], name: tool["tool"], arguments: tool["arguments"])
+        provider = ToolProvider.new(@client, @model)
+        result = provider.call_tool(provider: tool["provider"], name: tool["tool"], arguments: tool["arguments"])
         ai_helper_logger.info "result: #{result}"
         if result.is_error?
           ai_helper_logger.error "error!!!!!!!!!!!!: #{result}"
@@ -244,7 +244,7 @@ tools:
 
     # select the toos to solve the task
     def select_tool(task, conversation, pre_tasks = [], previous_error = nil)
-      tools = Agent.list_tools
+      tools = ToolProvider.list_tools
 
       previous_error_string = ""
       if previous_error
@@ -276,7 +276,7 @@ JSONの例:
 {
   tool:
     {
-      "agent": "issue_agent",
+      "provider": "issue_provider",
       "tool": "read_issue",
       "arguments": {  "id": 1 }
     }
@@ -338,7 +338,7 @@ JSONの例:
       answer
     end
 
-    class TaskResponse < RedmineAiHelper::AgentResponse
+    class TaskResponse < RedmineAiHelper::ToolResponse
     end
   end
 end

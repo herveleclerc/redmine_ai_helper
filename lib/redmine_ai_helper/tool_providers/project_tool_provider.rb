@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_agent"
+require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module Agents
-    class ProjectAgent < RedmineAiHelper::BaseAgent
+  module ToolProviders
+    class ProjectToolProvider < RedmineAiHelper::BaseToolProvider
       def self.list_tools()
         list = {
           tools: [
@@ -107,7 +107,7 @@ module RedmineAiHelper
             last_activity_date: project.last_activity_date,
           }
         end
-        AgentResponse.create_success(projects)
+        ToolResponse.create_success(projects)
       end
 
       # Read a project from the database and return it as a JSON object.
@@ -124,11 +124,11 @@ module RedmineAiHelper
         elsif project_identifier
           project = Project.find_by(identifier: project_identifier)
         else
-          return AgentResponse.create_error "No id or name or Identifier specified."
+          return ToolResponse.create_error "No id or name or Identifier specified."
         end
 
-        return AgentResponse.create_error "Project not found" unless project
-        return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
+        return ToolResponse.create_error "Project not found" unless project
+        return ToolResponse.create_error "You don't have permission to view this project" unless project.visible?
         project_json = {
           id: project.id,
           name: project.name,
@@ -150,7 +150,7 @@ module RedmineAiHelper
           end,
           last_activity_date: project.last_activity_date,
         }
-        AgentResponse.create_success project_json
+        ToolResponse.create_success project_json
       end
 
       # List all members of the project.
@@ -158,8 +158,8 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
-        return AgentResponse.create_error "Project not found" unless project
-        return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
+        return ToolResponse.create_error "Project not found" unless project
+        return ToolResponse.create_error "You don't have permission to view this project" unless project.visible?
 
         members = project.members.map do |member|
           {
@@ -178,7 +178,7 @@ module RedmineAiHelper
           project_id: project_id,
           members: members,
         }
-        AgentResponse.create_success json
+        ToolResponse.create_success json
       end
 
       # List all modules of the project.
@@ -187,8 +187,8 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
-        return AgentResponse.create_error "Project not found" unless project
-        return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
+        return ToolResponse.create_error "Project not found" unless project
+        return ToolResponse.create_error "You don't have permission to view this project" unless project.visible?
 
         enabled_modules = project.enabled_modules.map do |enabled_module|
           {
@@ -199,7 +199,7 @@ module RedmineAiHelper
           project_id: project_id,
           enabled_modules: enabled_modules,
         }
-        AgentResponse.create_success json
+        ToolResponse.create_success json
       end
 
       # List all activities of the project.
@@ -207,8 +207,8 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
-        return AgentResponse.create_error "Project not found" unless project
-        return AgentResponse.create_error "You don't have permission to view this project" unless project.visible?
+        return ToolResponse.create_error "Project not found" unless project
+        return ToolResponse.create_error "You don't have permission to view this project" unless project.visible?
 
         author_id = sym_args[:author_id]
         author = author_id ? User.find(author_id) : nil
@@ -238,7 +238,7 @@ module RedmineAiHelper
           }
         end
         json = { "activities": list }
-        AgentResponse.create_success json
+        ToolResponse.create_success json
       end
     end
   end

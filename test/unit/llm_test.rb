@@ -79,7 +79,7 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
 
   def test_select_tool
     result = @llm.select_tool("test task", @conversation)
-    assert_equal "project_agent", result["tool"]["agent"]
+    assert_equal "project_tool_provider", result["tool"]["provider"]
     assert_equal "read_project", result["tool"]["tool"]
     assert_equal ["1"], result["tool"]["arguments"]["id"]
   end
@@ -87,10 +87,17 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
   def test_select_tool_with_pre_error
     pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
     result = @llm.select_tool("test task", @conversation, pre_tasks, "error")
-    assert_equal "project_agent", result["tool"]["agent"]
+    assert_equal "project_tool_provider", result["tool"]["provider"]
     assert_equal "read_project", result["tool"]["tool"]
     assert_equal ["1"], result["tool"]["arguments"]["id"]
-    
+  end
+
+  def test_select_tool_with_error_handling
+    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
+    result = @llm.select_tool("error_task", @conversation, pre_tasks, "error")
+    assert_equal "project_tool_provider", result["tool"]["provider"]
+    assert_equal "read_project", result["tool"]["tool"]
+    assert_equal ["1"], result["tool"]["arguments"]["id"]
   end
 
   private
@@ -112,31 +119,33 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
           answer = "merged result ok"
         end
       elsif message.include?("というタスクを解決するのに最適なツールを")
-        answer = { "tool" => { "agent" => "project_agent", "tool" => "read_project", "arguments" => { "id": ["1"] } } }.to_json
-        if message.include?("execute_task_error")
-          answer = { "tool" => { "agent" => "project_agent", "tool" => "read_project", "arguments" => { "id": ["999"] } } }.to_json
+        answer = { "tool" => { "provider" => "project_tool_provider", "tool" => "read_project", "arguments" => { "id": ["1"] } } }.to_json
+        if message.include?("dispatch_success_test")
+          answer = { "tool" => { "provider" => "project_tool_provider", "tool" => "read_project", "arguments" => { "id": ["1"] } } }.to_json
+        elsif message.include?("execute_task_error")
+          answer = { "tool" => { "provider" => "project_tool_provider", "tool" => "read_project", "arguments" => { "id": ["999"] } } }.to_json
         elsif message.include?("dispatch_error")
-          answer = { "tool" => { "agent" => "aaaa", "tool" => "read_project", "arguments" => { "id": ["999"] } } }.to_json
+          answer = { "tool" => { "provider" => "aaaa", "tool" => "read_project", "arguments" => { "id": ["999"] } } }.to_json
         end
-        
+
       elsif message.include?("というタスクを解決するために必要なステップに分解してください。")
         answer = { "steps" => [{ "name" => "step1", "step" => "do something" }] }.to_json
       else
-        #puts "DummyOpenAIClient#chat prams = #{message} called!!!!!!!!!!!!!!!!"
+        #puts "DummyOpenAIClient#chat params = #{message} called!!!!!!!!!!!!!!!!"
       end
 
-      chunk = { 
-        "id": "response_id", 
-        "object": "chat.completion.chunk", 
-        "created": Time.now.to_i, 
-        "model": "gpt-3.5-turbo-0613", 
+      chunk = {
+        "id": "response_id",
+        "object": "chat.completion.chunk",
+        "created": Time.now.to_i,
+        "model": "gpt-3.5-turbo-0613",
         "choices": [
-          { "index": 0, 
-          "delta": { "content": answer }, 
-          "finish_reason": nil 
+          { "index": 0,
+          "delta": { "content": answer },
+          "finish_reason": nil
           }
           ]
-         
+
         }.deep_stringify_keys
 
       proc.call(chunk, nil) if proc
