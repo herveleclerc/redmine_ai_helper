@@ -5,11 +5,18 @@ class BaseToolProviderTest < ActiveSupport::TestCase
 
   end
 
-  def test_agent_list
-    agent_list = RedmineAiHelper::BaseToolProvider.agent_list
-    assert agent_list.size >= 6
+  def test_provider_list
+    provider_list = RedmineAiHelper::BaseToolProvider.provider_list
+    # puts "#### provider_list: #{provider_list}"
+    assert provider_list.size >= 6
   end
 
+  def test_my_test_agent_list_tools
+    tools = MyTestAgent.list_tools
+    assert_equal 2, tools[:tools].size
+    assert_equal "tool1", tools[:tools][0][:name]
+    assert_equal "tool2", tools[:tools][1][:name]
+  end
 
   class MyTestAgent < RedmineAiHelper::BaseToolProvider
     def self.list_tools
@@ -42,7 +49,7 @@ class BaseToolProviderTest < ActiveSupport::TestCase
 
 end
 
-class MyTestAgent < RedmineAiHelper::BaseToolProvider
+class MyTestToolProvider < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -71,7 +78,7 @@ class MyTestAgent < RedmineAiHelper::BaseToolProvider
   end
 end
 
-class MyTestAgent2 < RedmineAiHelper::BaseToolProvider
+class MyTestToolProvider2 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -100,7 +107,7 @@ class MyTestAgent2 < RedmineAiHelper::BaseToolProvider
   end
 end
 
-class MyTestAgent3 < RedmineAiHelper::BaseToolProvider
+class MyTestToolProvider3 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -129,7 +136,7 @@ class MyTestAgent3 < RedmineAiHelper::BaseToolProvider
   end
 end
 
-class MyTestAgent4 < RedmineAiHelper::BaseToolProvider
+class MyTestToolProvider4 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -158,7 +165,7 @@ class MyTestAgent4 < RedmineAiHelper::BaseToolProvider
   end
 end
 
-class MyTestAgent5 < RedmineAiHelper::BaseToolProvider
+class MyTestToolProvider5 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -187,7 +194,7 @@ class MyTestAgent5 < RedmineAiHelper::BaseToolProvider
   end
 end
 
-class MyTestAgent6 < RedmineAiHelper::BaseToolProvider
+class MyTestToolProvider6 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [

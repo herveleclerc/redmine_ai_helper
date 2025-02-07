@@ -9,22 +9,22 @@ module RedmineAiHelper
 
     class << self
       def inherited(subclass)
-        # puts "######## Adding agent: #{subclass.name}"
+        # puts "######## Adding provider: #{subclass.name}"
         real_class_name = subclass.name.split("::").last
-        agent_list = AgentList.instance
-        agent_list.add_agent(
+        provider_list = ProviderList.instance
+        provider_list.add_provider(
           real_class_name.underscore,
           subclass.name,
         )
       end
 
-      def agent_list
-        #puts "######## Getting agent list: #{AgentList.instance.agent_list}"
-        AgentList.instance.agent_list
+      def provider_list
+        #puts "######## Getting provider list: #{ProviderList.instance.provider_list}"
+        ProviderList.instance.provider_list
       end
 
-      def agent_class_name(name)
-        AgentList.instance.agent_class_name(name)
+      def provider_class_name(name)
+        ProviderList.instance.provider_class_name(name)
       end
 
       def list_tools
@@ -33,32 +33,40 @@ module RedmineAiHelper
     end
 
 
-    class AgentList
+    class ProviderList
       include Singleton
 
       def initialize
-        @agents = []
+        @providers = []
       end
 
-      def add_agent(name, class_name)
-        agent = {
+      def add_provider(name, class_name)
+        provider = {
           name: name,
           class: class_name,
         }
-        # Check if the agent is already in the list
+        # Check if the provider is already in the list
         # If it is, remove it and add the new one
-        @agents.delete_if { |a| a[:name] == name }
-        @agents << agent
+        @providers.delete_if { |a| a[:name] == name }
+        @providers << provider
       end
 
-      def agent_list
-        @agents
+      def provider_list
+        @providers
       end
     end
 
-    def self.agent_class_name(agent_name)
-      agent = self.agent_list.find { |agent| agent[:name] == agent_name }
-      agent[:class] if agent
+    def self.provider_class_name(provider_name)
+      provider = self.provider_list.find { |provider| provider[:name] == provider_name }
+      provider[:class] if provider
+    end
+
+    def self.list_tools
+
+      tools = provider_list.map do |provider|
+        { name: provider[:name], class: provider[:class] }
+      end
+      { tools: tools }
     end
   end
 end
