@@ -19,7 +19,6 @@ module RedmineAiHelper
     def self.list_tools()
       list = {}
 
-      # puts "#### BaseAgent.agent_list: #{RedmineAiHelper::BaseAgent.agent_list}"
       providers = RedmineAiHelper::BaseToolProvider.provider_list.map do |provider|
         begin
           provider_class = Object.const_get(provider[:class])
@@ -31,7 +30,6 @@ module RedmineAiHelper
           ai_helper_logger.error "provider_name = #{provider[:name]}: #{e.full_message}"
         end
       end
-      # puts "#### agents: #{agents}"
       list = { providers: providers }
       json = JSON.pretty_generate(list)
       # puts "#### list_tools: #{json}"

@@ -11,14 +11,14 @@ class BaseToolProviderTest < ActiveSupport::TestCase
     assert provider_list.size >= 6
   end
 
-  def test_my_test_agent_list_tools
-    tools = MyTestAgent.list_tools
+  def test_my_test_provider_list_tools
+    tools = MyTestProvider.list_tools
     assert_equal 2, tools[:tools].size
     assert_equal "tool1", tools[:tools][0][:name]
     assert_equal "tool2", tools[:tools][1][:name]
   end
 
-  class MyTestAgent < RedmineAiHelper::BaseToolProvider
+  class MyTestProvider < RedmineAiHelper::BaseToolProvider
     def self.list_tools
       {
         tools: [

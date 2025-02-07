@@ -2,7 +2,7 @@ require File.expand_path("../../test_helper", __FILE__)
 
 class SystemToolProviderTest < ActiveSupport::TestCase
   def setup
-    @agent = RedmineAiHelper::ToolProviders::SystemToolProvider.new
+    @provider = RedmineAiHelper::ToolProviders::SystemToolProvider.new
   end
 
   def test_list_tools
@@ -21,7 +21,7 @@ class SystemToolProviderTest < ActiveSupport::TestCase
   def test_list_plugins
 
 
-    response = @agent.list_plugins
+    response = @provider.list_plugins
 
     assert response.is_success?
     assert response.value[:plugins].any?

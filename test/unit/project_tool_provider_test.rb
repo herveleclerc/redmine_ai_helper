@@ -4,13 +4,13 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :users, :repositories, :changesets, :changes, :issues, :issue_statuses, :enumerations, :issue_categories, :trackers
 
   def setup
-    @agent = RedmineAiHelper::ToolProviders::ProjectToolProvider.new
+    @provider = RedmineAiHelper::ToolProviders::ProjectToolProvider.new
   end
 
   def test_list_projects
     projects = Project.all
 
-    response = @agent.list_projects
+    response = @provider.list_projects
     assert response.is_success?
     assert_equal projects.size, response.value.size
     projects.each_with_index do |project, index|
@@ -22,7 +22,7 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   def test_read_project_by_id
     project = Project.find(1)
 
-    response = @agent.read_project(id: project.id)
+    response = @provider.read_project(id: project.id)
     assert response.is_success?
     assert_equal project.id, response.value[:id]
     assert_equal project.name, response.value[:name]
@@ -31,7 +31,7 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   def test_read_project_by_name
     project = Project.find(1)
 
-    response = @agent.read_project(name: project.name)
+    response = @provider.read_project(name: project.name)
     assert response.is_success?
     assert_equal project.id, response.value[:id]
     assert_equal project.name, response.value[:name]
@@ -40,20 +40,20 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   def test_read_project_by_identifier
     project = Project.find(1)
 
-    response = @agent.read_project(identifier: project.identifier)
+    response = @provider.read_project(identifier: project.identifier)
     assert response.is_success?
     assert_equal project.id, response.value[:id]
     assert_equal project.name, response.value[:name]
   end
 
   def test_read_project_not_found
-    response = @agent.read_project(id: 999)
+    response = @provider.read_project(id: 999)
     assert response.is_error?
     assert_equal "Project not found", response.error
   end
 
   def test_read_project_no_args
-    response = @agent.read_project
+    response = @provider.read_project
     assert response.is_error?
     assert_equal "No id or name or Identifier specified.", response.error
   end
@@ -62,7 +62,7 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
     project = Project.find(1)
     members = project.members
 
-    response = @agent.project_members(project_id: project.id)
+    response = @provider.project_members(project_id: project.id)
     assert response.is_success?
     assert_equal members.size, response.value[:members].size
     assert_equal members.first.user_id, response.value[:members].first[:user_id]
@@ -72,7 +72,7 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
     project = Project.find(1)
     enabled_modules = project.enabled_modules
 
-    response = @agent.project_enabled_modules(project_id: project.id)
+    response = @provider.project_enabled_modules(project_id: project.id)
     assert response.is_success?
     assert_equal enabled_modules.size, response.value[:enabled_modules].size
     assert_equal enabled_modules.first.name, response.value[:enabled_modules].first[:name]
@@ -80,11 +80,11 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
 
   def test_list_project_activities
     project = Project.find(1)
-    response = @agent.list_project_activities(project_id: project.id)
+    response = @provider.list_project_activities(project_id: project.id)
     assert response.is_success?
 
     author = User.find(1)
-    response = @agent.list_project_activities(project_id: project.id, author_id: author.id)
+    response = @provider.list_project_activities(project_id: project.id, author_id: author.id)
     assert response.is_success?
     # assert_equal project.list_project_activities.size, response.value[:activities].size
   end
