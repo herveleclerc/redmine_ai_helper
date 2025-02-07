@@ -28,6 +28,7 @@
     "[erb]": {
       "editor.defaultFormatter": "aliariff.vscode-erb-beautify"
     },
-    "vscode-erb-beautify.useBundler": true
+    "vscode-erb-beautify.useBundler": true,
+    "github.copilot.nextEditSuggestions.enabled": true
   }
 }
