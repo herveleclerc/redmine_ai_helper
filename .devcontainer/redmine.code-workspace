@@ -10,12 +10,25 @@
   "settings": {
     "editor.formatOnSave": true,
     "editor.wordWrap": "on",
+    "files.trimFinalNewlines": true,
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true,
     "git.ignoredRepositories": [
       "/workspace/redmine_ai_helper"
     ],
     "liveServer.settings.multiRootWorkspaceName": "redmine_ai_helper",
-    "ruby.rubocop.onSave": true,
-    "ruby.rubocop.useBundler": false,
-    "rubyLsp.formatter": "rubocop"
+    "rubyLsp.formatter": "rubocop",
+    "[ruby]": {
+      "editor.defaultFormatter": "Shopify.ruby-lsp",
+      "editor.formatOnSave": true
+    },
+    "files.associations": {
+      "*.html.erb": "erb"
+    },
+    "[erb]": {
+      "editor.defaultFormatter": "aliariff.vscode-erb-beautify"
+    },
+    "vscode-erb-beautify.useBundler": true,
+    "github.copilot.nextEditSuggestions.enabled": true
   }
 }

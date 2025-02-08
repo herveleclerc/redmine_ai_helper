@@ -1,17 +1,24 @@
 require File.expand_path("../../test_helper", __FILE__)
 
-class BaseAgentTest < ActiveSupport::TestCase
+class BaseToolProviderTest < ActiveSupport::TestCase
   def setup
-    
+
   end
 
-  def test_agent_list
-    agent_list = RedmineAiHelper::BaseAgent.agent_list
-    assert agent_list.size >= 6
+  def test_provider_list
+    provider_list = RedmineAiHelper::BaseToolProvider.provider_list
+    # puts "#### provider_list: #{provider_list}"
+    assert provider_list.size >= 6
   end
 
+  def test_my_test_provider_list_tools
+    tools = MyTestProvider.list_tools
+    assert_equal 2, tools[:tools].size
+    assert_equal "tool1", tools[:tools][0][:name]
+    assert_equal "tool2", tools[:tools][1][:name]
+  end
 
-  class MyTestAgent < RedmineAiHelper::BaseAgent
+  class MyTestProvider < RedmineAiHelper::BaseToolProvider
     def self.list_tools
       {
         tools: [
@@ -42,7 +49,7 @@ class BaseAgentTest < ActiveSupport::TestCase
 
 end
 
-class MyTestAgent < RedmineAiHelper::BaseAgent
+class MyTestToolProvider < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -71,7 +78,7 @@ class MyTestAgent < RedmineAiHelper::BaseAgent
   end
 end
 
-class MyTestAgent2 < RedmineAiHelper::BaseAgent
+class MyTestToolProvider2 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -100,7 +107,7 @@ class MyTestAgent2 < RedmineAiHelper::BaseAgent
   end
 end
 
-class MyTestAgent3 < RedmineAiHelper::BaseAgent
+class MyTestToolProvider3 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -129,7 +136,7 @@ class MyTestAgent3 < RedmineAiHelper::BaseAgent
   end
 end
 
-class MyTestAgent4 < RedmineAiHelper::BaseAgent
+class MyTestToolProvider4 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -158,7 +165,7 @@ class MyTestAgent4 < RedmineAiHelper::BaseAgent
   end
 end
 
-class MyTestAgent5 < RedmineAiHelper::BaseAgent
+class MyTestToolProvider5 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -187,7 +194,7 @@ class MyTestAgent5 < RedmineAiHelper::BaseAgent
   end
 end
 
-class MyTestAgent6 < RedmineAiHelper::BaseAgent
+class MyTestToolProvider6 < RedmineAiHelper::BaseToolProvider
   def self.list_tools
     {
       tools: [
@@ -215,4 +222,3 @@ class MyTestAgent6 < RedmineAiHelper::BaseAgent
     }
   end
 end
-

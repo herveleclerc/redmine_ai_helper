@@ -1,9 +1,11 @@
-require_relative '../test_helper'
+require File.expand_path("../../test_helper", __FILE__)
 
 class AiHelperMessageTest < ActiveSupport::TestCase
+  def setup
+    @message = AiHelperMessage.new
+  end
 
-  # Replace this with your real tests.
-  def test_truth
-    assert true
+  def test_message_initialization
+    assert_not_nil @message
   end
 end

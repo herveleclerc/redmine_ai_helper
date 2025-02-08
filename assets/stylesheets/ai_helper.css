@@ -1,4 +1,4 @@
-#ai_helper_chat_submit {
+#aihelper-chat-submit {
   /* 右寄せ */
   float: right;
 }
@@ -236,4 +236,11 @@ li.aihelper-history-item a {
   #aihelper-chat-clear .icon-label {
     color: #333;
   }
+}
+
+#aihelper-chat-conversation div.aihelper-message pre:has(code.syntaxhl) {
+  /* background-color: #f5f5f5; */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 4px;
 }

@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_agent"
+require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module Agents
-    class IssueAgent < RedmineAiHelper::BaseAgent
+  module ToolProviders
+    class IssueToolProvider < RedmineAiHelper::BaseToolProvider
       def self.list_tools()
         list = {
           tools: [
@@ -221,7 +221,7 @@ module RedmineAiHelper
       def read_issues(args = {})
         sym_args = args.deep_symbolize_keys
         issue_ids = sym_args[:id]
-        return AgentResponse.create_error("Issue ID array is required.") if issue_ids.empty?
+        return ToolResponse.create_error("Issue ID array is required.") if issue_ids.empty?
         issues = []
         Issue.where(id: issue_ids).each do |issue|
 
@@ -311,7 +311,7 @@ module RedmineAiHelper
         end
 
         issues_json = { issues: issues }
-        AgentResponse.create_success(issues_json)
+        ToolResponse.create_success(issues_json)
       end
 
       # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
@@ -328,10 +328,10 @@ module RedmineAiHelper
         elsif project_identifier
           project = Project.find_by(identifier: project_identifier)
         else
-          return AgentResponse.create_error("No id or name or Identifier specified.")
+          return ToolResponse.create_error("No id or name or Identifier specified.")
         end
 
-        return AgentResponse.create_error("Project not found.") unless project
+        return ToolResponse.create_error("Project not found.") unless project
 
         properties = {
           trackers: project.trackers.map do |tracker|
@@ -375,7 +375,7 @@ module RedmineAiHelper
           end,
         }
 
-        AgentResponse.create_success properties
+        ToolResponse.create_success properties
       end
 
       # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
@@ -392,11 +392,11 @@ module RedmineAiHelper
         custom_fields = sym_args[:custom_fields] || []
 
         if fields.empty? && date_fields.empty? && time_fields.empty? && number_fields.empty? && text_fields.empty? && status_field.empty? && custom_fields.empty?
-          return AgentResponse.create_success({ url: "/projects/#{project.identifier}/issues" })
+          return ToolResponse.create_success({ url: "/projects/#{project.identifier}/issues" })
         end
 
         validate_errors = generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
-        return AgentResponse.create_error(validate_errors.join("\n")) if validate_errors.length > 0
+        return ToolResponse.create_error(validate_errors.join("\n")) if validate_errors.length > 0
 
         params = { fields: [], operators: {}, values: {} }
         params[:fields] << "project_id"
@@ -446,7 +446,7 @@ module RedmineAiHelper
         url = builder.generate_query_string(project)
 
         json = { url: url }
-        AgentResponse.create_success json
+        ToolResponse.create_success json
       end
 
       # Validate the parameters for generate_issue_search_url
