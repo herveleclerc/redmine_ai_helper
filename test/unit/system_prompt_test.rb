@@ -62,7 +62,7 @@ class SystemPromptTest < ActiveSupport::TestCase
   end
 
   def test_prompt_with_repository_other_page
-    options = { controller_name: 'repositories', action_name: 'other', project: @project }
+    options = { controller_name: 'repositories', action_name: 'other', project: @project, content_id: @repository.id }
     system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
     prompt = system_prompt.prompt
     assert_match /リポジトリの情報ページです/, prompt

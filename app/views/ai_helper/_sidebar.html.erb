@@ -48,11 +48,12 @@
          content_id = @page.id if @page
        when "repositories"
          content_id = @repository.id if @repository
-         case action_name
-         when "entry"
-           additional_info[:path] = @path if @path
-           additional_info[:rev] = @rev if @rev
-         end
+         additional_info[:path] = @path if @path
+         additional_info[:rev] = @rev if @rev
+         additional_info[:rev_to] = @rev_to if @rev_to
+         additional_info[:diff] = @diff if @diff
+         additional_info[:changeset] = @changeset if @changeset
+         additional_info[:changeset_to] = @changeset_to if @changeset_to
        end %>
     <script>
       const is_sidebar_exist = function() {
