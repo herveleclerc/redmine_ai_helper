@@ -306,6 +306,13 @@ module RedmineAiHelper
                 end,
               }
             end,
+            revisions: issue.changesets.map do |changeset|
+              {
+                repository_id: changeset.repository_id,
+                revision: changeset.revision,
+                committed_on: changeset.committed_on,
+              }
+            end
 
           }
         end
