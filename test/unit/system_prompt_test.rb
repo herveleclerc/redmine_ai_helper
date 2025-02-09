@@ -61,6 +61,20 @@ class SystemPromptTest < ActiveSupport::TestCase
     assert_match /リポジトリのファイル情報のページです。表示しているファイルパスは path\/to\/file です。リビジョンは 123 です。リポジトリは「 #{@repository.name}」です。/, prompt
   end
 
+  def test_prompt_with_repository_diff_page
+    options = { controller_name: 'repositories', action_name: 'diff', content_id: @repository.id, additional_info: { "rev" => "123", "rev_to" => "456", "path" => "path/to/file" }, project: @project }
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /リポジトリ「#{@repository.name}」の変更差分ページです/, prompt
+  end
+
+  def test_prompt_with_repository_revision_page
+    options = { controller_name: 'repositories', action_name: 'revision', content_id: @repository.id, additional_info: { "rev" => "123" }, project: @project }
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /リポジトリ「#{@repository.name}」のリビジョン情報ページです/, prompt
+  end
+
   def test_prompt_with_repository_other_page
     options = { controller_name: 'repositories', action_name: 'other', project: @project, content_id: @repository.id }
     system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
