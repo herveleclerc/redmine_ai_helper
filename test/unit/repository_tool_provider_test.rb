@@ -115,4 +115,14 @@ class RepositoryToolProviderTest < ActiveSupport::TestCase
     assert response.is_error?
     assert_equal "Revision not found: revision = invalid_revision", response.error
   end
+
+  def test_read_diff_success
+    repository = @repository
+    changeset = repository.changesets.second
+    revision = changeset.revision
+    args = { repository_id: repository.id, revision: revision }
+    response = @provider.read_diff(args)
+    assert response.is_success?
+    assert response.value[:diff].include?("diff --git")
+  end
 end
