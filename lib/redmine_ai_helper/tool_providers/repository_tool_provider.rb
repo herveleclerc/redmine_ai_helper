@@ -136,6 +136,7 @@ module RedmineAiHelper
           paths: changeset.filechanges.map{|f| f.path},
           comments: changeset.comments,
           revision: changeset.revision,
+          related_issues: changeset.issues.filter{|i| i.visible? }.map{|i| {id: i.id, subject: i.subject}},
         }
         ToolResponse.create_success(revision_info)
       end
