@@ -83,8 +83,26 @@ module RedmineAiHelper
           else
             page_name = "リポジトリの情報ページです"
           end
+        when "boards"
+          board = Board.find(@content_id) if @content_id
+          case @action_name
+          when "show"
+            page_name = "フォーラム「#{board.name}」のページです。フォーラムのIDは #{board.id} です。"
+          when "index"
+            if board
+              page_name = "フォーラム「#{board.name}」のページです。フォーラムのIDは #{board.id} です。"
+            else
+              page_name = "フォーラム一覧のページです。"
+            end
+          else
+            page_name = "フォーラムのページです。"
+          end
+        when "messages"
+          message = Message.find(@content_id) if @content_id
+          page_name = "メッセージ「#{message.subject}」のページです。メッセージのIDは #{message.id}です。" if message
+          page_name = "メッセージのページです。" unless message
         else
-          page_name = "{@controller_name}の{@action_name}ページです"
+          page_name = "#{@controller_name}の#{@action_name}ページです"
         end
 
         return "" if page_name.nil?
