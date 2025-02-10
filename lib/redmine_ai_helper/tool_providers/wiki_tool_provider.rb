@@ -61,8 +61,13 @@ module RedmineAiHelper
         project_id = sym_args[:project_id]
         title = sym_args[:title]
         wiki = Wiki.find_by(project_id: project_id)
+        return ToolResponse.create_error("Wiki not found: project_id = #{project_id}") if !wiki || !wiki.visible?
+
+        return ToolResponse.create_error("Title not provided") unless title
+
         page = wiki.pages.find_by(title: title)
-        return ToolResponse.create_error("Page not found: title = #{title}") unless page
+        return ToolResponse.create_error("Page not found: title = #{title}") if !page || !page.visible?
+
         json = {
           title: page.title,
           text: page.text,
@@ -73,7 +78,7 @@ module RedmineAiHelper
           version: page.version,
           created_on: page.created_on,
           updated_on: page.updated_on,
-          children: page.children.map do |child|
+          children: page.children.filter(&:visible?).map do |child|
             {
               title: child.title,
             }
@@ -91,7 +96,8 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         project_id = sym_args[:project_id]
         wiki = Wiki.find_by(project_id: project_id)
-        pages = wiki.pages
+        return ToolResponse.create_error("Wiki not found: project_id = #{project_id}") if !wiki || !wiki.visible?
+        pages = wiki.pages.filter(&:visible?)
         json = pages.map do |page|
           {
             title: page.title,
@@ -114,8 +120,9 @@ module RedmineAiHelper
         project_id = sym_args[:project_id]
         title = sym_args[:title]
         wiki = Wiki.find_by(project_id: project_id)
+        return ToolResponse.create_error("Wiki not found: project_id = #{project_id}") if !wiki || !wiki.visible?
         page = wiki.pages.find_by(title: title)
-        # url = "/projects/#{wiki.project.identifier}/wiki/#{page.title}"
+        return ToolResponse.create_error("Page not found: title = #{title}") if !page || !page.visible?
         url = "#{project_wiki_page_path(wiki.project, page.title)}"
         ToolResponse.create_success url: url
       end

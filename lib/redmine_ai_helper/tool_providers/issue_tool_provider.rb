@@ -264,7 +264,7 @@ module RedmineAiHelper
             updated_on: issue.updated_on,
             closed_on: issue.closed_on,
             issue_url: issue_url(issue, only_path: true),
-            children: issue.children.map do |child|
+            children: issue.children.filter { |child| child.visible? }.map do |child|
               {
                 id: child.id,
                 tracker: {
@@ -275,7 +275,7 @@ module RedmineAiHelper
                 issue_url: issue_url(child, only_path: true),
               }
             end,
-            relations: issue.relations.map do |relation|
+            relations: issue.relations.filter { |relation| relation.visible? }.map do |relation|
               {
                 id: relation.id,
                 issue_to_id: relation.issue_to_id,
@@ -284,7 +284,7 @@ module RedmineAiHelper
                 delay: relation.delay,
               }
             end,
-            journals: issue.journals.map do |journal|
+            journals: issue.journals.filter { |journal| journal.visible? }.map do |journal|
               {
                 id: journal.id,
                 user: {
