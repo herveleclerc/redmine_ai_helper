@@ -82,6 +82,51 @@ class SystemPromptTest < ActiveSupport::TestCase
     assert_match /リポジトリの情報ページです/, prompt
   end
 
+  def test_prompt_with_board_page
+    options = { controller_name: 'boards', action_name: 'show', content_id: 1, project: @project }
+    board = Board.find(1)
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /フォーラム「#{board.name}」のページです。フォーラムのIDは #{board.id} です。/, prompt
+  end
+
+  def test_prompt_with_board_index_page
+    options = { controller_name: 'boards', action_name: 'index', project: @project }
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /フォーラム一覧のページです。/, prompt
+  end
+
+  def test_prompot_with_board_index_page_with_board
+    options = { controller_name: 'boards', action_name: 'index', project: @project, content_id: 1 }
+    board = Board.find(1)
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /フォーラム「#{board.name}」のページです。フォーラムのIDは #{board.id} です。/, prompt
+  end
+
+  def test_prompt_with_board_other_page
+    options = { controller_name: 'boards', action_name: 'other', project: @project }
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /フォーラムのページです/, prompt
+  end
+
+  def test_prompt_with_message_page
+    options = { controller_name: 'messages', action_name: 'show', project: @project, content_id: 1 }
+    message = Message.find(1)
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /メッセージ「#{message.subject}」のページです。メッセージのIDは #{message.id}です。/, prompt
+  end
+
+  def test_prompt_with_message_other_page
+    options = { controller_name: 'messages', action_name: 'other', project: @project }
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /メッセージのページです。/, prompt
+  end
+
   def test_site_info_json
     system_prompt = RedmineAiHelper::Util::SystemPrompt.new
     json = system_prompt.site_info_json(project: @project)
