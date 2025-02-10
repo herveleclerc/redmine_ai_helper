@@ -19,6 +19,8 @@ class RepositoryToolProviderTest < ActiveSupport::TestCase
       url: repo_dir,
       identifier: "test",
     )
+    @repository.fetch_changesets
+    @repository.save!
   end
 
   def test_repository_info_success
@@ -85,6 +87,42 @@ class RepositoryToolProviderTest < ActiveSupport::TestCase
     assert_not_nil tools
     assert_equal "repository_info", tools[:tools].first[:name]
     assert_equal "get_file_info", tools[:tools].second[:name]
-    assert_equal "read_file", tools[:tools].third[:name]
+    assert_equal "get_revision_info", tools[:tools].third[:name]
+    assert_equal "read_file", tools[:tools].fourth[:name]
+    assert_equal "read_diff", tools[:tools].fifth[:name]
+  end
+
+  def test_get_revision_info_success
+    repository = @repository
+    changeset = repository.changesets.second
+    revision = changeset.revision
+    args = { repository_id: repository.id, revision: revision }
+    response = @provider.get_revision_info(args)
+    assert response.is_success?
+    assert_equal revision, response.value[:revision]
+    assert_equal changeset.committed_on, response.value[:committed_on]
+    assert_equal changeset.comments, response.value[:comments]
+  end
+
+  def test_get_revision_info_not_found
+    args = { repository_id: 999, revision: "invalid_revision" }
+    response = @provider.get_revision_info(args)
+    assert response.is_error?
+    assert_equal "Repository not found: repository_id = 999", response.error
+
+    args = { repository_id: @repository.id, revision: "invalid_revision" }
+    response = @provider.get_revision_info(args)
+    assert response.is_error?
+    assert_equal "Revision not found: revision = invalid_revision", response.error
+  end
+
+  def test_read_diff_success
+    repository = @repository
+    changeset = repository.changesets.second
+    revision = changeset.revision
+    args = { repository_id: repository.id, revision: revision }
+    response = @provider.read_diff(args)
+    assert response.is_success?
+    assert response.value[:diff].include?("diff --git")
   end
 end

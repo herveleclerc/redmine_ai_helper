@@ -37,6 +37,23 @@ module RedmineAiHelper
               },
             },
             {
+              name: "get_revision_info",
+              description: "Get information about a revision in a repository. Returns the author, committed_on, list of path, and comments for the revision.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    repository_id: "integer",
+                    revision: {
+                      type: "string",
+                      description: "The revision to get information about."
+                    },
+                  },
+                  required: ["repository_id", "revision"],
+                },
+              },
+            },
+            {
               name: "read_file",
               description: "Read a file for the specified path and revision within the specified repository.",
               arguments: {
@@ -51,6 +68,28 @@ module RedmineAiHelper
                 },
               },
             },
+            {
+              name: "read_diff",
+              description: "Get the diff information for a specified path and revision within the repository. If the path is not specified, the diff information for all files in the revision is returned. If the revision_to is specified, the diff information between the two revisions is returned.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    repository_id: "integer",
+                    path: { type: "string", description: "The path of the file to get diff information about." },
+                    revision: {
+                      type: "string",
+                      description: "The revision to get diff information about.",
+                    },
+                    revision_to: {
+                      type: "string",
+                      description: "The revision to compare the diff against.",
+                    }
+                  },
+                  required: ["repository_id", "revision"],
+                },
+              },
+            }
           ],
         }
         list
@@ -74,6 +113,34 @@ module RedmineAiHelper
         ToolResponse.create_success(json)
       end
 
+      # Get information about a revision in a repository.
+      # Returns the author, committed_on, list of path, and comments for the revision.
+      def get_revision_info(args = {})
+        sym_args = args.deep_symbolize_keys
+        repository_id = sym_args[:repository_id]
+        revision = sym_args[:revision]
+        repository = Repository.find_by_id(repository_id)
+        return ToolResponse.create_error("Repository not found: repository_id = #{repository_id}") if repository.nil?
+        changeset = repository.find_changeset_by_name(revision)
+        return ToolResponse.create_error("Revision not found: revision = #{revision}") if changeset.nil?
+        user = changeset.user
+        author_info = {
+            id: user.id,
+            name: user.name,
+        } if user
+        author_info = changeset.author if author_info.nil?
+        revision_info = {
+          repository_id: repository_id,
+          author: author_info,
+          committed_on: changeset.committed_on,
+          paths: changeset.filechanges.map{|f| f.path},
+          comments: changeset.comments,
+          revision: changeset.revision,
+          related_issues: changeset.issues.filter{|i| i.visible? }.map{|i| {id: i.id, subject: i.subject}},
+        }
+        ToolResponse.create_success(revision_info)
+      end
+
       # Get information about a file in a repository.
       def get_file_info(args = {})
         sym_args = args.deep_symbolize_keys
@@ -87,11 +154,11 @@ module RedmineAiHelper
         changeset = repository.find_changeset_by_name(revision)
         author_info = nil
         if changeset
-          author = changeset.author
+          user = changeset.user
           author_info = {
-            id: author.id,
-            name: author.name,
-          } if author
+            id: user.id,
+            name: user.name,
+          } if user
           author_info = changeset.committer if author_info.nil?
         end
         commit_info = {
@@ -132,6 +199,34 @@ module RedmineAiHelper
           content: content,
           url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
         }
+        ToolResponse.create_success(json)
+      end
+
+      # Get the diff information for a specified path and revision within the repository.
+      # If the path is not specified, the diff information for all files in the revision is returned.
+      def read_diff(args = {})
+        sym_args = args.deep_symbolize_keys
+        repository_id = sym_args[:repository_id]
+        path = sym_args[:path]
+        revision = sym_args[:revision]
+        revision_to = sym_args[:revision_to]
+        repository = Repository.find(repository_id)
+        return ToolResponse.create_error("Repository not found.") if repository.nil?
+
+        changeset = repository.find_changeset_by_name(revision)
+        return ToolResponse.create_error("Revision not found: revision = #{revision}") if changeset.nil?
+
+        diff_lines = repository.diff(path, revision, revision_to)
+
+        diff_text = diff_lines.join("\n")
+        diff_text.force_encoding("UTF-8")
+
+        json = {
+          repository_id: repository_id,
+          revision: revision,
+          diff: diff_text,
+        }
+
         ToolResponse.create_success(json)
       end
     end

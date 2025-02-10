@@ -18,6 +18,10 @@ class BaseToolProviderTest < ActiveSupport::TestCase
     assert_equal "tool2", tools[:tools][1][:name]
   end
 
+  def test_self_provider_class_name
+    assert_equal "BaseToolProviderTest::MyTestProvider", RedmineAiHelper::BaseToolProvider.provider_class_name("my_test_provider")
+  end
+
   class MyTestProvider < RedmineAiHelper::BaseToolProvider
     def self.list_tools
       {
