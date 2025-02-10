@@ -83,6 +83,16 @@ module RedmineAiHelper
           else
             page_name = "リポジトリの情報ページです"
           end
+        when "boards"
+          case @action_name
+          when "show"
+            board = Board.find(@content_id)
+            page_name = "ボード「#{board.name}」の情報ページです。"
+          when "index"
+            page_name = "ボード一覧"
+          else
+            page_name = "ボードの#{@action_name}ページです"
+          end
         else
           page_name = "{@controller_name}の{@action_name}ページです"
         end
