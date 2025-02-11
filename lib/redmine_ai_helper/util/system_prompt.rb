@@ -101,6 +101,10 @@ module RedmineAiHelper
           message = Message.find(@content_id) if @content_id
           page_name = "メッセージ「#{message.subject}」のページです。メッセージのIDは #{message.id}です。" if message
           page_name = "メッセージのページです。" unless message
+        when "versions"
+          version = Version.find(@content_id) if @content_id
+          page_name = "バージョン「#{version.name}」のページです。バージョンのIDは #{version.id} です。" if version
+          page_name ||= "バージョンのページです。"
         else
           page_name = "#{@controller_name}の#{@action_name}ページです"
         end
