@@ -51,6 +51,36 @@ module RedmineAiHelper
                   required: ["message_id"],
                 },
               },
+            },
+            {
+              name: "generate_url_for_board",
+              description: "Generate a URL for the specified board. It returns the board's URL.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    board_id: {
+                      type: "integer"
+                    },
+                  },
+                  required: ["board_id"],
+                },
+              },
+            },
+            {
+              name: "generate_url_for_message",
+              description: "Generate a URL for the specified message. It returns the message's URL.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    message_id: {
+                      type: "integer"
+                    },
+                  },
+                  required: ["message_id"],
+                },
+              },
             }
           ]
         }
@@ -140,6 +170,29 @@ module RedmineAiHelper
         }
 
         ToolResponse.create_success(message_hash)
+      end
+
+      # Generate a URL for the specified board.
+      def generate_board_url(args = {})
+        sym_args = args.symbolize_keys
+        board_id = sym_args[:board_id]
+        return ToolResponse.create_error("Board ID not provided") unless board_id
+        board = Board.find_by(id: board_id)
+        return ToolResponse.create_error("Board not found") if board.nil? || !board.visible?
+        url = "#{project_board_path(board.project, board)}"
+        ToolResponse.create_success({url: url})
+      end
+
+      # Generate a URL for the specified message.
+      # args: { message_id: "integer" }
+      def generate_message_url(args = {})
+        sym_args = args.symbolize_keys
+        message_id = sym_args[:message_id]
+        return ToolResponse.create_error("Message ID not provided") unless message_id
+        message = Message.find_by(id: message_id)
+        return ToolResponse.create_error("Message not found") if message.nil? || !message.visible?
+        url = "#{board_message_path(message.board, message)}"
+        ToolResponse.create_success({url: url})
       end
     end
   end
