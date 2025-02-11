@@ -3,6 +3,7 @@ require "redmine_ai_helper/base_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class BoardToolProvider < RedmineAiHelper::BaseToolProvider
+      # List all tools provided by this tool provider.
       def self.list_tools()
         list = {
           tools: [
@@ -56,14 +57,16 @@ module RedmineAiHelper
         list
       end
 
+      # List all boards in the project.
+      # args: { project_id: "integer" }
       def list_boards(args = {})
         sym_args = args.symbolize_keys
         project_id = sym_args[:project_id]
         project = Project.find_by(id: project_id)
         return ToolResponse.create_error("Project not found") if project.nil?
-        boards = project.boards.preload(:last_message => :author).to_a
+        boards = project.boards.filter{|b| b.visible?}
         board_list = []
-        boards.filter{|b| b.visible?}.each do |board|
+        boards.each do |board|
           board_list << {
             id: board.id,
             name: board.name,
@@ -75,6 +78,8 @@ module RedmineAiHelper
         ToolResponse.create_success(board_list)
       end
 
+      # Read a board from the database and return it as a JSON object.
+      # args: { board_id: "integer" }
       def board_info(args = {})
         sym_args = args.symbolize_keys
         board_id = sym_args[:board_id]
@@ -101,11 +106,13 @@ module RedmineAiHelper
         ToolResponse.create_success(board_hash)
       end
 
+      # Read a message from the database and return it as a JSON object.
+      # args: { message_id: "integer" }
       def read_message(args = {})
         sym_args = args.symbolize_keys
         message_id = sym_args[:message_id]
         message = Message.find_by(id: message_id)
-        return ToolResponse.create_error("Message not found") if message.nil?
+        return ToolResponse.create_error("Message not found") if message.nil? || !message.visible?
         message_hash = {
           id: message.id,
           board_id: message.board_id,
@@ -118,7 +125,7 @@ module RedmineAiHelper
           },
           created_on: message.created_on,
           updated_on: message.updated_on,
-          replies: message.children.map do |reply|
+          replies: message.children.filter(&:visible?).map do |reply|
             {
               id: reply.id,
               content: reply.content,
