@@ -3,6 +3,7 @@ require "redmine_ai_helper/base_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class BoardToolProvider < RedmineAiHelper::BaseToolProvider
+      # List all tools provided by this tool provider.
       def self.list_tools()
         list = {
           tools: [
@@ -50,31 +51,66 @@ module RedmineAiHelper
                   required: ["message_id"],
                 },
               },
+            },
+            {
+              name: "generate_url_for_board",
+              description: "Generate a URL for the specified board. It returns the board's URL.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    board_id: {
+                      type: "integer"
+                    },
+                  },
+                  required: ["board_id"],
+                },
+              },
+            },
+            {
+              name: "generate_url_for_message",
+              description: "Generate a URL for the specified message. It returns the message's URL.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    message_id: {
+                      type: "integer"
+                    },
+                  },
+                  required: ["message_id"],
+                },
+              },
             }
           ]
         }
         list
       end
 
+      # List all boards in the project.
+      # args: { project_id: "integer" }
       def list_boards(args = {})
         sym_args = args.symbolize_keys
         project_id = sym_args[:project_id]
         project = Project.find_by(id: project_id)
         return ToolResponse.create_error("Project not found") if project.nil?
-        boards = project.boards.preload(:last_message => :author).to_a
+        boards = project.boards.filter{|b| b.visible?}
         board_list = []
-        boards.filter{|b| b.visible?}.each do |board|
+        boards.each do |board|
           board_list << {
             id: board.id,
             name: board.name,
             description: board.description,
             messages_count: board.messages_count,
-            parent_board_id: board.parent_id
+            parent_board_id: board.parent_id,
+            url_for_board: "#{project_board_path(board.project, board)}"
           }
         end
         ToolResponse.create_success(board_list)
       end
 
+      # Read a board from the database and return it as a JSON object.
+      # args: { board_id: "integer" }
       def board_info(args = {})
         sym_args = args.symbolize_keys
         board_id = sym_args[:board_id]
@@ -85,13 +121,15 @@ module RedmineAiHelper
           project_id: board.project_id,
           name: board.name,
           description: board.description,
+          url_for_board: "#{project_board_path(board.project, board)}",
           messages: board.messages.filter{|m| m.visible? }.map do |message|
             hash ={
               id: message.id,
               content: message.content,
               created_on: message.created_on,
+              url_for_message: "#{board_message_path(message.board, message)}",
             }
-            hash[:authro] = {
+            hash[:author] = {
               id: message.author.id,
               name: message.author.name,
             } if message.author
@@ -101,11 +139,13 @@ module RedmineAiHelper
         ToolResponse.create_success(board_hash)
       end
 
+      # Read a message from the database and return it as a JSON object.
+      # args: { message_id: "integer" }
       def read_message(args = {})
         sym_args = args.symbolize_keys
         message_id = sym_args[:message_id]
         message = Message.find_by(id: message_id)
-        return ToolResponse.create_error("Message not found") if message.nil?
+        return ToolResponse.create_error("Message not found") if message.nil? || !message.visible?
         message_hash = {
           id: message.id,
           board_id: message.board_id,
@@ -118,7 +158,8 @@ module RedmineAiHelper
           },
           created_on: message.created_on,
           updated_on: message.updated_on,
-          replies: message.children.map do |reply|
+          url_for_message: "#{board_message_path(message.board, message)}",
+          replies: message.children.filter(&:visible?).map do |reply|
             {
               id: reply.id,
               content: reply.content,
@@ -133,6 +174,29 @@ module RedmineAiHelper
         }
 
         ToolResponse.create_success(message_hash)
+      end
+
+      # Generate a URL for the specified board.
+      def generate_board_url(args = {})
+        sym_args = args.symbolize_keys
+        board_id = sym_args[:board_id]
+        return ToolResponse.create_error("Board ID not provided") unless board_id
+        board = Board.find_by(id: board_id)
+        return ToolResponse.create_error("Board not found") if board.nil? || !board.visible?
+        url = "#{project_board_path(board.project, board)}"
+        ToolResponse.create_success({url: url})
+      end
+
+      # Generate a URL for the specified message.
+      # args: { message_id: "integer" }
+      def generate_message_url(args = {})
+        sym_args = args.symbolize_keys
+        message_id = sym_args[:message_id]
+        return ToolResponse.create_error("Message ID not provided") unless message_id
+        message = Message.find_by(id: message_id)
+        return ToolResponse.create_error("Message not found") if message.nil? || !message.visible?
+        url = "#{board_message_path(message.board, message)}"
+        ToolResponse.create_success({url: url})
       end
     end
   end

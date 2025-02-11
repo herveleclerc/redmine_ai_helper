@@ -58,6 +58,8 @@
          content_id = @board.id if @board
        when "messages"
          content_id = @message.id if @message
+       when "versions"
+         content_id = @version.id if @version
        end %>
     <script>
       const is_sidebar_exist = function() {

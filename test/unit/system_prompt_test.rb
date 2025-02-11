@@ -134,4 +134,19 @@ class SystemPromptTest < ActiveSupport::TestCase
     assert_match /"current_project": {/, json
     assert_match /"name": "#{@project.name}"/, json
   end
+
+  def test_prompt_with_version_page
+    options = { controller_name: 'versions', action_name: 'show', project: @project, content_id: 1 }
+    version = Version.find(1)
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /バージョン「#{version.name}」のページです。バージョンのIDは #{version.id} です。/, prompt
+  end
+
+  def test_prompt_with_version_other_page
+    options = { controller_name: 'versions', action_name: 'other', project: @project }
+    system_prompt = RedmineAiHelper::Util::SystemPrompt.new(options)
+    prompt = system_prompt.prompt
+    assert_match /バージョンのページです/, prompt
+  end
 end
