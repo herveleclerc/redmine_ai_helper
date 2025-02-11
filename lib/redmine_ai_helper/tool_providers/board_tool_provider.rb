@@ -102,7 +102,8 @@ module RedmineAiHelper
             name: board.name,
             description: board.description,
             messages_count: board.messages_count,
-            parent_board_id: board.parent_id
+            parent_board_id: board.parent_id,
+            url_for_board: "#{project_board_path(board.project, board)}"
           }
         end
         ToolResponse.create_success(board_list)
@@ -120,13 +121,15 @@ module RedmineAiHelper
           project_id: board.project_id,
           name: board.name,
           description: board.description,
+          url_for_board: "#{project_board_path(board.project, board)}",
           messages: board.messages.filter{|m| m.visible? }.map do |message|
             hash ={
               id: message.id,
               content: message.content,
               created_on: message.created_on,
+              url_for_message: "#{board_message_path(message.board, message)}",
             }
-            hash[:authro] = {
+            hash[:author] = {
               id: message.author.id,
               name: message.author.name,
             } if message.author
@@ -155,6 +158,7 @@ module RedmineAiHelper
           },
           created_on: message.created_on,
           updated_on: message.updated_on,
+          url_for_message: "#{board_message_path(message.board, message)}",
           replies: message.children.filter(&:visible?).map do |reply|
             {
               id: reply.id,
