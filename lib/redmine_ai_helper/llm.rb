@@ -6,6 +6,10 @@ require "redmine_ai_helper/util/json_extractor"
 require "openai"
 require "json"
 
+Dir[File.join(File.dirname(__FILE__), "agents", "*_agent.rb")].each do |file|
+  require file
+end
+
 module RedmineAiHelper
   class Llm
     include RedmineAiHelper::Logger
@@ -34,12 +38,8 @@ module RedmineAiHelper
       ai_helper_logger.info "#### ai_helper: chat start ####"
       ai_helper_logger.info "user:#{User.current}, task: #{task}, option: #{option}"
       begin
-        result = execute_task(task, conversation, proc)
-        if result[:status] == "success"
-          answer = result[:answer]
-        else
-          answer = result[:error]
-        end
+        agent = RedmineAiHelper::Agents::LeaderAgent.new(option)
+        answer = agent.perform_task(conversation.messages_for_openai, proc)
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
         answer = e.message

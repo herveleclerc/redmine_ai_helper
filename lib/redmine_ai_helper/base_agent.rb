@@ -1,9 +1,11 @@
 require "redmine_ai_helper/tool_provider"
+require "redmine_ai_helper/logger"
 require "openai"
 
 module RedmineAiHelper
   class BaseAgent
     attr_accessor :model
+    include RedmineAiHelper::Logger
 
     class << self
       def myname
@@ -23,8 +25,7 @@ module RedmineAiHelper
       end
     end
 
-    def initialize(room_id, params = {})
-      @room_id = room_id
+    def initialize(params = {})
       params[:access_token] ||= Setting.plugin_redmine_ai_helper["access_token"]
       params[:uri_base] ||= Setting.plugin_redmine_ai_helper["uri_base"]
       params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
@@ -75,6 +76,12 @@ module RedmineAiHelper
 
     def chat(messages, option = {}, callback = nil)
       messages_with_systemprompt = [system_prompt] + messages
+      messages_with_systemprompt.each do |message|
+        # message[:role] が system でも asssistant でも ユーザーでもない場合はエラー
+        unless %w(system assistant user).include?(message[:role])
+          raise "Invalid role: #{message[:role]}, message: #{message[:content]}"
+        end
+      end
       answer = ""
       @client.chat(
         parameters: {
@@ -115,6 +122,23 @@ module RedmineAiHelper
 
     def all_agents
       @agents
+    end
+
+    def get_agent_instance(name, option = {})
+      agent = find_agent(name)
+      return nil unless agent
+      agent_class = Object.const_get(agent[:class])
+      agent_class.new(option)
+    end
+
+    def list_agents
+      @agents.map { |a|
+        agent = Object.const_get(a[:class]).new
+        {
+          agent_name: a[:name],
+          backstory: agent.backstory
+        }
+     }
     end
 
     def find_agent(name)

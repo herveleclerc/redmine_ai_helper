@@ -5,19 +5,16 @@ class BaseAgentTest < ActiveSupport::TestCase
   def setup
     @openai_mock = OpenAI::DummyOpenAIClient.new
     OpenAI::Client.stubs(:new).returns(@openai_mock)
-    @room_id = 1
     @params = {
       access_token: "test_access_token",
       uri_base: "http://example.com",
       organization_id: "test_org_id",
       model: "test_model",
     }
-    @agent = MyAgent.new(@room_id, @params)
+    @agent = MyAgent.new(@params)
   end
 
-  def test_initialize
-    assert_equal @room_id, @agent.instance_variable_get(:@room_id)
-  end
+
 
   def test_available_tool_providers
     assert_equal [], @agent.available_tool_providers
@@ -54,7 +51,7 @@ class BaseAgentTest < ActiveSupport::TestCase
   end
 
   def test_available_tool_providers
-    agent = MyAgent.new(@room_id, @params)
+    agent = MyAgent.new(@params)
     assert_equal ["dummy_tool_provider"], agent.available_tool_providers
   end
 end
