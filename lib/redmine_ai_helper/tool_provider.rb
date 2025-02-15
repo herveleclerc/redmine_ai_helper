@@ -31,9 +31,7 @@ module RedmineAiHelper
         end
       end
       list = { providers: providers }
-      json = JSON.pretty_generate(list)
-      # puts "#### list_tools: #{json}"
-      json
+      # json = JSON.pretty_generate(list)
     end
 
     def call_tool(params = {})
