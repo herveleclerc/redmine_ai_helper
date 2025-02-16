@@ -51,7 +51,6 @@ module RedmineAiHelper
     # @param [String] to the role of the agent receiving the task
     def send_task(from, to, task, option = {}, proc = nil)
       add_message(from, task, to)
-      ai_helper_logger.info @messages.last
       agent = get_agent(to)
       unless agent
         error = "Agent not found: #{to}"
@@ -60,7 +59,6 @@ module RedmineAiHelper
       end
       answer = agent.perform_task(@messages, option, proc)
       add_message(to, answer, from)
-      ai_helper_logger.info @messages.last
       answer
     end
   end

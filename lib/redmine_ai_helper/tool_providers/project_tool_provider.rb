@@ -222,7 +222,7 @@ module RedmineAiHelper
           project: project,
           author: author,
         )
-        ai_helper_logger.info "current_user: #{current_user}, project: #{project}, author: #{author}, start_date: #{start_date}, end_date: #{end_date}, limit: #{limit}"
+        ai_helper_logger.debug "current_user: #{current_user}, project: #{project}, author: #{author}, start_date: #{start_date}, end_date: #{end_date}, limit: #{limit}"
         events = fetcher.events(start_date, end_date).sort_by(&:event_datetime).reverse.first(limit)
         # events = fetcher.events(start_date, end_date, limit).sort_by(&:event_datetime)
         # events = fetcher.events(start_date)
