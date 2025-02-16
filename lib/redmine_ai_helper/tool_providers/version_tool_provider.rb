@@ -14,7 +14,7 @@ module RedmineAiHelper
                   type: "object",
                   properties: {
                     project_id: {
-                      type: "integer"
+                      type: "integer",
                     },
                   },
                   required: ["project_id"],
@@ -23,20 +23,23 @@ module RedmineAiHelper
             },
             {
               name: "version_info",
-              description: "Read a version from the database and return it as a JSON object. It returns the version ID, project ID, name, description, status, due_date, sharing, wiki_page_title, and created_on, estimated_hours, spent_hours, and issues.",
+              description: "Read versions from the database and return them as a JSON object. It returns the version ID, project ID, name, description, status, due_date, sharing, wiki_page_title, created_on, estimated_hours, spent_hours, and issues.",
               arguments: {
                 schema: {
                   type: "object",
                   properties: {
-                    version_id: {
-                      type: "integer"
+                    version_ids: {
+                      type: "array",
+                      items: {
+                        type: "integer",
+                      },
                     },
                   },
-                  required: ["version_id"],
+                  required: ["version_ids"],
                 },
               },
-            }
-          ]
+            },
+          ],
         }
         list
       end
@@ -68,37 +71,42 @@ module RedmineAiHelper
       end
 
       # Read a version from the database and return it as a JSON object.
-      # args: { version_id: "integer" }
+      # args: { version_ids: "array" }
       def version_info(args = {})
         sym_args = args.deep_symbolize_keys
-        version_id = sym_args[:version_id]
-        return ToolResponse.create_error("Version ID is required.") if version_id.nil?
-        version = Version.find_by_id(version_id)
-        return ToolResponse.create_error("Version not found") if version.nil? or !version.visible?
-        version_hash = {
-          id: version.id,
-          project_id: version.project_id,
-          name: version.name,
-          description: version.description,
-          status: version.status,
-          due_date: version.due_date,
-          sharing: version.sharing,
-          wiki_page_title: version.wiki_page_title,
-          created_on: version.created_on,
-          estimated_hours: version.estimated_hours,
-          spent_hours: version.spent_hours,
-          url_for_version: "#{version_url(version, only_path: true)}",
-          issues: version.fixed_issues.filter(&:visible?).map do |issue|
-            {
-              id: issue.id,
-              subject: issue.subject,
-              status: issue.status,
-              priority: issue.priority,
-              url_for_issue: "#{issue_url(issue, only_path: true)}",
-            }
-          end
-        }
-        ToolResponse.create_success(version_hash)
+        version_ids = sym_args[:version_ids]
+        return ToolResponse.create_error("Version ID is required.") if version_ids.nil?
+        versions = []
+
+        version_ids.each do |version_id|
+          version = Version.find_by_id(version_id)
+          return ToolResponse.create_error("Version not found: version_id: #{version_id}") if version.nil? or !version.visible?
+          version_hash = {
+            id: version.id,
+            project_id: version.project_id,
+            name: version.name,
+            description: version.description,
+            status: version.status,
+            due_date: version.due_date,
+            sharing: version.sharing,
+            wiki_page_title: version.wiki_page_title,
+            created_on: version.created_on,
+            estimated_hours: version.estimated_hours,
+            spent_hours: version.spent_hours,
+            url_for_version: "#{version_url(version, only_path: true)}",
+            issues: version.fixed_issues.filter(&:visible?).map do |issue|
+              {
+                id: issue.id,
+                subject: issue.subject,
+                status: issue.status,
+                priority: issue.priority,
+                url_for_issue: "#{issue_url(issue, only_path: true)}",
+              }
+            end,
+          }
+          versions << version_hash
+        end
+        ToolResponse.create_success({versions: versions})
       end
     end
   end

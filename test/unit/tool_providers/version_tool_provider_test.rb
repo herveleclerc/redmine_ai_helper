@@ -1,4 +1,4 @@
-require File.expand_path("../../test_helper", __FILE__)
+require File.expand_path("../../../test_helper", __FILE__)
 
 class VersionToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :boards, :messages
@@ -24,18 +24,18 @@ class VersionToolProviderTest < ActiveSupport::TestCase
   end
 
   def test_version_info_success
-    args = { version_id: @version.id }
+    args =  {version_ids: [@version.id]}
     response = @provider.version_info(args)
     assert response.is_success?
-    assert_equal @version.id, response.value[:id]
-    assert_equal @version.name, response.value[:name]
+    assert_equal @version.id, response.value[:versions].first[:id]
+    assert_equal @version.name, response.value[:versions].first[:name]
   end
 
   def test_version_info_not_found
-    args = { version_id: 999 }
+    args = { version_ids: [999] }
     response = @provider.version_info(args)
     assert response.is_error?
-    assert_equal "Version not found", response.error
+    assert_equal "Version not found: version_id: 999", response.error
   end
 
   def test_list_tools

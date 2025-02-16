@@ -1,4 +1,4 @@
-require File.expand_path('../../test_helper', __FILE__)
+require File.expand_path('../../../test_helper', __FILE__)
 
 class SystemPromptTest < ActiveSupport::TestCase
   fixtures :users, :projects, :issues, :repositories, :wiki_pages

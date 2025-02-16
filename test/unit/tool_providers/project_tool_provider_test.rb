@@ -1,4 +1,4 @@
-require File.expand_path("../../test_helper", __FILE__)
+require File.expand_path("../../../test_helper", __FILE__)
 
 class ProjectToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :users, :repositories, :changesets, :changes, :issues, :issue_statuses, :enumerations, :issue_categories, :trackers

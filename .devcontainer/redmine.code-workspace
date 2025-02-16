@@ -17,7 +17,6 @@
       "/workspace/redmine_ai_helper"
     ],
     "liveServer.settings.multiRootWorkspaceName": "redmine_ai_helper",
-    "rubyLsp.formatter": "rubocop",
     "[ruby]": {
       "editor.defaultFormatter": "Shopify.ruby-lsp",
       "editor.formatOnSave": true
@@ -29,6 +28,7 @@
       "editor.defaultFormatter": "aliariff.vscode-erb-beautify"
     },
     "vscode-erb-beautify.useBundler": true,
-    "github.copilot.nextEditSuggestions.enabled": true
+    "github.copilot.nextEditSuggestions.enabled": false,
+    "rubyLsp.formatter": "auto"
   }
 }
