@@ -1,5 +1,8 @@
 $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/lib"
 require_dependency "redmine_ai_helper/sidebar_hook"
+Dir[File.join(File.dirname(__FILE__), "lib/redmine_ai_helper/agents", "*_agent.rb")].each do |file|
+  require file
+end
 Redmine::Plugin.register :redmine_ai_helper do
   name "Redmine Ai Helper plugin"
   author "Haruyuki Iida"

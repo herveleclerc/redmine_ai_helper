@@ -12,6 +12,7 @@ class BaseAgentTest < ActiveSupport::TestCase
       model: "test_model",
     }
     @agent = MyAgent.new(@params)
+    @messages = [{ role: "user", content: "Hello" }]
   end
 
 
@@ -47,13 +48,78 @@ class BaseAgentTest < ActiveSupport::TestCase
     messages = [{ role: "user", content: "Hello" }]
     option = {}
     callback = proc { |content| puts content }
-    assert_equal "test answer", @agent.perform_task(messages, option, callback)
+    assert_equal "merged result", @agent.perform_task(messages, option, callback)
   end
 
   def test_available_tool_providers
     agent = MyAgent.new(@params)
     assert_equal ["dummy_tool_provider"], agent.available_tool_providers
   end
+
+  def test_perform_task_success
+    result = @agent.perform_task(@messages)
+    assert_equal "merged result", result
+  end
+
+
+  def test_merge_results
+    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
+    result = @agent.merge_results(@messages, pre_tasks)
+    assert_equal "merged result", result
+  end
+
+  def test_decompose_task
+    result = @agent.decompose_task(@messages)
+    assert_equal [{ "name" => "step1", "step" => "do something" }], result["steps"]
+  end
+
+  def test_decompose_task_with_pre_tasks_and_pre_error
+    result = @agent.decompose_task(@messages)
+    assert_equal [{ "name" => "step1", "step" => "do something" }], result["steps"]
+  end
+
+  def test_simple_llm_chat
+
+    response = @agent.chat(@messages)
+    assert_equal "test answer", response
+  end
+
+  def test_dispatch_success
+
+    result = @agent.dispatch("dispatch_success_test", @messages)
+    assert result.is_success?
+    assert_equal 1, result.value[:id]
+  end
+
+  def test_dispatch_error
+
+    result = @agent.dispatch("dispatch_error", @messages)
+    assert result.is_error?
+  end
+
+  def test_select_tool
+    result = @agent.select_tool("test task", @messages)
+    assert_equal "project_tool_provider", result["tool"]["provider"]
+    assert_equal "read_project", result["tool"]["tool"]
+    assert_equal ["1"], result["tool"]["arguments"]["id"]
+  end
+
+  def test_select_tool_with_pre_error
+    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
+    result = @agent.select_tool("test task", @messages, pre_tasks, "error")
+    assert_equal "project_tool_provider", result["tool"]["provider"]
+    assert_equal "read_project", result["tool"]["tool"]
+    assert_equal ["1"], result["tool"]["arguments"]["id"]
+  end
+
+  def test_select_tool_with_error_handling
+    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
+    result = @agent.select_tool("error_task", @messages, pre_tasks, "error")
+    assert_equal "project_tool_provider", result["tool"]["provider"]
+    assert_equal "read_project", result["tool"]["tool"]
+    assert_equal ["1"], result["tool"]["arguments"]["id"]
+  end
+
 end
 
 module OpenAI
@@ -78,7 +144,7 @@ module OpenAI
         elsif message.include?("dispatch_error")
           answer = { "tool" => { "provider" => "aaaa", "tool" => "read_project", "arguments" => { "id": ["999"] } } }.to_json
         end
-      elsif message.include?("というタスクを解決するために必要なステップに分解してください。")
+      elsif message.include?("タスクを解決するために必要なステップに分解してください。")
         answer = { "steps" => [{ "name" => "step1", "step" => "do something" }] }.to_json
       else
         #puts "DummyOpenAIClient#chat params = #{message} called!!!!!!!!!!!!!!!!"

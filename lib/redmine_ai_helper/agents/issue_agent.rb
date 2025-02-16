@@ -1,3 +1,4 @@
+require_relative '../base_agent'
 module RedmineAiHelper
   module Agents
     class IssueAgent < RedmineAiHelper::BaseAgent

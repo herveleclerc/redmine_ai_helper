@@ -3,6 +3,7 @@ require "redmine_ai_helper/llm"
 
 class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
+
   def setup
     AiHelperConversation.delete_all
     @params = {
@@ -16,8 +17,6 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
     @conversation = AiHelperConversation.new(title: "test task")
     message = AiHelperMessage.new(content: "test task", role: "user")
     @conversation.messages << message
-
-
   end
 
   # def test_initialize
@@ -27,77 +26,11 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
   # end
 
   def test_chat_success
-    message = AiHelperMessage.new(content: "test task", role: "user")
+    message = AiHelperMessage.new(content: "hello", role: "user")
     @conversation.messages << message
     response = @llm.chat(@conversation, nil, { controller_name: "issues", action_name: "show", content_id: 1 })
     assert_equal "assistant", response.role
-    assert_equal "merged result", response.content
-  end
-
-  def test_execute_task_success
-    result = @llm.execute_task("test task", @conversation, nil)
-    assert_equal "success", result[:status]
-    assert_equal "merged result", result[:answer]
-  end
-
-
-  def test_merge_results
-    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
-    result = @llm.merge_results("merge_results_test", @conversation, pre_tasks, nil)
-    assert_equal "merged result ok", result
-  end
-
-  def test_decompose_task
-    result = @llm.decompose_task("test task",  @conversation)
-    assert_equal [{ "name" => "step1", "step" => "do something" }], result["steps"]
-  end
-
-  def test_decompose_task_with_pre_tasks_and_pre_error
-    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
-    result = @llm.decompose_task("test task", @conversation, pre_tasks, "error")
-    assert_equal [{ "name" => "step1", "step" => "do something" }], result["steps"]
-  end
-
-  def test_simple_llm_chat
-
-    response = @llm.simple_llm_chat(@conversation)
-    assert_equal "test answer", response.value
-  end
-
-  def test_dispatch_success
-
-    result = @llm.dispatch("dispatch_success_test", @conversation)
-    assert result.is_success?
-    assert_equal 1, result.value[:id]
-  end
-
-  def test_dispatch_error
-
-    result = @llm.dispatch("dispatch_error", @conversation)
-    assert result.is_error?
-  end
-
-  def test_select_tool
-    result = @llm.select_tool("test task", @conversation)
-    assert_equal "project_tool_provider", result["tool"]["provider"]
-    assert_equal "read_project", result["tool"]["tool"]
-    assert_equal ["1"], result["tool"]["arguments"]["id"]
-  end
-
-  def test_select_tool_with_pre_error
-    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
-    result = @llm.select_tool("test task", @conversation, pre_tasks, "error")
-    assert_equal "project_tool_provider", result["tool"]["provider"]
-    assert_equal "read_project", result["tool"]["tool"]
-    assert_equal ["1"], result["tool"]["arguments"]["id"]
-  end
-
-  def test_select_tool_with_error_handling
-    pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
-    result = @llm.select_tool("error_task", @conversation, pre_tasks, "error")
-    assert_equal "project_tool_provider", result["tool"]["provider"]
-    assert_equal "read_project", result["tool"]["tool"]
-    assert_equal ["1"], result["tool"]["arguments"]["id"]
+    assert_equal "test_answer", response.content
   end
 
   private
@@ -127,8 +60,7 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         elsif message.include?("dispatch_error")
           answer = { "tool" => { "provider" => "aaaa", "tool" => "read_project", "arguments" => { "id": ["999"] } } }.to_json
         end
-
-      elsif message.include?("というタスクを解決するために必要なステップに分解してください。")
+      elsif message.include?("タスクを解決するために必要なステップに分解してください。")
         answer = { "steps" => [{ "name" => "step1", "step" => "do something" }] }.to_json
       else
         #puts "DummyOpenAIClient#chat params = #{message} called!!!!!!!!!!!!!!!!"
@@ -141,12 +73,11 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         "model": "gpt-3.5-turbo-0613",
         "choices": [
           { "index": 0,
-          "delta": { "content": answer },
-          "finish_reason": nil
-          }
-          ]
+            "delta": { "content": answer },
+            "finish_reason": nil },
+        ],
 
-        }.deep_stringify_keys
+      }.deep_stringify_keys
 
       proc.call(chunk, nil) if proc
 
