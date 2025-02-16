@@ -1,4 +1,4 @@
-require File.expand_path("../../test_helper", __FILE__)
+require File.expand_path("../../../test_helper", __FILE__)
 
 class WikiToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :wikis, :wiki_pages, :users
