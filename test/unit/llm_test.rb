@@ -11,7 +11,7 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
       uri_base: "http://example.com",
       organization_id: "test_org_id",
     }
-    @openai_mock = DummyOpenAIClient.new
+    @openai_mock = DummyOpenAIClientForLlmTest.new
     OpenAI::Client.stubs(:new).returns(@openai_mock)
     @llm = RedmineAiHelper::Llm.new(@params)
     @conversation = AiHelperConversation.new(title: "test task")
@@ -30,7 +30,7 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
     @conversation.messages << message
     response = @llm.chat(@conversation, nil, { controller_name: "issues", action_name: "show", content_id: 1 })
     assert_equal "assistant", response.role
-    assert_equal "test_answer", response.content
+    assert_equal "test answer", response.content
   end
 
   private
@@ -39,7 +39,7 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
     { "choices": [{ "message": { "content": message } }] }
   end
 
-  class DummyOpenAIClient
+  class DummyOpenAIClientForLlmTest
     def chat(params = {})
       proc = params[:parameters][:stream]
       messages = params[:parameters][:messages]
@@ -62,6 +62,13 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         end
       elsif message.include?("タスクを解決するために必要なステップに分解してください。")
         answer = { "steps" => [{ "name" => "step1", "step" => "do something" }] }.to_json
+      elsif message.include?("というゴールを解決するために")
+        answer = {
+          "steps": [
+            { "agent": "leader", "step": "my_projectという名前のプロジェクトのIDを教えてください" },
+          ]
+        }.to_json
+
       else
         #puts "DummyOpenAIClient#chat params = #{message} called!!!!!!!!!!!!!!!!"
       end
