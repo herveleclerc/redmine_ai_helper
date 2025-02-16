@@ -3,7 +3,7 @@ require File.expand_path("../../test_helper", __FILE__)
 class JsonExtractorTest < ActiveSupport::TestCase
   def setup
     @valid_json = '{"key": "value"}'
-    @invalid_json = '{"key": "value"'
+    @invalid_json = 'aaabbbcccc'
     @markdown_json = "```json\n{\"key\": \"value\"}\n```"
   end
 
@@ -34,4 +34,21 @@ class JsonExtractorTest < ActiveSupport::TestCase
     expected = JSON.pretty_generate({"key" => "value"})
     assert_equal(expected, result)
   end
+
+  test "should extract invalid JSON with unnecessary comma " do
+    invalid_json = '{"key": "value",}'
+    result = RedmineAiHelper::Util::JsonExtractor.extract(invalid_json)
+    assert_equal({"key" => "value"}, result)
+
+    invalid_json = '{"key": ["value1", "value2",]}'
+    result = RedmineAiHelper::Util::JsonExtractor.extract(invalid_json)
+    assert_equal({"key" => ["value1", "value2"]}, result)
+  end
+
+  test "should extract JSON with unquoted keys" do
+    invalid_json = "{key: 'value'}"
+    result = RedmineAiHelper::Util::JsonExtractor.extract(invalid_json)
+    assert_equal({"key" => "value"}, result)
+  end
+
 end
