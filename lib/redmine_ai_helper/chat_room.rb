@@ -15,7 +15,6 @@ module RedmineAiHelper
         #{goal}
       EOS
       add_message("leader", first_message, "all")
-      ai_helper_logger.info "#{@messages.first}"
     end
 
     def goal
@@ -27,6 +26,7 @@ module RedmineAiHelper
     end
 
     def add_message(role, message, to)
+      ai_helper_logger.info "role: #{role}\n @#{to}, #{message}"
       @messages ||= []
       @messages << { role: "assistant", content: "role: #{role}\n----\nTo: #{to}\n#{message}" }
     end
