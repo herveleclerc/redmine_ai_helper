@@ -15,9 +15,8 @@ class RedmineAiHelper::ToolProviderTest < ActiveSupport::TestCase
   def test_list_tools
     result = RedmineAiHelper::ToolProvider.list_tools
     # resultの中に他のエージェントに混じってTestProviderのlist_toolsメソッドの結果が含まれていることを確認する
-    # puts "#### result = #{result}"
-    json = JSON.parse(result, symbolize_names: true)
-    providers = json[:providers]
+
+    providers = result[:providers]
     # puts "providers = #{providers}"
     test_provider = providers.find { |provider| provider[:name] == "test_provider" }
     # puts "###### test_provider = #{test_provider}"
