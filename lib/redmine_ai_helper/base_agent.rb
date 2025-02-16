@@ -129,8 +129,7 @@ module RedmineAiHelper
         pre_tasks << pre_task
         answer = result.value
       end
-      answer = merge_results(messages, pre_tasks) if pre_tasks.length
-      answer
+      pre_tasks
     end
 
 
@@ -278,27 +277,6 @@ module RedmineAiHelper
       RedmineAiHelper::Util::JsonExtractor.extract(json)
     end
 
-    # merge the results
-    def merge_results(messages, pre_tasks )
-      prompt = <<~EOS
-        「 タスクを解決するために今までに実施したステップは以下の通りです。これらの結果の内容を踏まえて、タスクに対する最終回答を作成してください。
-
-        最終回答はタスクに対する自然な会話となる文章です。文章は要点をまとめてなるべく箇条書きにしてください。
-        回答にURLを含める際には、ユーザーがアクセスしやすいようにリンクを生成してください。
-        ** 最終回答には会話の文章のみ含めてください。解説は不要です。 **
-
-        回答の作成には過去の会話履歴も参考にしてください。
-        ----
-        事前のステップ:
-        #{pre_tasks}
-
-      EOS
-
-      newmessages = messages.dup
-      newmessages << { role: "user", content: prompt }
-      json = chat(newmessages)
-      json
-    end
 
     class TaskResponse < RedmineAiHelper::ToolResponse
     end

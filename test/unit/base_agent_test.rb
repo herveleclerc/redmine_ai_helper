@@ -42,13 +42,8 @@ class BaseAgentTest < ActiveSupport::TestCase
 
     should "perform task successfully" do
       result = @agent.perform_task(@messages)
-      assert_equal "merged result", result
-    end
-
-    should "merge results correctly" do
-      pre_tasks = [{ "name" => "step1", "step" => "do something", "result" => "result1" }]
-      result = @agent.merge_results(@messages, pre_tasks)
-      assert_equal "merged result", result
+      project = Project.find(1)
+      assert_equal project.name, result.first[:result][:name]
     end
 
     should "decompose task correctly" do
