@@ -100,7 +100,204 @@ module RedmineAiHelper
     end
 
     def perform_task(messages, option = {}, callback = nil)
-      chat(messages, option, callback)
+      tasks = decompose_task(messages)
+      ai_helper_logger.info "### decomposed tasks: #{tasks}"
+
+      answer = ""
+      pre_tasks = []
+      tasks["steps"].each do |new_task|
+        ai_helper_logger.debug "new_task: #{new_task}"
+        result = nil
+        previous_error = nil
+        max_retry = 3
+        max_retry.times do |i|
+          result = dispatch(new_task["step"], messages, pre_tasks, previous_error)
+          break if result.is_success?
+
+          previous_error = result.error
+          ai_helper_logger.debug "retry: #{i}"
+        end
+        pre_task = {
+          "name": new_task["name"],
+          "step": new_task["step"],
+          "result": result.value,
+        }
+        ai_helper_logger.info "pre_task: #{pre_task}"
+        pre_tasks << pre_task
+        answer = result.value
+      end
+      answer = merge_results(messages, pre_tasks) if pre_tasks.length
+      answer
+    end
+
+
+    def decompose_task(messages)
+      prompt = <<~EOS
+        「leader から与えられたタスクを解決するために必要なステップに分解してください。
+        ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。
+        各ステップでは、前のステップの実行で得られた結果をどのように利用するかを考慮してください。
+        それらをまとめて「ステップの分解のJSONのスキーマ」にマッチするJSONを作成してください。
+
+        ２つ以上のステップに分解がする必要がない場合には元のタスクをそのまま一つのステップとして記述してください。
+        タスクを解決するためにツールの実行が不要な場合にはステップを分解する必要はありません。
+        ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
+        ----
+        ステップの分解のJSONのスキーマ:
+        {
+          "type": "object",
+          "properties": {
+            "steps": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "ステップの名前"
+                  },
+                  "step": {
+                    "type": "string",
+                    "description": "ステップの内容"
+                  }
+                  required: ["name", "step"]
+                }
+              }
+            }
+          }
+        }ß
+        ----
+        タスクの例:
+        「トラッカーがサポートのチケットを探す」
+        JSONの例:
+        {
+          "steps": [
+            {
+                  "name": "step1",
+                  "step": "名前がサポートのトラッカーのIDを取得する",
+                },
+            {
+                  "name": "step2",
+                  "step": "前のステップで取得したトラッカーのIDを使用して、そのトラッカーのチケットを探す",
+                },
+          ],
+        }
+        ----
+        tools:
+        #{available_tools}
+        ("\n")}
+      EOS
+
+      newmessages = messages.dup
+      newmessages << { role: "user", content: prompt }
+
+      json = chat(newmessages)
+
+      RedmineAiHelper::Util::JsonExtractor.extract(json)
+    end
+
+    # dispatch the tool
+    def dispatch(task, messages, pre_tasks = [], previous_error = nil)
+      begin
+        response = select_tool(task, messages, pre_tasks, previous_error)
+        tool = response["tool"]
+        ai_helper_logger.info "tool: #{tool}"
+        return TaskRespose.create_success chat(messages) if tool.blank?
+
+        provider = ToolProvider.new(@client, @model)
+        result = provider.call_tool(provider: tool["provider"], name: tool["tool"], arguments: tool["arguments"])
+        ai_helper_logger.info "result: #{result}"
+        if result.is_error?
+          ai_helper_logger.error "error!!!!!!!!!!!!: #{result}"
+          return result
+        end
+
+        res = TaskResponse.create_success result.value
+        res
+      rescue => e
+        ai_helper_logger.error "error: #{e.full_message}"
+        TaskResponse.create_error e.message
+      end
+
+    end
+
+     # select the toos to solve the task
+    def select_tool(task, messages, pre_tasks = [], previous_error = nil)
+      tools = ToolProvider.list_tools
+
+      previous_error_string = ""
+      if previous_error
+        previous_error_string = "\n----\n前回のツール実行でエラーが発生しました。今回はそのリトライです。前回のエラー内容は以下の通りです。このエラーが再度発生しないようにツールの選択とパラメータの作成してください。\n#{previous_error}"
+      end
+
+      pre_tasks_string = ""
+      if pre_tasks.length > 0
+        pre_tasks_string = <<~EOS
+          このタスクを解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップで使用するツールを選んでください。
+          事前のステップ:
+          #{JSON.pretty_generate(pre_tasks)}
+        EOS
+      end
+
+      prompt = <<~EOS
+        「#{task}」というタスクを解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。ツールのリストに無いものは含めないでください。
+        #{pre_tasks_string}
+
+        ** ツールは一つだけ選択できます。絶対に2つ以上ツールを選択しないでください。 **
+        選択には過去の会話履歴も参考にしてください。
+        また、そのツールに渡すのに必要な引数も作成してください。
+
+        #{previous_error_string}
+
+        回答は以下の形式のJSONで作成してください。最適なツールがない場合は、tool:にnullを設定してください。
+
+        JSONの例:
+        {
+          tool:
+            {
+              "provider": "issue_provider",
+              "tool": "read_issue",
+              "arguments": {  "id": 1 }
+            }
+        }
+        ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
+        ----
+        ツールのリスト
+        #{tools}
+
+      EOS
+
+      newmessages = messages.dup
+      newmessages << { role: "user", content: prompt }
+
+      json = chat(newmessages)
+
+      ai_helper_logger.info "json: #{json}"
+      RedmineAiHelper::Util::JsonExtractor.extract(json)
+    end
+
+    # merge the results
+    def merge_results(messages, pre_tasks )
+      prompt = <<~EOS
+        「 タスクを解決するために今までに実施したステップは以下の通りです。これらの結果の内容を踏まえて、タスクに対する最終回答を作成してください。
+
+        最終回答はタスクに対する自然な会話となる文章です。文章は要点をまとめてなるべく箇条書きにしてください。
+        回答にURLを含める際には、ユーザーがアクセスしやすいようにリンクを生成してください。
+        ** 最終回答には会話の文章のみ含めてください。解説は不要です。 **
+
+        回答の作成には過去の会話履歴も参考にしてください。
+        ----
+        事前のステップ:
+        #{pre_tasks}
+
+      EOS
+
+      newmessages = messages.dup
+      newmessages << { role: "user", content: prompt }
+      json = chat(newmessages)
+      json
+    end
+
+    class TaskResponse < RedmineAiHelper::ToolResponse
     end
   end
 

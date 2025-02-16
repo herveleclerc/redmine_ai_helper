@@ -7,6 +7,10 @@ module RedmineAiHelper
         EOS
         content
       end
+
+      def available_tool_providers
+        ["issue_tool_provider"]
+      end
     end
   end
 end

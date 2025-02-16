@@ -11,7 +11,7 @@ module RedmineAiHelper
       first_message =<<~EOS
         ユーザーのゴールは「#{goal}」です。各エージェントで協力して、このゴールを達成してください。
       EOS
-      @messages = [{ role: "leader", content: first_message }]
+      add_message("leader", first_message)
       ai_helper_logger.info "#{@messages.first}"
     end
 
@@ -23,8 +23,9 @@ module RedmineAiHelper
       @agents << agent
     end
 
-    def add_message(message)
-      @messages << message
+    def add_message(role, message)
+      @messages ||= []
+      @messages << { role: "assistant", content: "role: #{role}\n----\n#{message}" }
     end
 
     def get_agent(role)
@@ -35,17 +36,10 @@ module RedmineAiHelper
     # @param [String] from the role of the agent sending the message
     # @param [String] to the role of the agent receiving the message
     def send_message(from, to, message, option = {}, proc = nil)
-      @messages << {
-        role: from,
-        content: message,
-      }
-
+      add_message(from, message)
       agent = get_agent(to)
       answer = agent.chat(@messages, option, proc)
-      @messages << {
-        role: to,
-        content: answer,
-      }
+      add_message(to, answer)
       answer
     end
 
@@ -53,17 +47,16 @@ module RedmineAiHelper
     # @param [String] from the role of the agent sending the task
     # @param [String] to the role of the agent receiving the task
     def send_task(from, to, task, option = {}, proc = nil)
-      @messages << { role: from, content: task }
+      add_message(from, task)
       ai_helper_logger.info @messages.last
-      messages_for_ai = @messages.map do |message|
-        {
-          role: "assistant",
-          content: "role: #{message[:role]}\n----\n#{message[:content]}",
-        }
-      end
       agent = get_agent(to)
-      answer = agent.perform_task(messages_for_ai, option, proc)
-      @messages << { role: to, content: answer }
+      unless agent
+        error = "Agent not found: #{to}"
+        ai_helper_logger.error error
+        raise error
+      end
+      answer = agent.perform_task(@messages, option, proc)
+      add_message(to, answer)
       ai_helper_logger.info @messages.last
       answer
     end

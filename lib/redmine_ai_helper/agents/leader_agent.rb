@@ -36,12 +36,12 @@ module RedmineAiHelper
         ai_helper_logger.info "steps: #{steps}"
 
         if steps["steps"].empty? || steps["steps"].length == 1 && steps["steps"][0]["agent"] == "leader"
-          return super(messages, option, callback)
+          return chat(messages, option, callback)
         end
 
         chat_room = RedmineAiHelper::ChatRoom.new(goal)
         agent_list = RedmineAiHelper::AgentList.instance
-        steps["steps"].map{ |step| step["agent"] }.uniq.each do |agent|
+        steps["steps"].map{ |step| step["agent"] }.uniq.reject{|a| a == "leader_agent" }.each do |agent|
           agent_instance = agent_list.get_agent_instance(agent)
           chat_room.add_agent(agent_instance)
         end
@@ -53,7 +53,7 @@ module RedmineAiHelper
         newmessages = messages + chat_room.messages
         newmessages << { role: "system", content: "全てのエージェントのタスクが完了しました。最終的なユーザーへの回答を作成してください。" }
         ai_helper_logger.info "newmessages: #{newmessages}"
-        super(newmessages, option, callback)
+        chat(newmessages, option, callback)
       end
 
       def generate_goal(messages)
@@ -81,7 +81,7 @@ module RedmineAiHelper
           ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
           ----
           エージェントの一覧:
-          #{agent_list.list_agents}
+          #{agent_list.list_agents.reject{|a| a[:agent_name] == "leader_agent"}}
           ----
           JSONスキーマ:
           {
