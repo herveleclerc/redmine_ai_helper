@@ -63,9 +63,12 @@ module RedmineAiHelper
         あなたは他のエージェントと協力して、RedmineAIHelper のユーザーにサービスを提供します。
         あなたへの指示は <<leader>> ロールのエージェントから受け取ります。
         ----
+        現在の時刻は#{Time.now.iso8601}です。
+        ----
         あなたのバックストーリーは以下の通りです。
         #{backstory}
-              EOS
+
+      EOS
 
       return { role: "system", content: content }
     end
