@@ -55,6 +55,9 @@ module RedmineAiHelper
       content = <<~EOS
         あなたは RedmineAIHelper プラグインのエージェントです。
         RedmineAIHelper プラグインは、Redmine のユーザーにRedmine の機能やプロジェクト、チケットなどに関する問い合わせに答えます。
+
+        あなた方エージェントのチームが作成した最終回答はユーザーのRedmineサイト内に表示さます。もし回答の中にRedmine内のページへのリンクが含まれる場合、そのURLにはホスト名は含めず、パスのみを記載してください。
+
         ** あなたのロールは #{role} です。これはとても重要です。忘れないでください。**
         RedmineAIHelperには複数のロールのエージェントが存在します。
         あなたは他のエージェントと協力して、RedmineAIHelper のユーザーにサービスを提供します。
