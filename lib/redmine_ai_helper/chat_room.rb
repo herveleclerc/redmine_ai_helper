@@ -14,7 +14,7 @@ module RedmineAiHelper
         goal:
         #{goal}
       EOS
-      add_message("leader", first_message)
+      add_message("leader", first_message, "all")
       ai_helper_logger.info "#{@messages.first}"
     end
 
@@ -26,9 +26,9 @@ module RedmineAiHelper
       @agents << agent
     end
 
-    def add_message(role, message)
+    def add_message(role, message, to)
       @messages ||= []
-      @messages << { role: "assistant", content: "role: #{role}\n----\n#{message}" }
+      @messages << { role: "assistant", content: "role: #{role}\n----\nTo: #{to}\n#{message}" }
     end
 
     def get_agent(role)
@@ -39,10 +39,10 @@ module RedmineAiHelper
     # @param [String] from the role of the agent sending the message
     # @param [String] to the role of the agent receiving the message
     def send_message(from, to, message, option = {}, proc = nil)
-      add_message(from, message)
+      add_message(from, message, to)
       agent = get_agent(to)
       answer = agent.chat(@messages, option, proc)
-      add_message(to, answer)
+      add_message(to, answer, from)
       answer
     end
 
@@ -50,7 +50,7 @@ module RedmineAiHelper
     # @param [String] from the role of the agent sending the task
     # @param [String] to the role of the agent receiving the task
     def send_task(from, to, task, option = {}, proc = nil)
-      add_message(from, task)
+      add_message(from, task, to)
       ai_helper_logger.info @messages.last
       agent = get_agent(to)
       unless agent
@@ -59,7 +59,7 @@ module RedmineAiHelper
         raise error
       end
       answer = agent.perform_task(@messages, option, proc)
-      add_message(to, answer)
+      add_message(to, answer, from)
       ai_helper_logger.info @messages.last
       answer
     end
