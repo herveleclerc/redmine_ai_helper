@@ -9,7 +9,10 @@ module RedmineAiHelper
       @agents = []
       @goal = goal
       first_message =<<~EOS
-        ユーザーのゴールは「#{goal}」です。各エージェントで協力して、このゴールを達成してください。
+        ユーザーのゴールは以下です。各エージェントで協力して、このゴールを達成してください。
+        ----
+        goal:
+        #{goal}
       EOS
       add_message("leader", first_message)
       ai_helper_logger.info "#{@messages.first}"
