@@ -11,7 +11,7 @@ module RedmineAiHelper
       end
 
       def available_tool_providers
-        ["issue_tool_provider", "project_tool_provider"]
+        ["issue_tool_provider", "project_tool_provider", "user_tool_provider"]
       end
     end
   end

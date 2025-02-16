@@ -72,6 +72,17 @@ module RedmineAiHelper
                 },
               },
             },
+            {
+              name: "find_user",
+              description: "Returns a list of users that match the name or login. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on.",
+              arguments: {
+                name: {
+                  type: "string",
+                  description: "The name to search for.",
+                },
+                required: ["name"],
+              },
+            },
           ],
         }
         list
@@ -115,6 +126,31 @@ module RedmineAiHelper
           }
         end
         json = { users: user_list, total: count }
+        ToolResponse.create_success json
+      end
+
+      # Returns a list of users that match the name or login
+      # args: { name: "string" }
+      def find_user(args = {})
+        sym_args = args.deep_symbolize_keys
+        name = sym_args[:name]
+        return ToolResponse.create_error("Name is required.") if name.nil?
+        users = User.all.filter { |user|
+            user.login.downcase.include?(name.downcase) || user.name.downcase.include?(name.downcase)
+        }
+        user_list = []
+        users.map do |user|
+          user_list <<
+          {
+            id: user.id,
+            login: user.login,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            created_on: user.created_on,
+            last_login_on: user.last_login_on,
+          }
+        end
+        json = { users: user_list }
         ToolResponse.create_success json
       end
     end

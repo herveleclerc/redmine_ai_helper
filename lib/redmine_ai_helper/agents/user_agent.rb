@@ -5,6 +5,9 @@ module RedmineAiHelper
       def backstory
         content = <<~EOS
           あなたは RedmineAIHelper プラグインのユーザーエージェントです。Redmine のユーザーに関する問い合わせに答えます。
+
+          Redmineでチケットやwikiページなどをユーザーをキーに検索する場合にはユーザー名ではなくユーザーIDを使うことが多いです。
+          よって他のエージェントのためにユーザIDを検索してあげることもあります。
         EOS
         content
       end
