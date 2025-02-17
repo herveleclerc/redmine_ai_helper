@@ -14,6 +14,11 @@ class BaseAgentTest < ActiveSupport::TestCase
       }
       @agent = MyAgent.new(@params)
       @messages = [{ role: "user", content: "Hello" }]
+      enabled_module = EnabledModule.new
+      enabled_module.project_id = 1
+      enabled_module.name = "ai_helper"
+      enabled_module.save!
+      User.current = User.find(1)
     end
 
     should "return available tool providers" do

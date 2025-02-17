@@ -97,7 +97,7 @@ module RedmineAiHelper
       # List all projects visible to the current user.
       def list_projects(args = {})
         projects = Project.all
-        projects.select { |p| p.visible? }.map do |project|
+        projects.select { |p| accessible_project? p }.map do |project|
           {
             id: project.id,
             name: project.name,
@@ -128,7 +128,7 @@ module RedmineAiHelper
         end
 
         return ToolResponse.create_error "Project not found" unless project
-        return ToolResponse.create_error "You don't have permission to view this project" unless project.visible?
+        return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
         project_json = {
           id: project.id,
           name: project.name,
@@ -140,7 +140,7 @@ module RedmineAiHelper
           inherit_members: project.inherit_members,
           created_on: project.created_on,
           updated_on: project.updated_on,
-          subprojects: project.children.select { |p| p.visible? }.map do |child|
+          subprojects: project.children.select { |p| accessible_project? p }.map do |child|
             {
               id: child.id,
               name: child.name,
@@ -159,7 +159,7 @@ module RedmineAiHelper
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
         return ToolResponse.create_error "Project not found" unless project
-        return ToolResponse.create_error "You don't have permission to view this project" unless project.visible?
+        return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
 
         members = project.members.map do |member|
           {
@@ -188,7 +188,7 @@ module RedmineAiHelper
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
         return ToolResponse.create_error "Project not found" unless project
-        return ToolResponse.create_error "You don't have permission to view this project" unless project.visible?
+        return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
 
         enabled_modules = project.enabled_modules.map do |enabled_module|
           {
@@ -208,7 +208,7 @@ module RedmineAiHelper
         project_id = sym_args[:project_id]
         project = Project.find(project_id)
         return ToolResponse.create_error "Project not found" unless project
-        return ToolResponse.create_error "You don't have permission to view this project" unless project.visible?
+        return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
 
         author_id = sym_args[:author_id]
         author = author_id ? User.find(author_id) : nil

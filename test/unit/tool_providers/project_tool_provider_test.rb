@@ -5,6 +5,11 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
 
   def setup
     @provider = RedmineAiHelper::ToolProviders::ProjectToolProvider.new
+    enabled_module = EnabledModule.new
+    enabled_module.project_id = 1
+    enabled_module.name = "ai_helper"
+    enabled_module.save!
+    User.current = User.find(1)
   end
 
   def test_list_projects
