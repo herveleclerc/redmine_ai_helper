@@ -107,9 +107,7 @@ module RedmineAiHelper
 
     def perform_task(messages, option = {}, callback = nil)
       tasks = decompose_task(messages)
-      ai_helper_logger.info "### decomposed tasks: #{tasks}"
 
-      answer = ""
       pre_tasks = []
       tasks["steps"].each do |new_task|
         ai_helper_logger.debug "new_task: #{new_task}"
@@ -128,7 +126,7 @@ module RedmineAiHelper
           "step": new_task["step"],
           "result": result.value,
         }
-        ai_helper_logger.info "pre_task: #{pre_task}"
+        ai_helper_logger.debug "pre_task: #{pre_task}"
         pre_tasks << pre_task
         answer = result.value
       end
@@ -138,7 +136,7 @@ module RedmineAiHelper
 
     def decompose_task(messages)
       prompt = <<~EOS
-        「leader から与えられたタスクを解決するために必要なステップに分解してください。
+        leader から与えられたタスクを解決するために必要なステップに分解してください。
         ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。
         各ステップでは、前のステップの実行で得られた結果をどのように利用するかを考慮してください。
         それらをまとめて「ステップの分解のJSONのスキーマ」にマッチするJSONを作成してください。
@@ -205,12 +203,12 @@ module RedmineAiHelper
       begin
         response = select_tool(task, messages, pre_tasks, previous_error)
         tool = response["tool"]
-        ai_helper_logger.info "tool: #{tool}"
+        ai_helper_logger.debug "tool: #{tool}"
         return TaskRespose.create_success chat(messages) if tool.blank?
 
         provider = ToolProvider.new(@client, @model)
         result = provider.call_tool(provider: tool["provider"], name: tool["tool"], arguments: tool["arguments"])
-        ai_helper_logger.info "result: #{result}"
+        ai_helper_logger.debug "result: #{result}"
         if result.is_error?
           ai_helper_logger.error "error!!!!!!!!!!!!: #{result}"
           return result
@@ -276,7 +274,7 @@ module RedmineAiHelper
 
       json = chat(newmessages)
 
-      ai_helper_logger.info "json: #{json}"
+      ai_helper_logger.debug "json: #{json}"
       RedmineAiHelper::Util::JsonExtractor.extract(json)
     end
 

@@ -31,9 +31,9 @@ module RedmineAiHelper
       def perform_task(messages, option = {}, callback = nil)
 
         goal = generate_goal(messages)
-        ai_helper_logger.info "goal: #{goal}"
+        ai_helper_logger.debug "goal: #{goal}"
         steps = generate_steps(goal, messages)
-        ai_helper_logger.info "steps: #{steps}"
+        ai_helper_logger.debug "steps: #{steps}"
 
         if steps["steps"].empty? || steps["steps"].length == 1 && steps["steps"][0]["agent"] == "leader"
           return chat(messages, option, callback)
@@ -52,7 +52,7 @@ module RedmineAiHelper
 
         newmessages = messages + chat_room.messages
         newmessages << { role: "system", content: "全てのエージェントのタスクが完了しました。最終的なユーザーへの回答を作成してください。" }
-        ai_helper_logger.info "newmessages: #{newmessages}"
+        ai_helper_logger.debug "newmessages: #{newmessages}"
         chat(newmessages, option, callback)
       end
 
@@ -60,6 +60,7 @@ module RedmineAiHelper
         prompt = <<~EOS
           ユーザーが達成したい目的を明確にし、各エージェントと共有します。これにより各エージェントが円滑にタスクを実行できます。
           各エージェントが過去の会話履歴を参照しなくても目的を理解できるように具体的に記述してください。
+          各エージェントがタスクを実行する際には、各種ID情報が非常に重要です。プロジェクトID、チケットID、ユーザーID、リポジトリIDなど、すでに分かっているものは明記して共有してください。
         EOS
 
         newmessages = messages.dup
@@ -70,7 +71,7 @@ module RedmineAiHelper
 
       def generate_steps(goal, messages)
         agent_list = RedmineAiHelper::AgentList.instance
-        ai_helper_logger.info "agent_list: #{agent_list.list_agents}"
+        ai_helper_logger.debug "agent_list: #{agent_list.list_agents}"
         prompt = <<~EOS
           「#{goal}」というゴールを解決するために、他のエージェントに指示を出してください。
           各ステップでは、前のステップの実行で得られた結果をどのように利用するかを考慮してください。

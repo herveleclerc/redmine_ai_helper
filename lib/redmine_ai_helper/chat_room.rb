@@ -9,10 +9,12 @@ module RedmineAiHelper
       @agents = []
       @goal = goal
       first_message =<<~EOS
-        ユーザーのゴールは「#{goal}」です。各エージェントで協力して、このゴールを達成してください。
+        ユーザーのゴールは以下です。各エージェントで協力して、このゴールを達成してください。
+        ----
+        goal:
+        #{goal}
       EOS
-      add_message("leader", first_message)
-      ai_helper_logger.info "#{@messages.first}"
+      add_message("leader", first_message, "all")
     end
 
     def goal
@@ -23,9 +25,10 @@ module RedmineAiHelper
       @agents << agent
     end
 
-    def add_message(role, message)
+    def add_message(role, message, to)
+      ai_helper_logger.info "role: #{role}\n @#{to}, #{message}"
       @messages ||= []
-      @messages << { role: "assistant", content: "role: #{role}\n----\n#{message}" }
+      @messages << { role: "assistant", content: "role: #{role}\n----\nTo: #{to}\n#{message}" }
     end
 
     def get_agent(role)
@@ -36,10 +39,10 @@ module RedmineAiHelper
     # @param [String] from the role of the agent sending the message
     # @param [String] to the role of the agent receiving the message
     def send_message(from, to, message, option = {}, proc = nil)
-      add_message(from, message)
+      add_message(from, message, to)
       agent = get_agent(to)
       answer = agent.chat(@messages, option, proc)
-      add_message(to, answer)
+      add_message(to, answer, from)
       answer
     end
 
@@ -47,8 +50,7 @@ module RedmineAiHelper
     # @param [String] from the role of the agent sending the task
     # @param [String] to the role of the agent receiving the task
     def send_task(from, to, task, option = {}, proc = nil)
-      add_message(from, task)
-      ai_helper_logger.info @messages.last
+      add_message(from, task, to)
       agent = get_agent(to)
       unless agent
         error = "Agent not found: #{to}"
@@ -56,8 +58,7 @@ module RedmineAiHelper
         raise error
       end
       answer = agent.perform_task(@messages, option, proc)
-      add_message(to, answer)
-      ai_helper_logger.info @messages.last
+      add_message(to, answer, from)
       answer
     end
   end
