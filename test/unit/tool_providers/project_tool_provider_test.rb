@@ -67,10 +67,10 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
     project = Project.find(1)
     members = project.members
 
-    response = @provider.project_members(project_id: project.id)
+    response = @provider.project_members(project_ids: [project.id])
     assert response.is_success?
-    assert_equal members.size, response.value[:members].size
-    assert_equal members.first.user_id, response.value[:members].first[:user_id]
+    assert_equal members.size, response.value[:projects][0][:members].size
+    assert_equal members.first.user_id, response.value[:projects][0][:members].first[:user_id]
   end
 
   def test_project_enabled_modules

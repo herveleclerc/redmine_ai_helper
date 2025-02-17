@@ -37,9 +37,14 @@ module RedmineAiHelper
                 schema: {
                   type: "object",
                   properties: {
-                    project_id: "integer",
+                    project_ids: {
+                      type: "array",
+                      items: {
+                        type: "integer",
+                      },
+                    },
                   },
-                  required: ["project_id"],
+                  required: ["project_ids"],
                 },
               },
             },
@@ -50,7 +55,12 @@ module RedmineAiHelper
                 schema: {
                   type: "object",
                   properties: {
-                    project_id: "integer",
+                    project_id: {
+                      type: "array",
+                      items: {
+                        type: "integer",
+                      },
+                    },
                   },
                   required: ["project_id"],
                 },
@@ -63,7 +73,12 @@ module RedmineAiHelper
                 schema: {
                   type: "object",
                   properties: {
-                    project_id: "integer",
+                    project_id: {
+                      type: "array",
+                      items: {
+                        type: "integer",
+                      },
+                    },
                     author_id: {
                       type: "integer",
                       description: "The user ID of the author of the activity. If not specified, it will return all activities.",
@@ -156,28 +171,33 @@ module RedmineAiHelper
       # List all members of the project.
       def project_members(args = {})
         sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:project_id]
-        project = Project.find(project_id)
-        return ToolResponse.create_error "Project not found" unless project
-        return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
+        project_ids = sym_args[:project_ids]
+        projects = Project.where(id: project_ids)
+        return ToolResponse.create_error "No projects found" if projects.empty?
 
-        members = project.members.map do |member|
+        list = projects.map do |project|
+          return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
+
+          members = project.members.map do |member|
+            {
+              user_id: member.user_id,
+              login: member.user.login,
+              user_name: member.user.name,
+              roles: member.roles.map do |role|
+                {
+                  id: role.id,
+                  name: role.name,
+                }
+              end,
+            }
+          end
           {
-            user_id: member.user_id,
-            login: member.user.login,
-            user_name: member.user.name,
-            roles: member.roles.map do |role|
-              {
-                id: role.id,
-                name: role.name,
-              }
-            end,
+            project_id: project.id,
+            project_name: project.name,
+            members: members,
           }
         end
-        json = {
-          project_id: project_id,
-          members: members,
-        }
+        json = { "projects": list }
         ToolResponse.create_success json
       end
 
