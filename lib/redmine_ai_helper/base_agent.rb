@@ -204,7 +204,7 @@ module RedmineAiHelper
         response = select_tool(task, messages, pre_tasks, previous_error)
         tool = response["tool"]
         ai_helper_logger.debug "tool: #{tool}"
-        return TaskRespose.create_success chat(messages) if tool.blank?
+        return TaskResponse.create_success chat(messages) if tool.blank?
 
         provider = ToolProvider.new(@client, @model)
         result = provider.call_tool(provider: tool["provider"], name: tool["tool"], arguments: tool["arguments"])
