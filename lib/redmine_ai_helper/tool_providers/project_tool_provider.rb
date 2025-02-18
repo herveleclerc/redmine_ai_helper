@@ -68,7 +68,7 @@ module RedmineAiHelper
             },
             {
               name: "list_project_activities",
-              description: "List all activities of the project.",
+              description: "List all activities of the project. It returns the activity ID, event_datetime, event_type, event_title, event_description, and event_url.",
               arguments: {
                 schema: {
                   type: "object",
@@ -175,7 +175,7 @@ module RedmineAiHelper
         projects = Project.where(id: project_ids)
         return ToolResponse.create_error "No projects found" if projects.empty?
 
-        list = projects.map do |project|
+        list = projects.filter{|p| accessible_project? p }.map do |project|
           return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
 
           members = project.members.map do |member|
