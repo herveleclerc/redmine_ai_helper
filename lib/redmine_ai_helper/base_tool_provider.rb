@@ -6,7 +6,6 @@ module RedmineAiHelper
     include RedmineAiHelper::Logger
     include Rails.application.routes.url_helpers
 
-
     class << self
       def inherited(subclass)
         # puts "######## Adding provider: #{subclass.name}"
@@ -30,8 +29,18 @@ module RedmineAiHelper
       def list_tools
         raise NotImplementedError
       end
+
+      def provider_class_name(provider_name)
+        provider = self.provider_list.find { |provider| provider[:name] == provider_name }
+        provider[:class] if provider
+      end
     end
 
+    def accessible_project?(project)
+      return false unless project.visible?
+      return false unless project.module_enabled?(:ai_helper)
+      User.current.allowed_to?({ controller: :ai_helper, action: :chat_form }, project)
+    end
 
     class ProviderList
       include Singleton
@@ -56,17 +65,5 @@ module RedmineAiHelper
       end
     end
 
-    def self.provider_class_name(provider_name)
-      provider = self.provider_list.find { |provider| provider[:name] == provider_name }
-      provider[:class] if provider
-    end
-
-    def self.list_tools
-
-      tools = provider_list.map do |provider|
-        { name: provider[:name], class: provider[:class] }
-      end
-      { tools: tools }
-    end
   end
 end
