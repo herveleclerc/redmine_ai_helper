@@ -87,6 +87,7 @@ class AiHelper {
     let lastProcessedIndex = 0;
 
     xhr.onprogress = function (event) {
+
       const text = xhr.responseText.substring(lastProcessedIndex);
       lastProcessedIndex = xhr.responseText.length;
       // console.log('onprogress:', text);
@@ -108,10 +109,11 @@ class AiHelper {
               $("#aihelper-chat-conversation").scrollTop(
                 $("#aihelper-chat-conversation")[0].scrollHeight
               );
+              $("#ai-helper-loader-area").hide();
             }
             if (data.choices[0]?.finish_reason === 'stop') {
               // $('#aihelper_last_message').text('AIが返信しました');
-              $("#ai-helper-loader-area").hide();
+
               ai_helper.reload_chat();
             }
           } catch (e) {
@@ -126,6 +128,7 @@ class AiHelper {
     };
 
     xhr.onerror = function () {
+      $("#ai-helper-loader-area").hide();
       $('#aihelper_last_message').text('エラーが発生しました');
     };
 
