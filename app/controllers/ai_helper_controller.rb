@@ -103,7 +103,7 @@ class AiHelperController < ApplicationController
             finish_reason: nil
           }]
         })
-      
+
     end
 
     @conversation.messages << llm.chat(@conversation, proc, option)
@@ -152,11 +152,11 @@ class AiHelperController < ApplicationController
 
   def find_conversation
     if conversation_id
-      @conversation = AiHelperConversation.find(conversation_id)
-    else
-      @conversation = AiHelperConversation.new
-      @conversation.user = @user
+      @conversation = AiHelperConversation.find_by(id: conversation_id)
+      return if @conversation
     end
+    @conversation = AiHelperConversation.new
+    @conversation.user = @user
   end
 
   def write_chunk(data)
