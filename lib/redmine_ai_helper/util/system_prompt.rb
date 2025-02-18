@@ -124,6 +124,7 @@ module RedmineAiHelper
           site: {
             title: Setting.app_title,
             welcome_text: Setting.welcome_text,
+            redmine_version: Redmine::VERSION::STRING,
           },
         }
 
