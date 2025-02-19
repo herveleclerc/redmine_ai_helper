@@ -8,7 +8,7 @@ module RedmineAiHelper
           tools: [
             {
               name: "read_issues",
-              description: "Read issues from the database and return it as a JSON object.",
+              description: "Read issues from the database and return it, including journals, attachments, relations, and revisions. Attachments including the URL to download the file which starts a root path of this site.",
               arguments: {
                 schema: {
                   type: "object",
@@ -264,6 +264,16 @@ module RedmineAiHelper
             updated_on: issue.updated_on,
             closed_on: issue.closed_on,
             issue_url: issue_url(issue, only_path: true),
+            attachments: issue.attachments.map do |attachment|
+              {
+                id: attachment.id,
+                filename: attachment.filename,
+                filesize: attachment.filesize,
+                content_type: attachment.content_type,
+                created_on: attachment.created_on,
+                attachment_url: attachment_path(attachment, only_path: false),
+              }
+            end,
             children: issue.children.filter { |child| child.visible? }.map do |child|
               {
                 id: child.id,
@@ -312,7 +322,7 @@ module RedmineAiHelper
                 revision: changeset.revision,
                 committed_on: changeset.committed_on,
               }
-            end
+            end,
 
           }
         end
