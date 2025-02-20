@@ -25,7 +25,7 @@ module RedmineAiHelper
             },
             {
               name: "capable_issue_properties",
-              description: "Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc. It can be used to obtain the ID of the items to be searched when searching for tickets using generate_issue_search_url.",
+              description: "Return properties that can be assigned to an issue for the specified project, It includes trackers, statuses, priorities, categories, versions and custom fields. It can be used to obtain the ID of the items to be searched when searching for tickets using generate_issue_search_url.",
               arguments: {
                 schema: {
                   type: "object",
