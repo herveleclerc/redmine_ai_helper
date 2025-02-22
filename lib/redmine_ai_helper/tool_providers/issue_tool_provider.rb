@@ -24,6 +24,44 @@ module RedmineAiHelper
               },
             },
             {
+              name: "create_new_issue",
+              description: "Create a new issue in the database.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    project_id: "integer",
+                    tracker_id: "integer",
+                    subject: "string",
+                    status_id: "integer",
+                    priority_id: "integer",
+                    category_id: "integer",
+                    version_id: "integer",
+                    assigned_to_id: "integer",
+                    description: "string",
+                    start_date: "string",
+                    due_date: "string",
+                    done_ratio: "integer",
+                    is_private: { type: "boolean", default: false },
+                    estimated_hours: "float",
+                    custom_fields: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          field_id: "integer",
+                          value: "string",
+                        },
+                        required: ["field_id", "value"],
+                      },
+                    },
+                  },
+                  required: ["project_id", "tracker_id", "subject", "status_id"],
+                  description: "Project ID, Tracker ID, Status ID and Subject are required. Other fields are optional.",
+                },
+              },
+            },
+            {
               name: "update_issue",
               description: "Update an issue in the database. It can also be used to add a comment to the issue.",
               arguments: {
@@ -371,6 +409,43 @@ module RedmineAiHelper
 
         issues_json = { issues: issues }
         ToolResponse.create_success(issues_json)
+      end
+
+      # Create a new issue in the database.
+      def create_new_issue(args = {})
+        sym_args = args.deep_symbolize_keys
+        project_id = sym_args[:project_id]
+        project = Project.find_by(id: project_id)
+        return ToolResponse.create_error("Project not found. id = #{project_id}") unless project
+
+        issue = Issue.new
+        issue.project_id = project_id
+        issue.author_id = User.current.id
+        issue.tracker_id = sym_args[:tracker_id]
+        issue.subject = sym_args[:subject]
+        issue.status_id = sym_args[:status_id]
+        issue.priority_id = sym_args[:priority_id]
+        issue.category_id = sym_args[:category_id]
+        issue.fixed_version_id = sym_args[:version_id]
+        issue.assigned_to_id = sym_args[:assigned_to_id]
+        issue.description = sym_args[:description]
+        issue.start_date = sym_args[:start_date]
+        issue.due_date = sym_args[:due_date]
+        issue.done_ratio = sym_args[:done_ratio]
+        issue.is_private = sym_args[:is_private] || false
+        issue.estimated_hours = sym_args[:estimated_hours]
+
+        custom_fields = sym_args[:custom_fields] || []
+        custom_fields.each do |field|
+          custom_field = CustomField.find(field[:field_id])
+          next unless custom_field
+          issue.custom_field_values = { custom_field.id => field[:value] }
+        end
+
+        unless issue.save
+          return ToolResponse.create_error("Failed to create a new issue. #{issue.errors.full_messages.join(", ")}")
+        end
+        ToolResponse.create_success({ issue_id: issue.id })
       end
 
       # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
