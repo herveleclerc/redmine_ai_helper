@@ -57,7 +57,7 @@ module RedmineAiHelper
                     },
                     comment_to_add: {
                       type: "string",
-                      description: "Comment to add to the issue.",
+                      description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.",
                     },
                   },
                   required: ["issue_id"],
