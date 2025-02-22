@@ -30,6 +30,7 @@ module RedmineAiHelper
       params[:uri_base] ||= Setting.plugin_redmine_ai_helper["uri_base"]
       params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
       @model ||= Setting.plugin_redmine_ai_helper["model"]
+      @project = params[:project]
 
       @client = OpenAI::Client.new(params)
     end
@@ -257,7 +258,7 @@ module RedmineAiHelper
         {
           tool:
             {
-              "provider": "issue_provider",
+              "provider": "issue_tool_provider",
               "tool": "read_issue",
               "arguments": {  "id": 1 }
             }

@@ -42,7 +42,7 @@ module RedmineAiHelper
         chat_room = RedmineAiHelper::ChatRoom.new(goal)
         agent_list = RedmineAiHelper::AgentList.instance
         steps["steps"].map{ |step| step["agent"] }.uniq.reject{|a| a == "leader_agent" }.each do |agent|
-          agent_instance = agent_list.get_agent_instance(agent)
+          agent_instance = agent_list.get_agent_instance(agent, {project: @project})
           chat_room.add_agent(agent_instance)
         end
 
