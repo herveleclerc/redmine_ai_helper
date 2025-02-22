@@ -24,6 +24,48 @@ module RedmineAiHelper
               },
             },
             {
+              name: "update_issue",
+              description: "Update an issue in the database. It can also be used to add a comment to the issue.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    issue_id: "integer",
+                    subject: "string",
+                    tracker_id: "integer",
+                    status_id: "integer",
+                    priority_id: "integer",
+                    category_id: "integer",
+                    version_id: "integer",
+                    assigned_to_id: "integer",
+                    description: "string",
+                    start_date: "string",
+                    due_date: "string",
+                    done_ratio: "integer",
+                    is_private: "boolean",
+                    estimated_hours: "float",
+                    custom_fields: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          field_id: "integer",
+                          value: "string",
+                        },
+                        required: ["field_id", "value"],
+                      },
+                    },
+                    comment_to_add: {
+                      type: "string",
+                      description: "Comment to add to the issue.",
+                    },
+                  },
+                  required: ["issue_id"],
+                  description: "Issue ID is required. Other fields are optional. If you do not specify a field, it will not be updated.",
+                },
+              },
+            },
+            {
               name: "capable_issue_properties",
               description: "Return properties that can be assigned to an issue for the specified project, It includes trackers, statuses, priorities, categories, versions and custom fields. It can be used to obtain the ID of the items to be searched when searching for tickets using generate_issue_search_url.",
               arguments: {
@@ -393,6 +435,48 @@ module RedmineAiHelper
         }
 
         ToolResponse.create_success properties
+      end
+
+      # Update an issue in the database.
+      # args: { issue_id: issue_id, subject: "string", tracker_id: tracker_id, status_id: status_id, priority_id: priority_id, category_id: category_id, version_id: version_id, assigned_to_id: assigned_to_id, description: "string", start_date: "string", due_date: "string", done_ratio: done_ratio, is_private: is_private, estimated_hours: estimated_hours, custom_fields: [{ field_id: field_id, value: "string" }], comment_to_add: "string" }
+      def update_issue(args = {})
+        sym_args = args.deep_symbolize_keys
+        issue_id = sym_args[:issue_id]
+        issue = Issue.find_by(id: issue_id)
+        return ToolResponse.create_error("Issue not found.") unless issue
+
+        comment_to_add = sym_args[:comment_to_add]
+        if comment_to_add
+          issue.init_journal(User.current, comment_to_add)
+        else
+          issue.init_journal(User.current)
+        end
+
+        issue.subject = sym_args[:subject] if sym_args[:subject]
+        issue.tracker_id = sym_args[:tracker_id] if sym_args[:tracker_id]
+        issue.status_id = sym_args[:status_id] if sym_args[:status_id]
+        issue.priority_id = sym_args[:priority_id] if sym_args[:priority_id]
+        issue.category_id = sym_args[:category_id] if sym_args[:category_id]
+        issue.fixed_version_id = sym_args[:version_id] if sym_args[:version_id]
+        issue.assigned_to_id = sym_args[:assigned_to_id] if sym_args[:assigned_to_id]
+        issue.description = sym_args[:description] if sym_args[:description]
+        issue.start_date = sym_args[:start_date] if sym_args[:start_date]
+        issue.due_date = sym_args[:due_date] if sym_args[:due_date]
+        issue.done_ratio = sym_args[:done_ratio] if sym_args[:done_ratio]
+        issue.is_private = sym_args[:is_private] if sym_args[:is_private]
+        issue.estimated_hours = sym_args[:estimated_hours] if sym_args[:estimated_hours]
+
+        custom_fields = sym_args[:custom_fields] || []
+        custom_fields.each do |field|
+          custom_field = CustomField.find(field[:field_id])
+          next unless custom_field
+          issue.custom_field_values = { custom_field.id => field[:value] }
+        end
+
+        unless issue.save
+          return ToolResponse.create_error("Failed to update the issue #{issue.id}. #{issue.errors.full_messages.join(", ")}")
+        end
+        ToolResponse.create_success({ issue_id: issue.id })
       end
 
       # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
