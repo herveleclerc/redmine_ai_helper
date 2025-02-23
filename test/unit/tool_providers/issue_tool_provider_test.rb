@@ -127,6 +127,15 @@ class IssueToolProviderTest < ActiveSupport::TestCase
         assert url_value.include?("op[status_id]==")
         assert url_value.include?("v[status_id][]=1")
       end
+
+      should "generate url with custom field" do
+        response = @provider.generate_issue_search_url(project_id: 1, custom_fields: [{ field_id: 1, operator: "=", values: ["MySQL"] }])
+        assert response.is_success?
+        url_value = CGI.unescape(response.value[:url])
+        assert url_value.include?("f[]=cf_1")
+        assert url_value.include?("op[cf_1]==")
+        assert url_value.include?("v[cf_1][]=MySQL")
+      end
     end
 
     context "validate_new_issue" do
