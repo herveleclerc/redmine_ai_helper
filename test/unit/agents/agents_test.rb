@@ -13,11 +13,29 @@ class AgentsTest < ActiveSupport::TestCase
 
   context "IssueAgent" do
     setup do
-      @agent = RedmineAiHelper::Agents::IssueAgent.new
+      @agent = RedmineAiHelper::Agents::IssueAgent.new({project: Project.find(1)})
     end
 
     should "return correct tool providers" do
       assert_equal  ["issue_tool_provider", "project_tool_provider", "user_tool_provider"], @agent.available_tool_providers
+    end
+
+    should "return correct backstory" do
+      assert @agent.backstory.include?("RedmineAIHelper プラグインのチケットエージェントです")
+    end
+  end
+
+  context "IssueUpdateAgent" do
+    setup do
+      @agent = RedmineAiHelper::Agents::IssueUpdateAgent.new({project: Project.find(1)})
+    end
+
+    should "return correct tool providers" do
+      assert_equal ["issue_tool_provider", "issue_update_tool_provider", "project_tool_provider", "user_tool_provider"], @agent.available_tool_providers
+    end
+
+    should "return correct backstory" do
+      assert @agent.backstory.include?("RedmineAIHelper プラグインのチケットアップデートエージェントです")
     end
   end
 
