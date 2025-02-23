@@ -25,7 +25,7 @@ module RedmineAiHelper
             },
             {
               name: "create_new_issue",
-              description: "Create a new issue in the database.",
+              description: "Create a new issue in the database. It can also be used to validate the issue without creating it.",
               arguments: {
                 schema: {
                   type: "object",
@@ -68,7 +68,7 @@ module RedmineAiHelper
             },
             {
               name: "update_issue",
-              description: "Update an issue in the database. It can also be used to add a comment to the issue.",
+              description: "Update an issue in the database. It can also be used to add a comment to the issue. It can also be used to validate the issue without updating it.",
               arguments: {
                 schema: {
                   type: "object",

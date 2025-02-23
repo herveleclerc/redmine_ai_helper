@@ -165,6 +165,20 @@ module RedmineAiHelper
                   "step": {
                     "type": "string",
                     "description": "ステップの内容"
+                  },
+                  "tool": {
+                    "type": "object",
+                    "properties": {
+                      "provider": {
+                        "type": "string",
+                        "description": "ツールのプロバイダー"
+                      },
+                      "tool_name": {
+                        "type": "string",
+                        "description": "ツールの名前"
+                      },
+                    },
+                    "description": "ツールの情報"
                   }
                   required: ["name", "step"]
                 }
@@ -174,19 +188,27 @@ module RedmineAiHelper
         }ß
         ----
         タスクの例:
-        「トラッカーがサポートのチケットを探す」
+        「チケットID 3のチケットのステータスを完了に変更する」
         JSONの例:
         {
           "steps": [
             {
                   "name": "step1",
-                  "step": "名前がサポートのトラッカーのIDを取得する",
-                },
+                  "step": "チケットを更新するために、必要な情報を整理する。",
+                  "tool": {
+                    "provider": "issue_tool_provider",
+                    "tool_name": "capable_issue_properties"
+                  }
+            },
             {
                   "name": "step2",
-                  "step": "前のステップで取得したトラッカーのIDを使用して、そのトラッカーのチケットを探す",
-                },
-          ],
+                  "step": "前のステップで取得したステータスを使用してチケットを更新する",
+                  "tool": {
+                    "provider": "issue_tool_provider",
+                    "tool_name": "update_issue",
+                  }
+            }
+          ]
         }
         ----
         tools:
