@@ -11,7 +11,9 @@ jobs:
   build:
     name: Lint
     runs-on: worker
-
+    container:
+        image: alpine:latest
+        options: --user root
     permissions:
       contents: read
       packages: read
