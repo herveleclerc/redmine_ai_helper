@@ -637,6 +637,8 @@ module RedmineAiHelper
         ToolResponse.create_success json
       end
 
+      private
+
       # Validate the parameters for generate_issue_search_url
       def generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
         errors = []
