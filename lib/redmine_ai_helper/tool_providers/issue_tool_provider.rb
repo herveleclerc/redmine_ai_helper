@@ -59,7 +59,7 @@ module RedmineAiHelper
                       type: "boolean",
                       default: false,
                       description: "If true, the issue will not be created, but the validation result will be returned.",
-                    }
+                    },
                   },
                   required: ["project_id", "tracker_id", "subject", "status_id"],
                   description: "Project ID, Tracker ID, Status ID and Subject are required. Other fields are optional.",
@@ -101,6 +101,11 @@ module RedmineAiHelper
                     comment_to_add: {
                       type: "string",
                       description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.",
+                    },
+                    validate_only: {
+                      type: "boolean",
+                      default: false,
+                      description: "If true, the issue will not be updated, but the validation result will be returned.",
                     },
                   },
                   required: ["issue_id"],
@@ -530,7 +535,7 @@ module RedmineAiHelper
         sym_args = args.deep_symbolize_keys
         issue_id = sym_args[:issue_id]
         issue = Issue.find_by(id: issue_id)
-        return ToolResponse.create_error("Issue not found.") unless issue
+        return ToolResponse.create_error("Issue not found. id = #{issue_id}") unless issue
 
         comment_to_add = sym_args[:comment_to_add]
         if comment_to_add
@@ -558,6 +563,14 @@ module RedmineAiHelper
           custom_field = CustomField.find(field[:field_id])
           next unless custom_field
           issue.custom_field_values = { custom_field.id => field[:value] }
+        end
+
+        validate_only = sym_args[:validate_only] || false
+        if validate_only
+          unless issue.valid?
+            return ToolResponse.create_error("Validation failed. #{issue.errors.full_messages.join(", ")}")
+          end
+          return ToolResponse.create_success({ issue_id: nil })
         end
 
         unless issue.save
