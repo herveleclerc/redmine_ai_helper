@@ -58,8 +58,9 @@ then
   git checkout -b $REDMINE_GIT_TAG origin/$REDMINE_GIT_TAG
 fi
 
-# create a link to the backlogs plugin
-rsync -a $PATH_TO_PLUGIN plugins/
+
+mkdir -p plugins/$NAME_OF_PLUGIN
+cp -pr $PATH_TO_PLUGIN/!(test) plugins/$NAME_OF_PLUGIN/
 
 cp "$SCRIPTDIR/database.yml" config/database.yml
 
