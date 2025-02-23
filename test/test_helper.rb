@@ -1,17 +1,10 @@
 # Load the Redmine helper
 
 require "simplecov"
-require "simplecov-rcov"
-require "simplecov-lcov"
-
-SimpleCov::Formatter::LcovFormatter.config do |config|
-  config.report_with_single_file = true
-  config.single_report_path = File.expand_path(File.dirname(__FILE__) + "/../coverage/lcov.info")
-end
+require "simplecov-cobertura"
 
 SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
-  SimpleCov::Formatter::RcovFormatter,
-  SimpleCov::Formatter::LcovFormatter,
+  SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter,
   SimpleCov::Formatter::HTMLFormatter
 # Coveralls::SimpleCov::Formatter
 ]
