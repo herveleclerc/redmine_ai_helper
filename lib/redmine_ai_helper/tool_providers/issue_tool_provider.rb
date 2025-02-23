@@ -1,4 +1,5 @@
 require "redmine_ai_helper/base_tool_provider"
+require_relative "./issue_update_tool_provider"
 
 module RedmineAiHelper
   module ToolProviders
@@ -24,8 +25,8 @@ module RedmineAiHelper
               },
             },
             {
-              name: "create_new_issue",
-              description: "Create a new issue in the database. It can also be used to validate the issue without creating it.",
+              name: "validate_new_issue",
+              description: "Validate the parameters for creating a new issue. It can be used to check if the parameters are correct before creating a new issue.",
               arguments: {
                 schema: {
                   type: "object",
@@ -55,11 +56,6 @@ module RedmineAiHelper
                         required: ["field_id", "value"],
                       },
                     },
-                    validate_only: {
-                      type: "boolean",
-                      default: false,
-                      description: "If true, the issue will not be created, but the validation result will be returned.",
-                    },
                   },
                   required: ["project_id", "tracker_id", "subject", "status_id"],
                   description: "Project ID, Tracker ID, Status ID and Subject are required. Other fields are optional.",
@@ -67,8 +63,8 @@ module RedmineAiHelper
               },
             },
             {
-              name: "update_issue",
-              description: "Update an issue in the database. It can also be used to add a comment to the issue. It can also be used to validate the issue without updating it.",
+              name: "validate_update_issue",
+              description: "Validate the parameters for updating an issue. It can be used to check if the parameters are correct before updating an issue.",
               arguments: {
                 schema: {
                   type: "object",
@@ -101,11 +97,6 @@ module RedmineAiHelper
                     comment_to_add: {
                       type: "string",
                       description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.",
-                    },
-                    validate_only: {
-                      type: "boolean",
-                      default: false,
-                      description: "If true, the issue will not be updated, but the validation result will be returned.",
                     },
                   },
                   required: ["issue_id"],
@@ -325,50 +316,6 @@ module RedmineAiHelper
         ToolResponse.create_success(issues_json)
       end
 
-      # Create a new issue in the database.
-      def create_new_issue(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:project_id]
-        project = Project.find_by(id: project_id)
-        return ToolResponse.create_error("Project not found. id = #{project_id}") unless project
-
-        issue = Issue.new
-        issue.project_id = project_id
-        issue.author_id = User.current.id
-        issue.tracker_id = sym_args[:tracker_id]
-        issue.subject = sym_args[:subject]
-        issue.status_id = sym_args[:status_id]
-        issue.priority_id = sym_args[:priority_id]
-        issue.category_id = sym_args[:category_id]
-        issue.fixed_version_id = sym_args[:version_id]
-        issue.assigned_to_id = sym_args[:assigned_to_id]
-        issue.description = sym_args[:description]
-        issue.start_date = sym_args[:start_date]
-        issue.due_date = sym_args[:due_date]
-        issue.done_ratio = sym_args[:done_ratio]
-        issue.is_private = sym_args[:is_private] || false
-        issue.estimated_hours = sym_args[:estimated_hours]
-
-        custom_fields = sym_args[:custom_fields] || []
-        custom_fields.each do |field|
-          custom_field = CustomField.find(field[:field_id])
-          next unless custom_field
-          issue.custom_field_values = { custom_field.id => field[:value] }
-        end
-
-        validate_only = sym_args[:validate_only] || false
-        if validate_only
-          unless issue.valid?
-            return ToolResponse.create_error("Validation failed. #{issue.errors.full_messages.join(", ")}")
-          end
-          return ToolResponse.create_success(generate_issue_data(issue))
-        end
-        unless issue.save
-          return ToolResponse.create_error("Failed to create a new issue. #{issue.errors.full_messages.join(", ")}")
-        end
-        ToolResponse.create_success(generate_issue_data(issue))
-      end
-
       # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
       def capable_issue_properties(args = {})
         sym_args = args.deep_symbolize_keys
@@ -433,54 +380,16 @@ module RedmineAiHelper
         ToolResponse.create_success properties
       end
 
-      # Update an issue in the database.
-      # args: { issue_id: issue_id, subject: "string", tracker_id: tracker_id, status_id: status_id, priority_id: priority_id, category_id: category_id, version_id: version_id, assigned_to_id: assigned_to_id, description: "string", start_date: "string", due_date: "string", done_ratio: done_ratio, is_private: is_private, estimated_hours: estimated_hours, custom_fields: [{ field_id: field_id, value: "string" }], comment_to_add: "string" }
-      def update_issue(args = {})
-        sym_args = args.deep_symbolize_keys
-        issue_id = sym_args[:issue_id]
-        issue = Issue.find_by(id: issue_id)
-        return ToolResponse.create_error("Issue not found. id = #{issue_id}") unless issue
+      # Validate the parameters for creating a new issue
+      def validate_new_issue(args = {})
+        issue_update_provider = IssueUpdateToolProvider.new
+        return issue_update_provider.create_new_issue(args, true)
+      end
 
-        comment_to_add = sym_args[:comment_to_add]
-        if comment_to_add
-          issue.init_journal(User.current, comment_to_add)
-        else
-          issue.init_journal(User.current)
-        end
-
-        issue.subject = sym_args[:subject] if sym_args[:subject]
-        issue.tracker_id = sym_args[:tracker_id] if sym_args[:tracker_id]
-        issue.status_id = sym_args[:status_id] if sym_args[:status_id]
-        issue.priority_id = sym_args[:priority_id] if sym_args[:priority_id]
-        issue.category_id = sym_args[:category_id] if sym_args[:category_id]
-        issue.fixed_version_id = sym_args[:version_id] if sym_args[:version_id]
-        issue.assigned_to_id = sym_args[:assigned_to_id] if sym_args[:assigned_to_id]
-        issue.description = sym_args[:description] if sym_args[:description]
-        issue.start_date = sym_args[:start_date] if sym_args[:start_date]
-        issue.due_date = sym_args[:due_date] if sym_args[:due_date]
-        issue.done_ratio = sym_args[:done_ratio] if sym_args[:done_ratio]
-        issue.is_private = sym_args[:is_private] if sym_args[:is_private]
-        issue.estimated_hours = sym_args[:estimated_hours] if sym_args[:estimated_hours]
-
-        custom_fields = sym_args[:custom_fields] || []
-        custom_fields.each do |field|
-          custom_field = CustomField.find(field[:field_id])
-          next unless custom_field
-          issue.custom_field_values = { custom_field.id => field[:value] }
-        end
-
-        validate_only = sym_args[:validate_only] || false
-        if validate_only
-          unless issue.valid?
-            return ToolResponse.create_error("Validation failed. #{issue.errors.full_messages.join(", ")}")
-          end
-          return ToolResponse.create_success(generate_issue_data(issue))
-        end
-
-        unless issue.save
-          return ToolResponse.create_error("Failed to update the issue #{issue.id}. #{issue.errors.full_messages.join(", ")}")
-        end
-        ToolResponse.create_success(generate_issue_data(issue))
+      # Validate the parameters for updating an issue
+      def validate_update_issue(args = {})
+        issue_update_provider = IssueUpdateToolProvider.new
+        return issue_update_provider.update_issue(args, true)
       end
 
       # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
@@ -582,7 +491,7 @@ module RedmineAiHelper
           },
           assigned_to: issue.assigned_to ? {
             id: issue.assigned_to.id,
-            name: issue.assigned_to.name
+            name: issue.assigned_to.name,
           } : nil,
           description: issue.description,
           start_date: issue.start_date,
@@ -596,7 +505,7 @@ module RedmineAiHelper
           created_on: issue.created_on,
           updated_on: issue.updated_on,
           closed_on: issue.closed_on,
-          issue_url: issue.id ? issue_url(issue, only_path: true): nil,
+          issue_url: issue.id ? issue_url(issue, only_path: true) : nil,
           attachments: issue.attachments.map do |attachment|
             {
               id: attachment.id,
