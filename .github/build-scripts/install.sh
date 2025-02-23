@@ -59,7 +59,7 @@ then
 fi
 
 # create a link to the backlogs plugin
-ln -sf $PATH_TO_PLUGIN plugins/$NAME_OF_PLUGIN
+rsync -a $PATH_TO_PLUGIN plugins/
 
 cp "$SCRIPTDIR/database.yml" config/database.yml
 
@@ -76,5 +76,3 @@ bundle exec rake db:migrate
 bundle exec rake redmine:plugins:migrate
 
 bundle exec rake redmine:plugins:redmine_ai_helper:setup_scm
-
-
