@@ -55,6 +55,11 @@ module RedmineAiHelper
                         required: ["field_id", "value"],
                       },
                     },
+                    validate_only: {
+                      type: "boolean",
+                      default: false,
+                      description: "If true, the issue will not be created, but the validation result will be returned.",
+                    }
                   },
                   required: ["project_id", "tracker_id", "subject", "status_id"],
                   description: "Project ID, Tracker ID, Status ID and Subject are required. Other fields are optional.",
@@ -442,6 +447,13 @@ module RedmineAiHelper
           issue.custom_field_values = { custom_field.id => field[:value] }
         end
 
+        validate_only = sym_args[:validate_only] || false
+        if validate_only
+          unless issue.valid?
+            return ToolResponse.create_error("Validation failed. #{issue.errors.full_messages.join(", ")}")
+          end
+          return ToolResponse.create_success({ issue_id: nil })
+        end
         unless issue.save
           return ToolResponse.create_error("Failed to create a new issue. #{issue.errors.full_messages.join(", ")}")
         end
