@@ -2,6 +2,7 @@ require File.expand_path("../../../test_helper", __FILE__)
 require "redmine_ai_helper/agents/leader_agent"
 
 class LeaderAgentTest < ActiveSupport::TestCase
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields
   context "LeaderAgent" do
     setup do
       @openai_mock = MyOpenAI::DummyOpenAIClient.new
@@ -11,6 +12,7 @@ class LeaderAgentTest < ActiveSupport::TestCase
         uri_base: "http://example.com",
         organization_id: "test_org_id",
         model: "test_model",
+        project: Project.find(1),
       }
       @agent = RedmineAiHelper::Agents::LeaderAgent.new(@params)
       @messages = [{ role: "user", content: "Hello" }]

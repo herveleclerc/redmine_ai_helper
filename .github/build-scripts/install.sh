@@ -58,8 +58,9 @@ then
   git checkout -b $REDMINE_GIT_TAG origin/$REDMINE_GIT_TAG
 fi
 
-# create a link to the backlogs plugin
-ln -sf $PATH_TO_PLUGIN plugins/$NAME_OF_PLUGIN
+
+mkdir -p plugins/$NAME_OF_PLUGIN
+find $PATH_TO_PLUGIN -mindepth 1 -maxdepth 1 ! -name $TESTSPACE_NAME -exec cp -r {} plugins/$NAME_OF_PLUGIN/ \;
 
 cp "$SCRIPTDIR/database.yml" config/database.yml
 
@@ -76,5 +77,3 @@ bundle exec rake db:migrate
 bundle exec rake redmine:plugins:migrate
 
 bundle exec rake redmine:plugins:redmine_ai_helper:setup_scm
-
-

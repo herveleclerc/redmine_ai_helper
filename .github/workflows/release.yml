@@ -5,6 +5,9 @@ on:
       - '**'
     tags:
       - '**'
+  workflow_dispatch:
+permissions:
+  contents: write
 env:
   SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
 jobs:

@@ -30,6 +30,7 @@ module RedmineAiHelper
       params[:uri_base] ||= Setting.plugin_redmine_ai_helper["uri_base"]
       params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
       @model ||= Setting.plugin_redmine_ai_helper["model"]
+      @project = params[:project]
 
       @client = OpenAI::Client.new(params)
     end
@@ -56,7 +57,7 @@ module RedmineAiHelper
         あなたは RedmineAIHelper プラグインのエージェントです。
         RedmineAIHelper プラグインは、Redmine のユーザーにRedmine の機能やプロジェクト、チケットなどに関する問い合わせに答えます。
 
-        あなた方エージェントのチームが作成した最終回答はユーザーのRedmineサイト内に表示さます。もし回答の中にRedmine内のページへのリンクが含まれる場合、そのURLにはホスト名は含めず、パスのみを記載してください。
+        あなた方エージェントのチームが作成した最終回答はユーザーのRedmineサイト内に表示さます。もし回答の中にRedmine内のページへのリンクが含まれる場合、そのURLにはホスト名は含めず、"/"から始まるパスのみを記載してください。
 
         ** あなたのロールは #{role} です。これはとても重要です。忘れないでください。**
         RedmineAIHelperには複数のロールのエージェントが存在します。
@@ -143,6 +144,9 @@ module RedmineAiHelper
 
         ２つ以上のステップに分解がする必要がない場合には元のタスクをそのまま一つのステップとして記述してください。
         タスクを解決するためにツールの実行が不要な場合にはステップを分解する必要はありません。
+
+        ** ステップの目的が情報の収集や取得の場合には、情報を作成したり更新したりするtoolを絶対に選ばないでください。 **
+
         ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
         ----
         ステップの分解のJSONのスキーマ:
@@ -161,6 +165,20 @@ module RedmineAiHelper
                   "step": {
                     "type": "string",
                     "description": "ステップの内容"
+                  },
+                  "tool": {
+                    "type": "object",
+                    "properties": {
+                      "provider": {
+                        "type": "string",
+                        "description": "ツールのプロバイダー"
+                      },
+                      "tool_name": {
+                        "type": "string",
+                        "description": "ツールの名前"
+                      },
+                    },
+                    "description": "ツールの情報"
                   }
                   required: ["name", "step"]
                 }
@@ -170,19 +188,27 @@ module RedmineAiHelper
         }ß
         ----
         タスクの例:
-        「トラッカーがサポートのチケットを探す」
+        「チケットID 3のチケットのステータスを完了に変更する」
         JSONの例:
         {
           "steps": [
             {
                   "name": "step1",
-                  "step": "名前がサポートのトラッカーのIDを取得する",
-                },
+                  "step": "チケットを更新するために、必要な情報を整理する。",
+                  "tool": {
+                    "provider": "issue_tool_provider",
+                    "tool_name": "capable_issue_properties"
+                  }
+            },
             {
                   "name": "step2",
-                  "step": "前のステップで取得したトラッカーのIDを使用して、そのトラッカーのチケットを探す",
-                },
-          ],
+                  "step": "前のステップで取得したステータスを使用してチケットを更新する",
+                  "tool": {
+                    "provider": "issue_tool_provider",
+                    "tool_name": "update_issue",
+                  }
+            }
+          ]
         }
         ----
         tools:
@@ -257,7 +283,7 @@ module RedmineAiHelper
         {
           tool:
             {
-              "provider": "issue_provider",
+              "provider": "issue_tool_provider",
               "tool": "read_issue",
               "arguments": {  "id": 1 }
             }

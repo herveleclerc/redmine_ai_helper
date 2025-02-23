@@ -1,4 +1,5 @@
 require "redmine_ai_helper/base_tool_provider"
+require_relative "./issue_update_tool_provider"
 
 module RedmineAiHelper
   module ToolProviders
@@ -8,7 +9,7 @@ module RedmineAiHelper
           tools: [
             {
               name: "read_issues",
-              description: "Read issues from the database and return it as a JSON object.",
+              description: "Read issues from the database and return it, including journals, attachments, relations, and revisions. Attachments including the URL to download the file which starts a root path of this site.",
               arguments: {
                 schema: {
                   type: "object",
@@ -24,8 +25,88 @@ module RedmineAiHelper
               },
             },
             {
+              name: "validate_new_issue",
+              description: "Validate the parameters for creating a new issue. It can be used to check if the parameters are correct before creating a new issue.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    project_id: "integer",
+                    tracker_id: "integer",
+                    subject: "string",
+                    status_id: "integer",
+                    priority_id: "integer",
+                    category_id: "integer",
+                    version_id: "integer",
+                    assigned_to_id: "integer",
+                    description: "string",
+                    start_date: "string",
+                    due_date: "string",
+                    done_ratio: "integer",
+                    is_private: { type: "boolean", default: false },
+                    estimated_hours: "float",
+                    custom_fields: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          field_id: "integer",
+                          value: "string",
+                        },
+                        required: ["field_id", "value"],
+                      },
+                    },
+                  },
+                  required: ["project_id", "tracker_id", "subject", "status_id"],
+                  description: "Project ID, Tracker ID, Status ID and Subject are required. Other fields are optional.",
+                },
+              },
+            },
+            {
+              name: "validate_update_issue",
+              description: "Validate the parameters for updating an issue. It can be used to check if the parameters are correct before updating an issue.",
+              arguments: {
+                schema: {
+                  type: "object",
+                  properties: {
+                    issue_id: "integer",
+                    subject: "string",
+                    tracker_id: "integer",
+                    status_id: "integer",
+                    priority_id: "integer",
+                    category_id: "integer",
+                    version_id: "integer",
+                    assigned_to_id: "integer",
+                    description: "string",
+                    start_date: "string",
+                    due_date: "string",
+                    done_ratio: "integer",
+                    is_private: "boolean",
+                    estimated_hours: "float",
+                    custom_fields: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          field_id: "integer",
+                          value: "string",
+                        },
+                        required: ["field_id", "value"],
+                      },
+                    },
+                    comment_to_add: {
+                      type: "string",
+                      description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.",
+                    },
+                  },
+                  required: ["issue_id"],
+                  description: "Issue ID is required. Other fields are optional. If you do not specify a field, it will not be updated.",
+                },
+              },
+            },
+            {
               name: "capable_issue_properties",
-              description: "Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc. It can be used to obtain the ID of the items to be searched when searching for tickets using generate_issue_search_url.",
+              description: "Return properties that can be assigned to an issue for the specified project, It includes trackers, statuses, priorities, categories, versions and custom fields. It can be used to obtain the ID of the items to be searched when searching for tickets using generate_issue_search_url.",
               arguments: {
                 schema: {
                   type: "object",
@@ -228,93 +309,7 @@ module RedmineAiHelper
           # Check if the issue is visible to the current user
           next unless issue.visible?
 
-          issues << {
-            id: issue.id,
-            subject: issue.subject,
-            project: {
-              id: issue.project.id,
-              name: issue.project.name,
-            },
-            tracker: {
-              id: issue.tracker.id,
-              name: issue.tracker.name,
-            },
-            status: {
-              id: issue.status.id,
-              name: issue.status.name,
-            },
-            priority: {
-              id: issue.priority.id,
-              name: issue.priority.name,
-            },
-            author: {
-              id: issue.author.id,
-              name: issue.author.name,
-            },
-            description: issue.description,
-            start_date: issue.start_date,
-            due_date: issue.due_date,
-            done_ratio: issue.done_ratio,
-            is_private: issue.is_private,
-            estimated_hours: issue.estimated_hours,
-            total_estimated_hours: issue.total_estimated_hours,
-            spent_hours: issue.spent_hours,
-            total_spent_hours: issue.total_spent_hours,
-            created_on: issue.created_on,
-            updated_on: issue.updated_on,
-            closed_on: issue.closed_on,
-            issue_url: issue_url(issue, only_path: true),
-            children: issue.children.filter { |child| child.visible? }.map do |child|
-              {
-                id: child.id,
-                tracker: {
-                  id: child.tracker.id,
-                  name: child.tracker.name,
-                },
-                subject: child.subject,
-                issue_url: issue_url(child, only_path: true),
-              }
-            end,
-            relations: issue.relations.filter { |relation| relation.visible? }.map do |relation|
-              {
-                id: relation.id,
-                issue_to_id: relation.issue_to_id,
-                issue_from_id: relation.issue_from_id,
-                relation_type: relation.relation_type,
-                delay: relation.delay,
-              }
-            end,
-            journals: issue.journals.filter { |journal| journal.visible? }.map do |journal|
-              {
-                id: journal.id,
-                user: {
-                  id: journal.user.id,
-                  name: journal.user.name,
-                },
-                notes: journal.notes,
-                created_on: journal.created_on,
-                updated_on: journal.updated_on,
-                private_notes: journal.private_notes,
-                details: journal.details.map do |detail|
-                  {
-                    id: detail.id,
-                    property: detail.property,
-                    prop_key: detail.prop_key,
-                    value: detail.value,
-                    old_value: detail.old_value,
-                  }
-                end,
-              }
-            end,
-            revisions: issue.changesets.map do |changeset|
-              {
-                repository_id: changeset.repository_id,
-                revision: changeset.revision,
-                committed_on: changeset.committed_on,
-              }
-            end
-
-          }
+          issues << generate_issue_data(issue)
         end
 
         issues_json = { issues: issues }
@@ -383,6 +378,18 @@ module RedmineAiHelper
         }
 
         ToolResponse.create_success properties
+      end
+
+      # Validate the parameters for creating a new issue
+      def validate_new_issue(args = {})
+        issue_update_provider = IssueUpdateToolProvider.new
+        return issue_update_provider.create_new_issue(args, true)
+      end
+
+      # Validate the parameters for updating an issue
+      def validate_update_issue(args = {})
+        issue_update_provider = IssueUpdateToolProvider.new
+        return issue_update_provider.update_issue(args, true)
       end
 
       # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
@@ -454,6 +461,112 @@ module RedmineAiHelper
 
         json = { url: url }
         ToolResponse.create_success json
+      end
+
+      private
+
+      def generate_issue_data(issue)
+        {
+          id: issue.id,
+          subject: issue.subject,
+          project: {
+            id: issue.project.id,
+            name: issue.project.name,
+          },
+          tracker: {
+            id: issue.tracker.id,
+            name: issue.tracker.name,
+          },
+          status: {
+            id: issue.status.id,
+            name: issue.status.name,
+          },
+          priority: {
+            id: issue.priority.id,
+            name: issue.priority.name,
+          },
+          author: {
+            id: issue.author.id,
+            name: issue.author.name,
+          },
+          assigned_to: issue.assigned_to ? {
+            id: issue.assigned_to.id,
+            name: issue.assigned_to.name,
+          } : nil,
+          description: issue.description,
+          start_date: issue.start_date,
+          due_date: issue.due_date,
+          done_ratio: issue.done_ratio,
+          is_private: issue.is_private,
+          estimated_hours: issue.estimated_hours,
+          total_estimated_hours: issue.total_estimated_hours,
+          spent_hours: issue.spent_hours,
+          total_spent_hours: issue.total_spent_hours,
+          created_on: issue.created_on,
+          updated_on: issue.updated_on,
+          closed_on: issue.closed_on,
+          issue_url: issue.id ? issue_url(issue, only_path: true) : nil,
+          attachments: issue.attachments.map do |attachment|
+            {
+              id: attachment.id,
+              filename: attachment.filename,
+              filesize: attachment.filesize,
+              content_type: attachment.content_type,
+              created_on: attachment.created_on,
+              attachment_url: attachment_path(attachment, only_path: false),
+            }
+          end,
+          children: issue.children.filter { |child| child.visible? }.map do |child|
+            {
+              id: child.id,
+              tracker: {
+                id: child.tracker.id,
+                name: child.tracker.name,
+              },
+              subject: child.subject,
+              issue_url: issue_url(child, only_path: true),
+            }
+          end,
+          relations: issue.relations.filter { |relation| relation.visible? }.map do |relation|
+            {
+              id: relation.id,
+              issue_to_id: relation.issue_to_id,
+              issue_from_id: relation.issue_from_id,
+              relation_type: relation.relation_type,
+              delay: relation.delay,
+            }
+          end,
+          journals: issue.journals.filter { |journal| journal.visible? }.map do |journal|
+            {
+              id: journal.id,
+              user: {
+                id: journal.user.id,
+                name: journal.user.name,
+              },
+              notes: journal.notes,
+              created_on: journal.created_on,
+              updated_on: journal.updated_on,
+              private_notes: journal.private_notes,
+              details: journal.details.map do |detail|
+                {
+                  id: detail.id,
+                  property: detail.property,
+                  prop_key: detail.prop_key,
+                  value: detail.value,
+                  old_value: detail.old_value,
+                }
+              end,
+            }
+          end,
+          revisions: issue.changesets.map do |changeset|
+            {
+              repository_id: changeset.repository_id,
+              revision: changeset.revision,
+              committed_on: changeset.committed_on,
+            }
+          end,
+
+        }
       end
 
       # Validate the parameters for generate_issue_search_url

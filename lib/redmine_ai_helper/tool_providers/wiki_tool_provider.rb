@@ -9,7 +9,7 @@ module RedmineAiHelper
 
             {
               name: "read_wiki_page",
-              description: "Read a wiki page from the database and return it as a JSON object.",
+              description: "Read a wiki page from the database and return it as a JSON object. It includes the title, text, author, version, created_on, updated_on, children, parent, and attachments.",
               arguments: {
                 schema: {
                   type: "object",
@@ -24,7 +24,7 @@ module RedmineAiHelper
             },
             {
               name: "list_wiki_pages",
-              description: "List all wiki pages in the project.",
+              description: "List all wiki pages in the project. It includes the title, author, created_on, and updated_on.",
               arguments: {
                 schema: {
                   type: "object",
@@ -84,6 +84,16 @@ module RedmineAiHelper
             }
           end,
           parent: page.parent ? { title: page.parent.title } : nil,
+          attachements: page.attachments.map do |attachment|
+            {
+              filename: attachment.filename,
+              filesize: attachment.filesize,
+              content_type: attachment.content_type,
+              description: attachment.description,
+              created_on: attachment.created_on,
+              attachement_url: attachment_path(attachment),
+            }
+          end,
 
         }
 

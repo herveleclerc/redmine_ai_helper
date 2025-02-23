@@ -42,7 +42,7 @@ module RedmineAiHelper
         chat_room = RedmineAiHelper::ChatRoom.new(goal)
         agent_list = RedmineAiHelper::AgentList.instance
         steps["steps"].map{ |step| step["agent"] }.uniq.reject{|a| a == "leader_agent" }.each do |agent|
-          agent_instance = agent_list.get_agent_instance(agent)
+          agent_instance = agent_list.get_agent_instance(agent, {project: @project})
           chat_room.add_agent(agent_instance)
         end
 
@@ -61,6 +61,15 @@ module RedmineAiHelper
           ユーザーが達成したい目的を明確にし、各エージェントと共有します。これにより各エージェントが円滑にタスクを実行できます。
           各エージェントが過去の会話履歴を参照しなくても目的を理解できるように具体的に記述してください。
           各エージェントがタスクを実行する際には、各種ID情報が非常に重要です。プロジェクトID、チケットID、ユーザーID、リポジトリIDなど、すでに分かっているものは明記して共有してください。
+          データを更新するタスクの場合には、ユーザーの確認が済んでいるのかまだなのかを明確にしてください。
+          ----
+          例1:
+          プロジェクト"my_project"(ID: 1)のチケットID:2の内容を要約してください。
+          ----
+          例2:
+          チケットID:3のに対し、以下の内容を盛り込んでエンドユーザー向けの回答を作成してください。
+          「バグの修正方法がわかりました。来週中に修正物件をリリースします。」
+          ユーザーからはチケットの更新確認は取れていません。
         EOS
 
         newmessages = messages.dup
@@ -78,6 +87,8 @@ module RedmineAiHelper
           エージェントの backstory を考慮して、適切なエージェントを選択してください。
           適切なエージェントが見つからない場合には、"leader" に指示を出してください。
           エージェントへの指示は、JSON形式で記述してください。
+
+          ** ユーザーへの確認を行うゴールが設定されている場合には、他のエージェントに対してデータを作成したり更新したりする指示を出してはいけません。その場合には他のエージェントには情報を取得する依頼のみ行うことができます。 **
 
           ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
           ----
