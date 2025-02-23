@@ -133,7 +133,7 @@ class IssueToolProviderTest < ActiveSupport::TestCase
       should "create issue" do
         response = @provider.create_new_issue(project_id: 1, tracker_id: 1, status_id: 1,subject: "test issue", description: "test description")
         assert response.is_success?
-        assert response.value[:issue_id].present?
+        assert response.value[:id].present?
       end
 
       should "return error with invalid project" do
@@ -157,7 +157,7 @@ class IssueToolProviderTest < ActiveSupport::TestCase
       should "create issue with custom fields" do
         response = @provider.create_new_issue(project_id: 1, tracker_id: 1, status_id: 1, subject: "test issue", description: "test description", custom_fields: [{ field_id: 1, value: "MySQL" }])
         assert response.is_success?
-        assert response.value[:issue_id].present?
+        assert response.value[:id].present?
       end
 
       context "validate_only is true" do
