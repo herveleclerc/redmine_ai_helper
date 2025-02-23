@@ -60,7 +60,7 @@ fi
 
 
 mkdir -p plugins/$NAME_OF_PLUGIN
-cp -pr $PATH_TO_PLUGIN/!(test) plugins/$NAME_OF_PLUGIN/
+find $PATH_TO_PLUGIN -mindepth 1 -maxdepth 1 ! -name test -exec cp -r {} plugins/$NAME_OF_PLUGIN/ \;
 
 cp "$SCRIPTDIR/database.yml" config/database.yml
 
