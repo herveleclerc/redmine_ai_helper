@@ -1,7 +1,8 @@
 # Redmine AI Helper Plugin
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
-[![codecov](https://codecov.io/gh/haru/redmine_ai_helper/branch/develop/graph/badge.svg?token=37CJ55KBUU)](https://codecov.io/gh/haru/redmine_ai_helper)
+[![Maintainability](https://qlty.sh/badges/a0cabed6-3c2d-4eb2-a7b0-2cd58e6fdf72/maintainability.svg)](https://qlty.sh/gh/haru/projects/redmine_ai_helper)
+[![codecov](https://codecov.io/gh/haru/redmine_ai_helper/graph/badge.svg?token=1HOSGRHVM9)](https://codecov.io/gh/haru/redmine_ai_helper)
 
 
 The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing project management efficiency through AI-powered support.
