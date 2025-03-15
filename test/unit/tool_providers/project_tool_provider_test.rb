@@ -1,7 +1,7 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
 class ProjectToolProviderTest < ActiveSupport::TestCase
-  fixtures :projects, :users, :repositories, :changesets, :changes, :issues, :issue_statuses, :enumerations, :issue_categories, :trackers
+  fixtures :projects, :projects_trackers, :trackers, :users, :repositories, :changesets, :changes, :issues, :issue_statuses, :enumerations, :issue_categories, :trackers
 
   def setup
     @provider = RedmineAiHelper::ToolProviders::ProjectToolProvider.new
@@ -14,13 +14,20 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
 
   def test_list_projects
     projects = Project.all
+    enabled_module = EnabledModule.new
+    enabled_module.project_id = 2
+    enabled_module.name = "ai_helper"
+    enabled_module.save!
 
     response = @provider.list_projects
     assert response.is_success?
-    assert_equal projects.size, response.value.size
-    projects.each_with_index do |project, index|
-      assert_equal project.id, response.value[index][:id]
-      assert_equal project.name, response.value[index][:name]
+    assert_equal 2, response.value.size
+    project1 = Project.find(1)
+    project2 = Project.find(2)
+    [project1, project2].each_with_index do |project, index|
+      value = response.value[index]
+      assert_equal project.id, value[:id]
+      assert_equal project.name, value[:name]
     end
   end
 

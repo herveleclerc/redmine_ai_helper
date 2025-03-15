@@ -74,10 +74,8 @@ module RedmineAiHelper
                   type: "object",
                   properties: {
                     project_id: {
-                      type: "array",
-                      items: {
-                        type: "integer",
-                      },
+                      type: "integer",
+                      description: "The project ID of the activities to return.",
                     },
                     author_id: {
                       type: "integer",
@@ -112,7 +110,7 @@ module RedmineAiHelper
       # List all projects visible to the current user.
       def list_projects(args = {})
         projects = Project.all
-        projects.select { |p| accessible_project? p }.map do |project|
+        list = projects.select { |p| accessible_project? p }.map do |project|
           {
             id: project.id,
             name: project.name,
@@ -122,7 +120,7 @@ module RedmineAiHelper
             last_activity_date: project.last_activity_date,
           }
         end
-        ToolResponse.create_success(projects)
+        ToolResponse.create_success(list)
       end
 
       # Read a project from the database and return it as a JSON object.
