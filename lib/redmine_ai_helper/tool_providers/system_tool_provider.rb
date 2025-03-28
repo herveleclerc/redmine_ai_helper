@@ -3,21 +3,11 @@ require "redmine_ai_helper/base_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class SystemToolProvider < RedmineAiHelper::BaseToolProvider
-      def self.list_tools()
-        list = {
-          tools: [
-            {
-              name: "list_plugins",
-              description: "Returns a list of all plugins installed in Redmine.",
-              arguments: {},
-            },
-          ],
-        }
-        list
+      define_function :list_plugins, description: "Returns a list of all plugins installed in Redmine." do
+        property :dummy, type: "string", description: "Dummy property. No need to specify.", required: false
       end
-
       # Returns a list of all plugins installed in Redmine
-      def list_plugins(args = {})
+      def list_plugins(dummy: nil)
         plugins = Redmine::Plugin.all
         plugin_list = []
         plugins.map do |plugin|
@@ -31,7 +21,7 @@ module RedmineAiHelper
           }
         end
         json = { plugins: plugin_list }
-        ToolResponse.create_success json
+        tool_response(content: json)
       end
     end
   end
