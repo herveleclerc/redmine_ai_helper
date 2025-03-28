@@ -3,104 +3,14 @@ require "redmine_ai_helper/base_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class RepositoryToolProvider < RedmineAiHelper::BaseToolProvider
-      def self.list_tools()
-        list = {
-          tools: [
 
-            {
-              name: "repository_info",
-              description: "Get information about a repository.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    repository_id: "integer",
-                  },
-                  required: ["repository_id"],
-                  description: "The ID of the repository to get information about.",
-                },
-              },
-            },
-            {
-              name: "get_file_info",
-              description: "Retrieve file information for the specified path and revision within the specified repository.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    repository_id: "integer",
-                    path: { type: "string", description: "The path of the file to get information about." },
-                    revision: { type: "string", default: "main" },
-                  },
-                  required: ["repository_id", "path"],
-                },
-              },
-            },
-            {
-              name: "get_revision_info",
-              description: "Get information about a revision in a repository. Returns the author, committed_on, list of path, and comments for the revision.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    repository_id: "integer",
-                    revision: {
-                      type: "string",
-                      description: "The revision to get information about."
-                    },
-                  },
-                  required: ["repository_id", "revision"],
-                },
-              },
-            },
-            {
-              name: "read_file",
-              description: "Read a file for the specified path and revision within the specified repository.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    repository_id: "integer",
-                    path: { type: "string", description: "The path of the file to read." },
-                    revision: { type: "string", default: "main" },
-                  },
-                  required: ["repository_id", "path"],
-                },
-              },
-            },
-            {
-              name: "read_diff",
-              description: "Get the diff information for a specified path and revision within the repository. If the path is not specified, the diff information for all files in the revision is returned. If the revision_to is specified, the diff information between the two revisions is returned.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    repository_id: "integer",
-                    path: { type: "string", description: "The path of the file to get diff information about." },
-                    revision: {
-                      type: "string",
-                      description: "The revision to get diff information about.",
-                    },
-                    revision_to: {
-                      type: "string",
-                      description: "The revision to compare the diff against.",
-                    }
-                  },
-                  required: ["repository_id", "revision"],
-                },
-              },
-            }
-          ],
-        }
-        list
+      define_function :repository_info, description: "Get information about a repository." do
+        property :repository_id, type: "integer", description: "The ID of the repository to get information about.", required: true
       end
-
       # Get information about a repository.
-      def repository_info(args = {})
-        sym_args = args.deep_symbolize_keys
-        repository_id = sym_args[:repository_id]
+      def repository_info(repository_id:)
         repository = Repository.find_by(id: repository_id)
-        return ToolResponse.create_error("Repository not found.") if repository.nil?
+        raise("Repository not found.") if repository.nil?
         json = {
           id: repository.id,
           type: repository.scm_name,
@@ -110,19 +20,21 @@ module RedmineAiHelper
           default_branch: repository.default_branch,
           url: url_for(controller: "repositories", action: "show", id: repository.project, repository_id: repository, only_path: true),
         }
-        ToolResponse.create_success(json)
+
+        tool_response(content: json)
       end
 
+      define_function :get_revision_info, description: "Get information about a revision in a repository. Returns the author, committed_on, list of path, and comments for the revision." do
+        property :repository_id, type: "integer", description: "The ID of the repository to get information about.", required: true
+        property :revision, type: "string", description: "The revision to get information about.", required: true
+      end
       # Get information about a revision in a repository.
       # Returns the author, committed_on, list of path, and comments for the revision.
-      def get_revision_info(args = {})
-        sym_args = args.deep_symbolize_keys
-        repository_id = sym_args[:repository_id]
-        revision = sym_args[:revision]
+      def get_revision_info(repository_id:, revision:)
         repository = Repository.find_by_id(repository_id)
-        return ToolResponse.create_error("Repository not found: repository_id = #{repository_id}") if repository.nil?
+        raise("Repository not found: repository_id = #{repository_id}") if repository.nil?
         changeset = repository.find_changeset_by_name(revision)
-        return ToolResponse.create_error("Revision not found: revision = #{revision}") if changeset.nil?
+        raise("Revision not found: revision = #{revision}") if changeset.nil?
         user = changeset.user
         author_info = {
             id: user.id,
@@ -138,19 +50,20 @@ module RedmineAiHelper
           revision: changeset.revision,
           related_issues: changeset.issues.filter{|i| i.visible? }.map{|i| {id: i.id, subject: i.subject}},
         }
-        ToolResponse.create_success(revision_info)
+        tool_response(content: revision_info)
       end
 
+      define_function :get_file_info, description: "Get information about a file in a repository." do
+        property :repository_id, type: "integer", description: "The ID of the repository to get information about.", required: true
+        property :path, type: "string", description: "The path of the file to get information about.", required: true
+        property :revision, type: "string", description: "The revision to get information about.", required: false
+      end
       # Get information about a file in a repository.
-      def get_file_info(args = {})
-        sym_args = args.deep_symbolize_keys
-        repository_id = sym_args[:repository_id]
-        path = sym_args[:path]
-        revision = sym_args[:revision] || "main"
-        repository = Repository.find(repository_id)
-        return ToolResponse.create_error("Repository not found.") if repository.nil?
+      def get_file_info(repository_id:, path:, revision: "main")
+        repository = Repository.find_by(id: repository_id)
+        raise("Repository not found.") if repository.nil?
         entry = repository.entry(path, revision)
-        return ToolResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
+        raise("File not found: path = #{path}, revision = #{revision}") if entry.nil?
         changeset = repository.find_changeset_by_name(revision)
         author_info = nil
         if changeset
@@ -175,46 +88,48 @@ module RedmineAiHelper
           url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
           commit: commit_info,
         }
-        ToolResponse.create_success(json)
+        tool_response(content: json)
       end
 
+      define_function :read_file, description: "Read a file in a repository." do
+        property :repository_id, type: "integer", description: "The ID of the repository to read the file from.", required: true
+        property :path, type: "string", description: "The path of the file to read.", required: true
+        property :revision, type: "string", description: "The revision to read the file from.", required: false
+      end
       # Read a file in a repository.
-      def read_file(args = {})
-        sym_args = args.deep_symbolize_keys
-        repository_id = sym_args[:repository_id]
-        path = sym_args[:path]
-        revision = sym_args[:revision] || "main"
+      def read_file(repository_id:, path:, revision: "main")
         repository = Repository.find_by(id: repository_id)
-        return ToolResponse.create_error("Repository not found.") if repository.nil?
+        raise("Repository not found.") if repository.nil?
 
         entry = repository.entry(path, revision)
-        return ToolResponse.create_error("File not found: path = #{path}, revision = #{revision}") if entry.nil?
+        raise("File not found: path = #{path}, revision = #{revision}") if entry.nil?
 
-        return ToolResponse.create_error("File is not text: path = #{path}, revision = #{revision}") unless entry.is_text?
+        raise("File is not text: path = #{path}, revision = #{revision}") unless entry.is_text?
 
-        return ToolResponse.create_error("#{path} is a directory.") if entry.is_dir?
+        raise("#{path} is a directory.") if entry.is_dir?
 
         content = repository.cat(path, revision)
         json = {
           content: content,
           url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
         }
-        ToolResponse.create_success(json)
+        tool_response(content: json)
       end
 
+      define_function :read_diff, description: "Get the diff information for a specified path and revision within the repository. If the path is not specified, the diff information for all files in the revision is returned." do
+        property :repository_id, type: "integer", description: "The ID of the repository to get diff information from.", required: true
+        property :path, type: "string", description: "The path of the file to get diff information about.", required: false
+        property :revision, type: "string", description: "The revision to get diff information about.", required: true
+        property :revision_to, type: "string", description: "The revision to compare the diff against.", required: false
+      end
       # Get the diff information for a specified path and revision within the repository.
       # If the path is not specified, the diff information for all files in the revision is returned.
-      def read_diff(args = {})
-        sym_args = args.deep_symbolize_keys
-        repository_id = sym_args[:repository_id]
-        path = sym_args[:path]
-        revision = sym_args[:revision]
-        revision_to = sym_args[:revision_to]
+      def read_diff(repository_id:, path: nil, revision:, revision_to: nil)
         repository = Repository.find(repository_id)
-        return ToolResponse.create_error("Repository not found.") if repository.nil?
+        raise("Repository not found.") if repository.nil?
 
         changeset = repository.find_changeset_by_name(revision)
-        return ToolResponse.create_error("Revision not found: revision = #{revision}") if changeset.nil?
+        raise("Revision not found: revision = #{revision}") if changeset.nil?
 
         diff_lines = repository.diff(path, revision, revision_to)
 
@@ -227,7 +142,7 @@ module RedmineAiHelper
           diff: diff_text,
         }
 
-        ToolResponse.create_success(json)
+        tool_response(content: json)
       end
     end
   end
