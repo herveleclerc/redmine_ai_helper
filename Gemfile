@@ -1,4 +1,5 @@
-gem "ruby-openai", "~> 7.3.1"
+gem "ruby-openai", "~> 8.0.0"
+gem "langchainrb", "~> 0.19.4"
 
 group :test do
   gem "simplecov-cobertura"
