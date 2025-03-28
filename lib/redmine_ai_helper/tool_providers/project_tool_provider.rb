@@ -3,112 +3,13 @@ require "redmine_ai_helper/base_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class ProjectToolProvider < RedmineAiHelper::BaseToolProvider
-      def self.list_tools()
-        list = {
-          tools: [
-            {
-              name: "list_projects",
-              description: "List all projects visible to the current user. It returns the project ID, name, identifier, description, created_on, and last_activity_date.",
-              arguments: {},
-            },
-            {
-              name: "read_project",
-              description: "Read a project from the database and return it as a JSON object. It returns the project ID, name, identifier, description, homepage, status, is_public, inherit_members, created_on, updated_on, subprojects, and last_activity_date.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    id: "integer",
-                    name: "string",
-                    identifier: "string",
-                  },
-                  "anyOf": [
-                    { required: ["id"] },
-                    { required: ["name"] },
-                    { required: ["identifier"] },
-                  ],
-                },
-              },
-            },
-            {
-              name: "project_members",
-              description: "List all members of the projects. It can be used to obtain the ID from the user's name. It can also be used to obtain the roles that the user has in the projects. Member information includes user_id, login, user_name, and roles.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_ids: {
-                      type: "array",
-                      items: {
-                        type: "integer",
-                      },
-                    },
-                  },
-                  required: ["project_ids"],
-                },
-              },
-            },
-            {
-              name: "project_enabled_modules",
-              description: "List all enabled modules of the projects. It shows the functions and plugins enabled in this projects.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_id: {
-                      type: "array",
-                      items: {
-                        type: "integer",
-                      },
-                    },
-                  },
-                  required: ["project_id"],
-                },
-              },
-            },
-            {
-              name: "list_project_activities",
-              description: "List all activities of the project. It returns the activity ID, event_datetime, event_type, event_title, event_description, and event_url.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_id: {
-                      type: "integer",
-                      description: "The project ID of the activities to return.",
-                    },
-                    author_id: {
-                      type: "integer",
-                      description: "The user ID of the author of the activity. If not specified, it will return all activities.",
-                    },
-                    limit: {
-                      type: "integer",
-                      description: "The maximum number of activities to return. If not specified, it will return all activities.",
-                      default: 100,
-                    },
-                    start_date: {
-                      type: "string",
-                      format: "date",
-                      description: "The start date of the activities to return.",
-                      default: "30 Days Ago",
-                    },
-                    end_date: {
-                      type: "string",
-                      format: "date",
-                      description: "The end date of the activities to return. If not specified, it will return all activities.",
-                    },
-                    required: ["project_id"],
-                  },
-                },
-              },
-            },
-          ],
-        }
-        list
+
+      define_function :list_projects, description: "List all projects visible to the current user. It returns the project ID, name, identifier, description, created_on, and last_activity_date." do
+        property :dummy, type: "string", description: "dummy property", required: false
       end
 
       # List all projects visible to the current user.
-      def list_projects(args = {})
+      def list_projects(dummy: nil)
         projects = Project.all
         list = projects.select { |p| accessible_project? p }.map do |project|
           {
@@ -120,16 +21,18 @@ module RedmineAiHelper
             last_activity_date: project.last_activity_date,
           }
         end
-        ToolResponse.create_success(list)
+        tool_response(content: list)
       end
 
-      # Read a project from the database and return it as a JSON object.
-      def read_project(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:id]
-        project_name = sym_args[:name]
-        project_identifier = sym_args[:identifier]
-        project = nil
+      define_function :read_project, description: "Read a project from the database and return it as a JSON object. It returns the project ID, name, identifier, description, homepage, status, is_public, inherit_members, created_on, updated_on, subprojects, and last_activity_date." do
+        property :project_id, type: "integer", description: "The project ID of the project to return.", required: false
+        property :project_name, type: "string", description: "The project name of the project to return.", required: false
+        property :project_identifier, type: "string", description: "The project identifier of the project to return.", required: false
+      end
+
+      # Read a project from the database.
+      def read_project(project_id: nil, project_name: nil, project_identifier: nil)
+
         if project_id
           project = Project.find_by(id: project_id)
         elsif project_name
@@ -137,11 +40,11 @@ module RedmineAiHelper
         elsif project_identifier
           project = Project.find_by(identifier: project_identifier)
         else
-          return ToolResponse.create_error "No id or name or Identifier specified."
+          raise "No id or name or Identifier specified."
         end
 
-        return ToolResponse.create_error "Project not found" unless project
-        return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
+        raise "Project not found" unless project
+        raise "You don't have permission to view this project" unless accessible_project? project
         project_json = {
           id: project.id,
           name: project.name,
@@ -163,13 +66,18 @@ module RedmineAiHelper
           end,
           last_activity_date: project.last_activity_date,
         }
-        ToolResponse.create_success project_json
+        tool_response(content: project_json)
+      end
+
+      define_function :project_members, description: "List all members of the projects. It can be used to obtain the ID from the user's name. It can also be used to obtain the roles that the user has in the projects. Member information includes user_id, login, user_name, and roles." do
+        property :project_ids, type: "array", description: "The project IDs of the projects to return.", required: true do
+          item type: "integer"
+        end
       end
 
       # List all members of the project.
-      def project_members(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_ids = sym_args[:project_ids]
+      def project_members(project_ids:)
+
         projects = Project.where(id: project_ids)
         return ToolResponse.create_error "No projects found" if projects.empty?
 
@@ -195,15 +103,16 @@ module RedmineAiHelper
             members: members,
           }
         end
-        json = { "projects": list }
-        ToolResponse.create_success json
+        tool_response(content: {projects: list})
+      end
+
+      define_function :project_enabled_modules, description: "List all enabled modules of the projects. It shows the functions and plugins enabled in this projects." do
+        property :project_id, type: "integer", description: "The project ID of the project to return.", required: true
       end
 
       # List all modules of the project.
       # It shows the functions and plugins enabled in this project.
-      def project_enabled_modules(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:project_id]
+      def project_enabled_modules(project_id:)
         project = Project.find(project_id)
         return ToolResponse.create_error "Project not found" unless project
         return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
@@ -217,22 +126,27 @@ module RedmineAiHelper
           project_id: project_id,
           enabled_modules: enabled_modules,
         }
-        ToolResponse.create_success json
+        tool_response(content: json)
+      end
+
+      define_function :list_project_activities, description: "List all activities of the project. It returns the activity ID, event_datetime, event_type, event_title, event_description, and event_url." do
+        property :project_id, type: "integer", description: "The project ID of the activities to return.", required: true
+        property :author_id, type: "integer", description: "The user ID of the author of the activity. If not specified, it will return all activities.", required: false
+        property :limit, type: "integer", description: "The maximum number of activities to return. If not specified, it will return all activities.", required: false
+        property :start_date, type: "string", description: "The start date of the activities to return.", required: false
+        property :end_date, type: "string", description: "The end date of the activities to return. If not specified, it will return all activities.", required: false
       end
 
       # List all activities of the project.
-      def list_project_activities(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:project_id]
+      def list_project_activities(project_id:, author_id: nil, limit: nil, start_date: nil, end_date: nil)
         project = Project.find(project_id)
         return ToolResponse.create_error "Project not found" unless project
         return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
 
-        author_id = sym_args[:author_id]
         author = author_id ? User.find(author_id) : nil
-        limit = sym_args[:limit] || 100
-        start_date = sym_args[:start_date] || 30.days.ago
-        end_date = sym_args[:end_date] || 1.day.from_now
+        limit ||= 100
+        start_date ||= 30.days.ago
+        end_date ||= 1.day.from_now
 
         current_user = User.current
         fetcher = Redmine::Activity::Fetcher.new(

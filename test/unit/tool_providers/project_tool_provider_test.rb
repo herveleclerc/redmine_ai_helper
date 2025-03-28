@@ -19,13 +19,12 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
     enabled_module.name = "ai_helper"
     enabled_module.save!
 
-    response = @provider.list_projects
-    assert response.is_success?
-    assert_equal 2, response.value.size
+    response = @provider.list_projects()
+    assert_equal 2, response.content.size
     project1 = Project.find(1)
     project2 = Project.find(2)
     [project1, project2].each_with_index do |project, index|
-      value = response.value[index]
+      value = response.content[index]
       assert_equal project.id, value[:id]
       assert_equal project.name, value[:name]
     end
@@ -34,40 +33,37 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   def test_read_project_by_id
     project = Project.find(1)
 
-    response = @provider.read_project(id: project.id)
-    assert response.is_success?
-    assert_equal project.id, response.value[:id]
-    assert_equal project.name, response.value[:name]
+    response = @provider.read_project(project_id: project.id)
+    assert_equal project.id, response.content[:id]
+    assert_equal project.name, response.content[:name]
   end
 
   def test_read_project_by_name
     project = Project.find(1)
 
-    response = @provider.read_project(name: project.name)
-    assert response.is_success?
-    assert_equal project.id, response.value[:id]
-    assert_equal project.name, response.value[:name]
+    response = @provider.read_project(project_name: project.name)
+    assert_equal project.id, response.content[:id]
+    assert_equal project.name, response.content[:name]
   end
 
   def test_read_project_by_identifier
     project = Project.find(1)
 
-    response = @provider.read_project(identifier: project.identifier)
-    assert response.is_success?
-    assert_equal project.id, response.value[:id]
-    assert_equal project.name, response.value[:name]
+    response = @provider.read_project(project_identifier: project.identifier)
+    assert_equal project.id, response.content[:id]
+    assert_equal project.name, response.content[:name]
   end
 
   def test_read_project_not_found
-    response = @provider.read_project(id: 999)
-    assert response.is_error?
-    assert_equal "Project not found", response.error
+    assert_raises(RuntimeError, "Project not found") do
+      @provider.read_project(project_id: 999)
+    end
   end
 
   def test_read_project_no_args
-    response = @provider.read_project
-    assert response.is_error?
-    assert_equal "No id or name or Identifier specified.", response.error
+    assert_raises(RuntimeError, "No id or name or Identifier specified.") do
+      @provider.read_project
+    end
   end
 
   def test_project_members
@@ -75,9 +71,8 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
     members = project.members
 
     response = @provider.project_members(project_ids: [project.id])
-    assert response.is_success?
-    assert_equal members.size, response.value[:projects][0][:members].size
-    assert_equal members.first.user_id, response.value[:projects][0][:members].first[:user_id]
+    assert_equal members.size, response.content[:projects][0][:members].size
+    assert_equal members.first.user_id, response.content[:projects][0][:members].first[:user_id]
   end
 
   def test_project_enabled_modules
@@ -85,29 +80,18 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
     enabled_modules = project.enabled_modules
 
     response = @provider.project_enabled_modules(project_id: project.id)
-    assert response.is_success?
-    assert_equal enabled_modules.size, response.value[:enabled_modules].size
-    assert_equal enabled_modules.first.name, response.value[:enabled_modules].first[:name]
+    assert_equal enabled_modules.size, response.content[:enabled_modules].size
+    assert_equal enabled_modules.first.name, response.content[:enabled_modules].first[:name]
   end
 
   def test_list_project_activities
     project = Project.find(1)
     response = @provider.list_project_activities(project_id: project.id)
-    assert response.is_success?
 
     author = User.find(1)
     response = @provider.list_project_activities(project_id: project.id, author_id: author.id)
-    assert response.is_success?
     # assert_equal project.list_project_activities.size, response.value[:activities].size
   end
 
-  def test_self_list_tools
-    response = RedmineAiHelper::ToolProviders::ProjectToolProvider.list_tools
-    assert_equal 5, response[:tools].size
-    assert_equal "list_projects", response[:tools].first[:name]
-    assert_equal "read_project", response[:tools].second[:name]
-    assert_equal "project_members", response[:tools].third[:name]
-    assert_equal "project_enabled_modules", response[:tools].fourth[:name]
-    assert_equal "list_project_activities", response[:tools].fifth[:name]
-  end
+
 end
