@@ -85,12 +85,13 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   end
 
   def test_list_project_activities
-    project = Project.find(1)
-    response = @provider.list_project_activities(project_id: project.id)
+    assert_nothing_raised do
+      project = Project.find(1)
+      response = @provider.list_project_activities(project_id: project.id)
 
-    author = User.find(1)
-    response = @provider.list_project_activities(project_id: project.id, author_id: author.id)
-    # assert_equal project.list_project_activities.size, response.value[:activities].size
+      author = User.find(1)
+      response = @provider.list_project_activities(project_id: project.id, author_id: author.id)
+    end
   end
 
 
