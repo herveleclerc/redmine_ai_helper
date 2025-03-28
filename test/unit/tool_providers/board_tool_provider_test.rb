@@ -47,7 +47,7 @@ class BoardToolProviderTest < ActiveSupport::TestCase
 
   def test_generate_board_url
     response = @provider.generate_board_url(board_id: @board.id)
-    assert_match /boards\/\d+/, response.content[:url]
+    assert_match(%r{boards/\d+}, response.content[:url])
   end
 
   def test_generate_board_url_no_board_id
@@ -64,6 +64,6 @@ class BoardToolProviderTest < ActiveSupport::TestCase
 
   def test_generate_message_url
     response = @provider.generate_message_url(message_id: @message.id)
-    assert_match /boards\/\d+\/topics\/\d+/, response.content[:url]
+    assert_match(%r{/boards/\d+/topics/\d+}, response.content[:url])
   end
 end

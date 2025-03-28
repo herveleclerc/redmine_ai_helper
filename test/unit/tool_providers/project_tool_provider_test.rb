@@ -13,7 +13,6 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   end
 
   def test_list_projects
-    projects = Project.all
     enabled_module = EnabledModule.new
     enabled_module.project_id = 2
     enabled_module.name = "ai_helper"
@@ -87,10 +86,10 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   def test_list_project_activities
     assert_nothing_raised do
       project = Project.find(1)
-      response = @provider.list_project_activities(project_id: project.id)
+      @provider.list_project_activities(project_id: project.id)
 
       author = User.find(1)
-      response = @provider.list_project_activities(project_id: project.id, author_id: author.id)
+      @provider.list_project_activities(project_id: project.id, author_id: author.id)
     end
   end
 
