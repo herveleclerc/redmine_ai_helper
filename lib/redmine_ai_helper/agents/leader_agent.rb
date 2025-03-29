@@ -123,7 +123,7 @@ module RedmineAiHelper
         prompt_text = prompt.format(
           goal: goal,
           agent_list: agent_list_string,
-          json_schema: parser.get_format_instructions,
+          format_instructions: parser.get_format_instructions,
           json_examples: json_examples,
         )
 

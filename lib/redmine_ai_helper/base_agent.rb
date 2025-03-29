@@ -1,11 +1,11 @@
 require "langchain"
 require "redmine_ai_helper/logger"
 Langchain.logger.level = Logger::ERROR
+
 module RedmineAiHelper
   class BaseAgent
     attr_accessor :model
     include RedmineAiHelper::Logger
-
 
     class << self
       def myname
@@ -143,57 +143,45 @@ module RedmineAiHelper
     end
 
     def decompose_task(messages)
-      prompt = <<~EOS
-        leader から与えられたタスクを解決するために必要なステップに分解してください。
-        ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。
-        各ステップでは、前のステップの実行で得られた結果をどのように利用するかを考慮してください。
-        それらをまとめて「ステップの分解のJSONのスキーマ」にマッチするJSONを作成してください。
-
-        ２つ以上のステップに分解がする必要がない場合には元のタスクをそのまま一つのステップとして記述してください。
-        タスクを解決するためにツールの実行が不要な場合にはステップを分解する必要はありません。
-
-        ** ステップの目的が情報の収集や取得の場合には、情報を作成したり更新したりするtoolを絶対に選ばないでください。 **
-
-        ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
-        ----
-        ステップの分解のJSONのスキーマ:
-        {
-          "type": "object",
-          "properties": {
-            "steps": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "description": "ステップの名前"
-                  },
-                  "step": {
-                    "type": "string",
-                    "description": "ステップの内容"
-                  },
-                  "tool": {
-                    "type": "object",
-                    "properties": {
-                      "provider": {
-                        "type": "string",
-                        "description": "ツールのプロバイダー"
-                      },
-                      "tool_name": {
-                        "type": "string",
-                        "description": "ツールの名前"
-                      },
+      json_schema = {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "ステップの名前",
+                },
+                "step": {
+                  "type": "string",
+                  "description": "ステップの内容",
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "description": "ツールのプロバイダー",
                     },
-                    "description": "ツールの情報"
-                  }
-                  required: ["name", "step"]
-                }
-              }
-            }
-          }
-        }
-        ----
+                    "tool_name": {
+                      "type": "string",
+                      "description": "ツールの名前",
+                    },
+                  },
+                  "description": "ツールの情報",
+                },
+              },
+              "required": ["name", "step"],
+            },
+          },
+        },
+      }
+      parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
+
+      json_examples =<<~EOS
         タスクの例:
         「チケットID 3のチケットのステータスを完了に変更する」
         JSONの例:
@@ -217,18 +205,25 @@ module RedmineAiHelper
             }
           ]
         }
-        ----
-        tools:
-        #{available_tools}
-        ("\n")}
       EOS
 
+      prompt = load_prompt("base_agent/decompose_task")
+      prompt_text = prompt.format(
+        format_instructions: parser.get_format_instructions,
+        json_examples: json_examples,
+        available_tools: available_tools,
+      )
+
       newmessages = messages.dup
-      newmessages << { role: "user", content: prompt }
+      newmessages << { role: "user", content: prompt_text }
 
       json = chat(newmessages)
+      fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
+        llm: @client,
+        parser: parser
+      )
+      fix_parser.parse(json)
 
-      RedmineAiHelper::Util::JsonExtractor.extract(json)
     end
 
     # dispatch the tool
