@@ -22,7 +22,7 @@ module RedmineAiHelper
       def issue_properties
         return "" unless @project
         provider = RedmineAiHelper::ToolProviders::IssueToolProvider.new
-        properties = provider.capable_issue_properties({project_id: @project.id})
+        properties = provider.capable_issue_properties(project_id: @project.id)
         content = <<~EOS
           ----
           プロジェクトID: #{@project.id} で指定可能なチケットのプロパティは以下の通りです。

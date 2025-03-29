@@ -4,305 +4,15 @@ require_relative "./issue_update_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class IssueToolProvider < RedmineAiHelper::BaseToolProvider
-      def self.list_tools()
-        list = {
-          tools: [
-            {
-              name: "read_issues",
-              description: "Read issues from the database and return it, including journals, attachments, relations, and revisions. Attachments including the URL to download the file which starts a root path of this site.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    id: {
-                      type: "array",
-                      items: { type: "integer" },
-                    },
-                  },
-                  required: ["id"],
-                  description: "Issue ID array. At least one ID is required.",
-                },
-              },
-            },
-            {
-              name: "validate_new_issue",
-              description: "Validate the parameters for creating a new issue. It can be used to check if the parameters are correct before creating a new issue.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_id: "integer",
-                    tracker_id: "integer",
-                    subject: "string",
-                    status_id: "integer",
-                    priority_id: "integer",
-                    category_id: "integer",
-                    version_id: "integer",
-                    assigned_to_id: "integer",
-                    description: "string",
-                    start_date: "string",
-                    due_date: "string",
-                    done_ratio: "integer",
-                    is_private: { type: "boolean", default: false },
-                    estimated_hours: "float",
-                    custom_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_id: "integer",
-                          value: "string",
-                        },
-                        required: ["field_id", "value"],
-                      },
-                    },
-                  },
-                  required: ["project_id", "tracker_id", "subject", "status_id"],
-                  description: "Project ID, Tracker ID, Status ID and Subject are required. Other fields are optional.",
-                },
-              },
-            },
-            {
-              name: "validate_update_issue",
-              description: "Validate the parameters for updating an issue. It can be used to check if the parameters are correct before updating an issue.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    issue_id: "integer",
-                    subject: "string",
-                    tracker_id: "integer",
-                    status_id: "integer",
-                    priority_id: "integer",
-                    category_id: "integer",
-                    version_id: "integer",
-                    assigned_to_id: "integer",
-                    description: "string",
-                    start_date: "string",
-                    due_date: "string",
-                    done_ratio: "integer",
-                    is_private: "boolean",
-                    estimated_hours: "float",
-                    custom_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_id: "integer",
-                          value: "string",
-                        },
-                        required: ["field_id", "value"],
-                      },
-                    },
-                    comment_to_add: {
-                      type: "string",
-                      description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.",
-                    },
-                  },
-                  required: ["issue_id"],
-                  description: "Issue ID is required. Other fields are optional. If you do not specify a field, it will not be updated.",
-                },
-              },
-            },
-            {
-              name: "capable_issue_properties",
-              description: "Return properties that can be assigned to an issue for the specified project, It includes trackers, statuses, priorities, categories, versions and custom fields. It can be used to obtain the ID of the items to be searched when searching for tickets using generate_issue_search_url.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_id: "integer",
-                    project_name: "string",
-                    project_identifier: "string",
-                  },
-                  "anyOf": [
-                    { required: ["project_id"] },
-                    { required: ["project_name"] },
-                    { required: ["project_identifier"] },
-                  ],
-                },
-              },
-            },
-            {
-              name: "generate_issue_search_url",
-              description: "Generate a URL for searching issues based on the filter conditions. For search items with '_id', specify the ID instead of the name of the search target. If you do not know the ID, you need to call capable_issue_properties in advance to obtain the ID.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_id: "integer",
-                    fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["tracker_id", "priority_id", "category_id", "version_id", "assigned_to_id", "author_id", "start_date"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", "!", "*", "!*", "!p", "cf", "h"],
-                            description: "Operators: = (equal), != (not equal), * (all), !* (none), !p (has never been), cf (changed from), h (has been)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "string" },
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    date_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["created_on", "updated_on", "start_date", "due_date"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", ">=", "<=", "><", "<t+", ">t+", "t+", "t", "ld", "w", "lw", "l2w", "m", "lm", "y", ">t-", "<t-", "t-", "!*", "*"],
-                            description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (Within the next n days from today), >t+ (More than n days from today), t+ (n days from today), t (today), ld (last day), w (this week), lw (last week), l2w (last 2 weeks), m (this month), lm (last month), y (this year), >t- (More than n days ago), <t- (Within the past n days), t (today), t- (n days ago), !* (none), * (any)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "string" },
-                            description: "Specify absolute dates in YYYY-MM-DD format. For relative dates, specify only the number. Depending on the operator, multiple values may be specified, or no value may be required.
-                          The following operations must specify absolute dates: =, >=, <=, ><
-                          The following operations must specify relative dates: <t+, >t+, t+, >t-, <t-, t-
-                          No value is needed for other operations
-                          ",
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    time_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["estimated_hours", "spent_hours"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", ">=", "<=", "><", "!*", "*"],
-                            description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), !* (none), * (any)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "string" },
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    number_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["done_ratio"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", ">=", "<=", "><", "!*", "*"],
-                            description: "Operators: = (equal), >= (greater than or equal), <= (less than or equal), >< (between), !* (none), * (any)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "integer" },
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    text_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["subject", "description", "notes"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["~", "!~", "=", "!", "*", "!*"],
-                            description: "Operators: ~ (contains), !~ (does not contain), = (equal), != (not equal), * (any value set), !* (no value set)",
-                          },
-                          value: {
-                            type: "array",
-                            items: { type: "string" },
-                          },
-                        },
-                        required: ["field_name", "operator", "value"],
-                      },
-                    },
-                    status_field: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["status_id"],
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", "!", "o", "c", "*"],
-                            description: "Operators: = (exact match), ! (not equal), o (open), c (closed), * (any value set)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "integer" },
-                          },
-                        },
-                        required: ["field_name", "operator", "values"],
-                      },
-                    },
-                    custom_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_id: "integer",
-                          operator: {
-                            type: "string",
-                            enum: ["=", "!", "!*", "*", "~", "!~", "^", "$", ">=", "<=", "><", "<t", ">", "t+", "t", "w", ">t-", "<t-"],
-                            description: "Operators: = (equal), != (not equal), !* (no value set), * (any value set), ~ (contains), !~ (does not contain), ^ (starts with), $ (ends with), >= (greater than or equal), <= (less than or equal), >< (between), <t+ (within the next n days), >t+ (more than n days ahead), t+ (n days in the future), t (today), w (this week), >t- (more than n days ago), <t- (within the past n days)",
-                          },
-                          values: {
-                            type: "array",
-                            items: { type: "integer" },
-                          },
-                        },
-                        required: ["field_id", "operator", "values"],
-                      },
-                    },
-                  },
-                  required: ["project_id"],
-                },
-              },
-            },
-          ],
-        }
-        list
-      end
 
+      define_function :read_issues, description: "Read an issue from the database and return it as a JSON object. It returns the issue ID, subject, project, tracker, status, priority, author, assigned_to, description, start_date, due_date, done_ratio, is_private, estimated_hours, total_estimated_hours, spent_hours, total_spent_hours, created_on, updated_on, closed_on, issue_url, attachments, children and relations." do
+        property :issue_ids, type: "array", description: "The issue ID array to read.", required: true do
+          item type: "integer", description: "The issue ID to read."
+        end
+      end
       # Read an issue from the database and return it as a JSON object.
-      # args: { id: issue_id }
-      def read_issues(args = {})
-        sym_args = args.deep_symbolize_keys
-        issue_ids = sym_args[:id]
-        return ToolResponse.create_error("Issue ID array is required.") if issue_ids.empty?
+      def read_issues(issue_ids:)
+        raise("Issue ID array is required.") if issue_ids.empty?
         issues = []
         Issue.where(id: issue_ids).each do |issue|
 
@@ -312,16 +22,18 @@ module RedmineAiHelper
           issues << generate_issue_data(issue)
         end
 
-        issues_json = { issues: issues }
-        ToolResponse.create_success(issues_json)
+        raise("Issue not found") if issues.empty?
+
+        tool_response(content: {issues: issues})
       end
 
+      define_function :capable_issue_properties, description: "Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc. You must specify one of project_id, project_name, or project_identifier." do
+        property :project_id, type: "integer", description: "The project ID of the project to return.", required: false
+        property :project_name, type: "string", description: "The project name of the project to return.", required: false
+        property :project_identifier, type: "string", description: "The project identifier of the project to return.", required: false
+      end
       # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
-      def capable_issue_properties(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:project_id]
-        project_name = sym_args[:project_name]
-        project_identifier = sym_args[:project_identifier]
+      def capable_issue_properties(project_id: nil, project_name: nil, project_identifier: nil)
         project = nil
         if project_id
           project = Project.find_by(id: project_id)
@@ -330,10 +42,10 @@ module RedmineAiHelper
         elsif project_identifier
           project = Project.find_by(identifier: project_identifier)
         else
-          return ToolResponse.create_error("No id or name or Identifier specified.")
+          raise("No id or name or Identifier specified.")
         end
 
-        return ToolResponse.create_error("Project not found.") unless project
+        raise("Project not found.") unless project
 
         properties = {
           trackers: project.trackers.map do |tracker|
@@ -377,40 +89,143 @@ module RedmineAiHelper
           end,
         }
 
-        ToolResponse.create_success properties
+        tool_response(content: properties)
       end
 
+      define_function :validate_new_issue, description: "Validate the parameters for creating a new issue. It can be used to check if the parameters are correct before creating a new issue." do
+        property :project_id, type: "integer", description: "The project ID of the project to create the issue in.", required: true
+        property :tracker_id, type: "integer", description: "The tracker ID of the issue to create.", required: true
+        property :subject, type: "string", description: "The subject of the issue to create.", required: true
+        property :status_id, type: "integer", description: "The status ID of the issue to create.", required: true
+        property :priority_id, type: "integer", description: "The priority ID of the issue to create.", required: false
+        property :category_id, type: "integer", description: "The category ID of the issue to create.", required: false
+        property :version_id, type: "integer", description: "The version ID of the issue to create.", required: false
+        property :assigned_to_id, type: "integer", description: "The assigned_to ID of the issue to create.", required: false
+        property :description, type: "string", description: "The description of the issue to create.", required: false
+        property :start_date, type: "string", description: "The start date of the issue to create.", required: false
+        property :due_date, type: "string", description: "The due date of the issue to create.", required: false
+        property :done_ratio, type: "integer", description: "The done ratio of the issue to create.", required: false
+        property :is_private, type: "boolean", description: "Whether the issue is private or not. Default is false."
+        property :estimated_hours, type: "string", description: "The estimated hours of the issue to create.", required: false
+        property :custom_fields, type: "array", description:"Custom fields for the new issue." do
+          item type: "object", description: "The custom field of the issue to create." do
+            property :field_id, type: "integer", description: "The field ID of the custom field.", required: true
+            property :value, type: "string", description: "The value of the custom field.", required: true
+          end
+        end
+      end
       # Validate the parameters for creating a new issue
-      def validate_new_issue(args = {})
+      def validate_new_issue(project_id:, tracker_id:, subject:, status_id:, priority_id: nil, category_id: nil, version_id: nil, assigned_to_id: nil, description: nil, start_date: nil, due_date: nil, done_ratio: nil, is_private: false, estimated_hours: nil, custom_fields: [])
         issue_update_provider = IssueUpdateToolProvider.new
-        return issue_update_provider.create_new_issue(args, true)
+        return issue_update_provider.create_new_issue(project_id: project_id, tracker_id: tracker_id, subject: subject, status_id: status_id, priority_id: priority_id, category_id: category_id, version_id: version_id, assigned_to_id: assigned_to_id, description: description, start_date: start_date, due_date: due_date, done_ratio: done_ratio, is_private: is_private, estimated_hours: estimated_hours, custom_fields: custom_fields, validate_only: true)
       end
 
+      define_function :validate_update_issue, description: "Validate the parameters for updating an issue. It can be used to check if the parameters are correct before updating an issue." do
+        property :issue_id, type: "integer", description: "The issue ID of the issue to update.", required: true
+        property :subject, type: "string", description: "The subject of the issue to update.", required: false
+        property :tracker_id, type: "integer", description: "The tracker ID of the issue to update.", required: false
+        property :status_id, type: "integer", description: "The status ID of the issue to update.", required: false
+        property :priority_id, type: "integer", description: "The priority ID of the issue to update.", required: false
+        property :category_id, type: "integer", description: "The category ID of the issue to update.", required: false
+        property :version_id, type: "integer", description: "The version ID of the issue to update.", required: false
+        property :assigned_to_id, type: "integer", description: "The assigned_to ID of the issue to update.", required: false
+        property :description, type: "string", description: "The description of the issue to update.", required: false
+        property :start_date, type: "string", description: "The start date of the issue to update.", required: false
+        property :due_date, type: "string", description: "The due date of the issue to update.", required: false
+        property :done_ratio, type: "integer", description: "The done ratio of the issue to update.", required: false
+        property :is_private, type: "boolean", description: "Whether the issue is private or not. Default is false."
+        property :estimated_hours, type: "string", description: "The estimated hours of the issue to update.", required: false
+        property :custom_fields, type: "array", description: "The custom fields of the issue to update.", required: false do
+          item type: "object", description: "The custom field of the issue to update." do
+            property :field_id, type: "integer", description: "The field ID of the custom field.", required: true
+            property :value, type: "string", description: "The value of the custom field.", required: true
+          end
+        end
+        property :comment_to_add, type: "string", description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.", required: false
+      end
       # Validate the parameters for updating an issue
-      def validate_update_issue(args = {})
+      def validate_update_issue(issue_id:, subject: nil, tracker_id: nil, status_id: nil, priority_id: nil, category_id: nil, version_id: nil, assigned_to_id: nil, description: nil, start_date: nil, due_date: nil, done_ratio: nil, is_private: false, estimated_hours: nil, custom_fields: [], comment_to_add: nil)
         issue_update_provider = IssueUpdateToolProvider.new
-        return issue_update_provider.update_issue(args, true)
+        return issue_update_provider.update_issue(issue_id: issue_id, subject: subject, tracker_id: tracker_id, status_id: status_id, priority_id: priority_id, category_id: category_id, version_id: version_id, assigned_to_id: assigned_to_id, description: description, start_date: start_date, due_date: due_date, done_ratio: done_ratio, is_private: is_private, estimated_hours: estimated_hours, custom_fields: custom_fields, comment_to_add: comment_to_add, validate_only: true)
       end
 
-      # フィルター条件からIssueを検索するためのURLをクエリーストリングを含めて生成する
-      def generate_issue_search_url(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:project_id]
+      define_function :generate_issue_search_url, description: "Generate a URL for searching issues based on the filter conditions. For search items with '_id', specify the ID instead of the name of the search target. If you do not know the ID, you need to call capable_issue_properties in advance to obtain the ID." do
+        property :project_id, type: "integer", description: "The project ID of the project to search in.", required: true
+        property :fields, type: "array", description:"Search fields for the issue." do
+          item type: "object", description: "Search field for the issue." do
+            property :field_name, type: "string", description: "The name of the field to search.", required: true
+            property :operator, type: "string", description: "The operator to use for the search.", required: true
+            property :values, type: "array", description:"The values to search for.", required: true do
+              item type: "string", description: "The value to search for."
+            end
+          end
+        end
+        property :date_fields, type: "array", description:"Search fields for the issue." do
+          item type: "object", description: "Search field for the issue." do
+            property :field_name, type: "string", description: "The name of the field to search.", required: true
+            property :operator, type: "string", description: "The operator to use for the search.", required: true
+            property :values, type: "array", description:"The values to search for.", required: true do
+              item type: "string", description: "The value to search for."
+            end
+          end
+        end
+        property :time_fields, type: "array", description:"Search fields for the issue." do
+          item type: "object", description: "Search field for the issue." do
+            property :field_name, type: "string", description: "The name of the field to search.", required: true
+            property :operator, type: "string", description: "The operator to use for the search.", required: true
+            property :values, type: "array", description:"The values to search for.", required: true do
+              item type: "string", description: "The value to search for."
+            end
+          end
+        end
+        property :number_fields, type: "array", description:"Search fields for the issue." do
+          item type: "object", description: "Search field for the issue." do
+            property :field_name, type: "string", description: "The name of the field to search.", required: true
+            property :operator, type: "string", description: "The operator to use for the search.", required: true
+            property :values, type: "array", description:"The values to search for.", required: true do
+              item type: "integer", description: "The value to search for."
+            end
+          end
+        end
+        property :text_fields, type: "array", description:"Search fields for the issue." do
+          item type: "object", description: "Search field for the issue." do
+            property :field_name, type: "string", description: "The name of the field to search.", required: true
+            property :operator, type: "string", description: "The operator to use for the search.", required: true
+            property :value, type: "array", description:"The values to search for.", required: true do
+              item type: "string", description: "The value to search for."
+            end
+          end
+        end
+        property :status_field, type: "array", description:"Search fields for the issue." do
+          item type: "object", description: "Search field for the issue." do
+            property :field_name, type: "string", description: "The name of the field to search.", required: true
+            property :operator, type: "string", description: "The operator to use for the search.", required: true
+            property :values, type: "array", description:"The values to search for.", required: true do
+              item type: "integer", description: "The value to search for."
+            end
+          end
+        end
+        property :custom_fields, type: "array", description:"Search fields for the issue." do
+          item type: "object", description: "Search field for the issue." do
+            property :field_id, type: "integer", description: "The ID of the custom field to search.", required: true
+            property :operator, type: "string", description: "The operator to use for the search.", required: true
+            property :values, type: "array", description:"The values to search for.", required: true do
+              item type: "string", description: "The value to search for."
+            end
+          end
+        end
+      end
+
+      # Generate a URL with query strings to search for issues based on filter conditions
+      def generate_issue_search_url(project_id:, fields: [], date_fields: [], time_fields: [], number_fields: [], text_fields: [], status_field: [], custom_fields: [])
         project = Project.find(project_id)
-        fields = sym_args[:fields] || []
-        date_fields = sym_args[:date_fields] || []
-        time_fields = sym_args[:time_fields] || []
-        number_fields = sym_args[:number_fields] || []
-        text_fields = sym_args[:text_fields] || []
-        status_field = sym_args[:status_field] || []
-        custom_fields = sym_args[:custom_fields] || []
 
         if fields.empty? && date_fields.empty? && time_fields.empty? && number_fields.empty? && text_fields.empty? && status_field.empty? && custom_fields.empty?
-          return ToolResponse.create_success({ url: "/projects/#{project.identifier}/issues" })
+          return tool_response(content: { url: "/projects/#{project.identifier}/issues" })
         end
 
         validate_errors = generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
-        return ToolResponse.create_error(validate_errors.join("\n")) if validate_errors.length > 0
+        raise(validate_errors.join("\n")) if validate_errors.length > 0
 
         params = { fields: [], operators: {}, values: {} }
         params[:fields] << "project_id"
@@ -459,8 +274,7 @@ module RedmineAiHelper
 
         url = builder.generate_query_string(project)
 
-        json = { url: url }
-        ToolResponse.create_success json
+        tool_response(content: {url: url})
       end
 
       private
