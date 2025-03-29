@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_tool_provider"
+require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
-    class IssueUpdateToolProvider < RedmineAiHelper::BaseToolProvider
+    class IssueUpdateTools < RedmineAiHelper::BaseTools
 
       define_function :create_new_issue, description: "Create a new issue in the database." do
         property :project_id, type: "integer", description: "The project ID of the issue to create.", required: true

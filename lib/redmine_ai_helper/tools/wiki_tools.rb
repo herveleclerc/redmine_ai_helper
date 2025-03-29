@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_tool_provider"
+require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
-    class WikiToolProvider < RedmineAiHelper::BaseToolProvider
+    class WikiTools < RedmineAiHelper::BaseTools
       define_function :read_wiki_page, description: "Read a wiki page from the database and return it as a JSON object. It includes the title, text, author, version, created_on, updated_on, children, parent, and attachments." do
         property :project_id, type: "integer", description: "The project ID of the wiki page to read.", required: true
         property :title, type: "string", description: "The title of the wiki page to read.", required: true

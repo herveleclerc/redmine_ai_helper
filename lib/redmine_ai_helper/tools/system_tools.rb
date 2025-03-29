@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_tool_provider"
+require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
-    class SystemToolProvider < RedmineAiHelper::BaseToolProvider
+    class SystemTools < RedmineAiHelper::BaseTools
       define_function :list_plugins, description: "Returns a list of all plugins installed in Redmine." do
         property :dummy, type: "string", description: "Dummy property. No need to specify.", required: false
       end

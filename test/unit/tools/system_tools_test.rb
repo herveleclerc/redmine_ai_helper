@@ -1,8 +1,8 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
-class SystemToolProviderTest < ActiveSupport::TestCase
+class SystemToolsTest < ActiveSupport::TestCase
   def setup
-    @provider = RedmineAiHelper::Tools::SystemToolProvider.new
+    @provider = RedmineAiHelper::Tools::SystemTools.new
   end
 
   def test_list_plugins

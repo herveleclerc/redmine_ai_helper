@@ -3,7 +3,7 @@ require "redmine_ai_helper/logger"
 
 module RedmineAiHelper
 
-  class BaseToolProvider
+  class BaseTools
     extend Langchain::ToolDefinition
 
     include RedmineAiHelper::Logger

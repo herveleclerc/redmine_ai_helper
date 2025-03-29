@@ -16,16 +16,16 @@ module RedmineAiHelper
 
       def available_tool_providers
         [
-          RedmineAiHelper::Tools::IssueToolProvider,
-          RedmineAiHelper::Tools::ProjectToolProvider,
-          RedmineAiHelper::Tools::UserToolProvider
+          RedmineAiHelper::Tools::IssueTools,
+          RedmineAiHelper::Tools::ProjectTools,
+          RedmineAiHelper::Tools::UserTools
         ]
       end
 
       private
       def issue_properties
         return "" unless @project
-        provider = RedmineAiHelper::Tools::IssueToolProvider.new
+        provider = RedmineAiHelper::Tools::IssueTools.new
         properties = provider.capable_issue_properties(project_id: @project.id)
         content = <<~EOS
           ----

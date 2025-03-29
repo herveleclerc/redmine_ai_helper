@@ -1,10 +1,10 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
-class WikiToolProviderTest < ActiveSupport::TestCase
+class WikiToolsTest < ActiveSupport::TestCase
   fixtures :projects, :wikis, :wiki_pages, :users
 
   def setup
-    @provider = RedmineAiHelper::Tools::WikiToolProvider.new
+    @provider = RedmineAiHelper::Tools::WikiTools.new
     @project = Project.find(1)
     @wiki = @project.wiki
     @page = @wiki.pages.first

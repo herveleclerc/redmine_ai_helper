@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_tool_provider"
+require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
-    class BoardToolProvider < RedmineAiHelper::BaseToolProvider
+    class BoardTools < RedmineAiHelper::BaseTools
 
       define_function :list_boards, description: "List all boards in the project. It returns the board ID, project ID, name, description, messages_count, and last_message." do
         property :project_id, type: "integer", description: "The project ID of the project to return.", required: true

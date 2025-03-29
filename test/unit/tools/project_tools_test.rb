@@ -1,10 +1,10 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
-class ProjectToolProviderTest < ActiveSupport::TestCase
+class ProjectToolsTest < ActiveSupport::TestCase
   fixtures :projects, :projects_trackers, :trackers, :users, :repositories, :changesets, :changes, :issues, :issue_statuses, :enumerations, :issue_categories, :trackers
 
   def setup
-    @provider = RedmineAiHelper::Tools::ProjectToolProvider.new
+    @provider = RedmineAiHelper::Tools::ProjectTools.new
     enabled_module = EnabledModule.new
     enabled_module.project_id = 1
     enabled_module.name = "ai_helper"

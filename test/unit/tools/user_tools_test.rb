@@ -1,12 +1,12 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
-class UserToolProviderTest < ActiveSupport::TestCase
+class UserToolsTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
   include RedmineAiHelper::Tools
 
-  context "UserToolProvider" do
+  context "UserTools" do
     setup do
-      @provider = UserToolProvider.new
+      @provider = UserTools.new
       @users = User.where(status: User::STATUS_ACTIVE)
     end
 

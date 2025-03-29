@@ -1,10 +1,10 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
-class BoardToolProviderTest < ActiveSupport::TestCase
+class BoardToolsTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :boards, :messages
 
   def setup
-    @provider = RedmineAiHelper::Tools::BoardToolProvider.new
+    @provider = RedmineAiHelper::Tools::BoardTools.new
     @project = Project.find(1)
     @board = @project.boards.first
     @message = @board.messages.first

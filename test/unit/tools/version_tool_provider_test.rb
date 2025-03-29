@@ -1,10 +1,10 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
-class VersionToolProviderTest < ActiveSupport::TestCase
+class VersionToolsTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :boards, :messages
 
   def setup
-    @provider = RedmineAiHelper::Tools::VersionToolProvider.new
+    @provider = RedmineAiHelper::Tools::VersionTools.new
     @project = Project.find(1)
     @version = @project.versions.first
   end

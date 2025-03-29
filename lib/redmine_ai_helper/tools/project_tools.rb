@@ -1,8 +1,8 @@
-require "redmine_ai_helper/base_tool_provider"
+require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
-    class ProjectToolProvider < RedmineAiHelper::BaseToolProvider
+    class ProjectTools < RedmineAiHelper::BaseTools
 
       define_function :list_projects, description: "List all projects visible to the current user. It returns the project ID, name, identifier, description, created_on, and last_activity_date." do
         property :dummy, type: "string", description: "dummy property", required: false

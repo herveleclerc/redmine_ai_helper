@@ -1,13 +1,13 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
-class IssueToolProviderTest < ActiveSupport::TestCase
+class IssueToolsTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users,  :issue_categories, :versions, :custom_fields
 
   def setup
-    @provider = RedmineAiHelper::Tools::IssueToolProvider.new
+    @provider = RedmineAiHelper::Tools::IssueTools.new
   end
 
-  context "IssueToolProvider" do
+  context "IssueTool" do
 
     context "read_issues" do
       should "return issues" do

@@ -10,7 +10,7 @@ module RedmineAiHelper
       end
 
       def available_tool_providers
-        [RedmineAiHelper::Tools::WikiToolProvider]
+        [RedmineAiHelper::Tools::WikiTools]
       end
     end
   end
