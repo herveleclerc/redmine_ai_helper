@@ -54,7 +54,11 @@ class LeaderAgentTest < ActiveSupport::TestCase
 end
 
 module MyOpenAI
-  class DummyOpenAIClient
+  class DummyOpenAIClient < Langchain::LLM::OpenAI
+    def initialize(params = {})
+      super(api_key: "aaaa")
+    end
+
     def chat(params = {})
       messages = params[:messages]
       message = messages.last[:content]

@@ -39,7 +39,22 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
     { "choices": [{ "message": { "content": message } }] }
   end
 
-  class DummyOpenAIClientForLlmTest
+  class DummyOpenAIClientForLlmTest < Langchain::LLM::OpenAI
+    def initialize(params = {})
+      super(api_key: "aaaa")
+    end
+
+    def chat_answer(message)
+      { "choices": [{ "message": { "content": message } }] }
+    end
+
+    # Dummy implementation of the chat_answer method
+
+    def chat_answer(message)
+      { "choices": [{ "message": { "content": message } }] }
+    end
+
+    # Dummy implementation of the chat method
     def chat(params = {})
       messages = params[:messages]
       message = messages.last[:content]

@@ -39,7 +39,8 @@ module RedmineAiHelper
         api_key: params[:access_token],
         llm_options: llm_options,
         default_options: {
-          chat_completion_mode_name: @modle,
+          chat_model: @model,
+          temperature: 0.5,
         },
       )
     end
