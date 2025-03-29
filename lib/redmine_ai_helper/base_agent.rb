@@ -251,61 +251,6 @@ module RedmineAiHelper
       end
     end
 
-    # select the toos to solve the task
-    def select_tool(task, messages, pre_tasks = [], previous_error = nil)
-      tools = ToolProvider.list_tools
-
-      previous_error_string = ""
-      if previous_error
-        previous_error_string = "\n----\n前回のツール実行でエラーが発生しました。今回はそのリトライです。前回のエラー内容は以下の通りです。このエラーが再度発生しないようにツールの選択とパラメータの作成してください。\n#{previous_error}"
-      end
-
-      pre_tasks_string = ""
-      if pre_tasks.length > 0
-        pre_tasks_string = <<~EOS
-          このタスクを解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップで使用するツールを選んでください。
-          事前のステップ:
-          #{JSON.pretty_generate(pre_tasks)}
-        EOS
-      end
-
-      prompt = <<~EOS
-        「#{task}」というタスクを解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。ツールのリストに無いものは含めないでください。
-        #{pre_tasks_string}
-
-        ** ツールは一つだけ選択できます。絶対に2つ以上ツールを選択しないでください。 **
-        選択には過去の会話履歴も参考にしてください。
-        また、そのツールに渡すのに必要な引数も作成してください。
-
-        #{previous_error_string}
-
-        回答は以下の形式のJSONで作成してください。最適なツールがない場合は、tool:にnullを設定してください。
-
-        JSONの例:
-        {
-          tool:
-            {
-              "provider": "issue_tool_provider",
-              "tool": "read_issue",
-              "arguments": {  "id": 1 }
-            }
-        }
-        ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
-        ----
-        ツールのリスト
-        #{tools}
-
-      EOS
-
-      newmessages = messages.dup
-      newmessages << { role: "user", content: prompt }
-
-      json = chat(newmessages)
-
-      ai_helper_logger.debug "json: #{json}"
-      RedmineAiHelper::Util::JsonExtractor.extract(json)
-    end
-
     class TaskResponse < RedmineAiHelper::ToolResponse
     end
   end
