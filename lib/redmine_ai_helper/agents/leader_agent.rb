@@ -57,26 +57,10 @@ module RedmineAiHelper
       end
 
       def generate_goal(messages)
-        prompt = <<~EOS
-          ユーザーが達成したい目的を明確にし、各エージェントと共有します。これにより各エージェントが円滑にタスクを実行できます。
-          各エージェントが過去の会話履歴を参照しなくても目的を理解できるように具体的に記述してください。
-          各エージェントがタスクを実行する際には、各種ID情報が非常に重要です。プロジェクトID、チケットID、ユーザーID、リポジトリIDなど、すでに分かっているものは明記して共有してください。
-          データを更新するタスクの場合には、ユーザーの確認が済んでいるのかまだなのかを明確にしてください。
-          ----
-          例1:
-          プロジェクト"my_project"(ID: 1)のチケットID:2の内容を要約してください。
-          ----
-          例2:
-          チケットID:3のに対し、以下の内容を盛り込んでエンドユーザー向けの回答を作成してください。
-          「バグの修正方法がわかりました。来週中に修正物件をリリースします。」
-          ユーザーからはチケットの更新確認は取れていません。
-          ----
-          例3:
-          ユーザーが「こんにちは」と挨拶をしています。親しみを込めて返答を作成してください。
-        EOS
+        prompt = load_prompt("leader_agent/goal")
 
         newmessages = messages.dup
-        newmessages << { role: "system", content: prompt }
+        newmessages << { role: "system", content: prompt.format }
         answer = chat(newmessages)
         answer
       end

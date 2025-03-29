@@ -253,6 +253,12 @@ module RedmineAiHelper
       end
     end
 
+    def load_prompt(name)
+      tepmlate_base_dir = File.dirname(__FILE__) + "/../../assets/prompt_templates"
+      template_file = "#{tepmlate_base_dir}/#{name}.yml"
+      Langchain::Prompt.load_from_path(file_path: template_file)
+    end
+
     class TaskResponse < RedmineAiHelper::ToolResponse
     end
   end
