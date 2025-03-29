@@ -1,5 +1,5 @@
 require_relative '../base_agent'
-require_relative '../tool_providers/issue_tool_provider'
+
 module RedmineAiHelper
   module Agents
     class IssueAgent < RedmineAiHelper::BaseAgent
@@ -16,16 +16,16 @@ module RedmineAiHelper
 
       def available_tool_providers
         [
-          RedmineAiHelper::ToolProviders::IssueToolProvider,
-          RedmineAiHelper::ToolProviders::ProjectToolProvider,
-          RedmineAiHelper::ToolProviders::UserToolProvider
+          RedmineAiHelper::Tools::IssueToolProvider,
+          RedmineAiHelper::Tools::ProjectToolProvider,
+          RedmineAiHelper::Tools::UserToolProvider
         ]
       end
 
       private
       def issue_properties
         return "" unless @project
-        provider = RedmineAiHelper::ToolProviders::IssueToolProvider.new
+        provider = RedmineAiHelper::Tools::IssueToolProvider.new
         properties = provider.capable_issue_properties(project_id: @project.id)
         content = <<~EOS
           ----

@@ -4,7 +4,7 @@ class BoardToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :boards, :messages
 
   def setup
-    @provider = RedmineAiHelper::ToolProviders::BoardToolProvider.new
+    @provider = RedmineAiHelper::Tools::BoardToolProvider.new
     @project = Project.find(1)
     @board = @project.boards.first
     @message = @board.messages.first

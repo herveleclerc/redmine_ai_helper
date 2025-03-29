@@ -4,7 +4,7 @@ class VersionToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :boards, :messages
 
   def setup
-    @provider = RedmineAiHelper::ToolProviders::VersionToolProvider.new
+    @provider = RedmineAiHelper::Tools::VersionToolProvider.new
     @project = Project.find(1)
     @version = @project.versions.first
   end

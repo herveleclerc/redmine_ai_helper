@@ -4,7 +4,7 @@ class IssueToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users,  :issue_categories, :versions, :custom_fields
 
   def setup
-    @provider = RedmineAiHelper::ToolProviders::IssueToolProvider.new
+    @provider = RedmineAiHelper::Tools::IssueToolProvider.new
   end
 
   context "IssueToolProvider" do

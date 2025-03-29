@@ -4,7 +4,7 @@ class RepositoryToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :repositories, :changesets, :changes
 
   def setup
-    @provider = RedmineAiHelper::ToolProviders::RepositoryToolProvider.new
+    @provider = RedmineAiHelper::Tools::RepositoryToolProvider.new
     repo_dir = Rails.root.join("plugins/redmine_ai_helper/tmp", "redmine_ai_helper_test_repo.git").to_s
     @project = Project.find(1)
     @repository = @project.create_repository(

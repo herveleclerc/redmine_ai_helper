@@ -4,7 +4,7 @@ class WikiToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :wikis, :wiki_pages, :users
 
   def setup
-    @provider = RedmineAiHelper::ToolProviders::WikiToolProvider.new
+    @provider = RedmineAiHelper::Tools::WikiToolProvider.new
     @project = Project.find(1)
     @wiki = @project.wiki
     @page = @wiki.pages.first

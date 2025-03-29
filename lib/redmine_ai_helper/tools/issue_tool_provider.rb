@@ -2,7 +2,7 @@ require "redmine_ai_helper/base_tool_provider"
 require_relative "./issue_update_tool_provider"
 
 module RedmineAiHelper
-  module ToolProviders
+  module Tools
     class IssueToolProvider < RedmineAiHelper::BaseToolProvider
 
       define_function :read_issues, description: "Read an issue from the database and return it as a JSON object. It returns the issue ID, subject, project, tracker, status, priority, author, assigned_to, description, start_date, due_date, done_ratio, is_private, estimated_hours, total_estimated_hours, spent_hours, total_spent_hours, created_on, updated_on, closed_on, issue_url, attachments, children and relations." do

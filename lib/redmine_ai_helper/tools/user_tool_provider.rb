@@ -1,7 +1,7 @@
 require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module ToolProviders
+  module Tools
     class UserToolProvider < RedmineAiHelper::BaseToolProvider
 
       define_function :list_users, description: "Returns a list of all users who have logged in within the past year. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on." do

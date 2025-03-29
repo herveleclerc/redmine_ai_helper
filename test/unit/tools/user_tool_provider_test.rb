@@ -2,7 +2,7 @@ require File.expand_path("../../../test_helper", __FILE__)
 
 class UserToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
-  include RedmineAiHelper::ToolProviders
+  include RedmineAiHelper::Tools
 
   context "UserToolProvider" do
     setup do

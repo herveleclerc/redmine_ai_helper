@@ -1,7 +1,7 @@
 require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module ToolProviders
+  module Tools
     class IssueUpdateToolProvider < RedmineAiHelper::BaseToolProvider
 
       define_function :create_new_issue, description: "Create a new issue in the database." do

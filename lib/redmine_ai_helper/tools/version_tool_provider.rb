@@ -1,7 +1,7 @@
 require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module ToolProviders
+  module Tools
     class VersionToolProvider < RedmineAiHelper::BaseToolProvider
 
       define_function :list_versions, description: "List all versions in the project. It returns the version ID, name, description, status, due_date, sharing, wiki_page_title, and created_on." do

@@ -1,7 +1,7 @@
 require "redmine_ai_helper/base_tool_provider"
 
 module RedmineAiHelper
-  module ToolProviders
+  module Tools
     class RepositoryToolProvider < RedmineAiHelper::BaseToolProvider
 
       define_function :repository_info, description: "Get information about a repository." do

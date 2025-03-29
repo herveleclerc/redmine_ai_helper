@@ -4,7 +4,7 @@ class ProjectToolProviderTest < ActiveSupport::TestCase
   fixtures :projects, :projects_trackers, :trackers, :users, :repositories, :changesets, :changes, :issues, :issue_statuses, :enumerations, :issue_categories, :trackers
 
   def setup
-    @provider = RedmineAiHelper::ToolProviders::ProjectToolProvider.new
+    @provider = RedmineAiHelper::Tools::ProjectToolProvider.new
     enabled_module = EnabledModule.new
     enabled_module.project_id = 1
     enabled_module.name = "ai_helper"
