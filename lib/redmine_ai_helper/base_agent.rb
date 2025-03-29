@@ -75,25 +75,15 @@ module RedmineAiHelper
 
     # The content of the system prompt
     def system_prompt
-      content = <<~EOS
-        あなたは RedmineAIHelper プラグインのエージェントです。
-        RedmineAIHelper プラグインは、Redmine のユーザーにRedmine の機能やプロジェクト、チケットなどに関する問い合わせに答えます。
+      time = Time.now.iso8601
+      prompt = load_prompt("base_agent/system_prompt")
+      prompt_text = prompt.format(
+        role: role,
+        backstory: backstory,
+        time: time,
+      )
 
-        あなた方エージェントのチームが作成した最終回答はユーザーのRedmineサイト内に表示さます。もし回答の中にRedmine内のページへのリンクが含まれる場合、そのURLにはホスト名は含めず、"/"から始まるパスのみを記載してください。
-
-        ** あなたのロールは #{role} です。これはとても重要です。忘れないでください。**
-        RedmineAIHelperには複数のロールのエージェントが存在します。
-        あなたは他のエージェントと協力して、RedmineAIHelper のユーザーにサービスを提供します。
-        あなたへの指示は <<leader>> ロールのエージェントから受け取ります。
-        ----
-        現在の時刻は#{Time.now.iso8601}です。
-        ----
-        あなたのバックストーリーは以下の通りです。
-        #{backstory}
-
-      EOS
-
-      return { role: "system", content: content }
+      return { role: "system", content: prompt_text }
     end
 
     # List all tools provided by available tool providers.
@@ -147,7 +137,7 @@ module RedmineAiHelper
         }
         ai_helper_logger.debug "pre_task: #{pre_task}"
         pre_tasks << pre_task
-        answer = result.value
+        result.value
       end
       pre_tasks
     end
