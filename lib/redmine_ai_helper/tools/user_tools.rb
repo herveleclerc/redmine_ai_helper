@@ -5,7 +5,7 @@ module RedmineAiHelper
     class UserTools < RedmineAiHelper::BaseTools
 
       define_function :list_users, description: "Returns a list of all users who have logged in within the past year. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on." do
-        property :query, type: "object", description: "The query to filter the users.", required: false do
+        property :query, type: "object", description: "The query to filter the users.", required: true do
           property :limit, type: "integer", description: "The maximum number of users to return. The default is 100."
           property :status, type: "string", enum: ["active", "locked", "registered"], description: "The status of the users to return. The default is 'active'."
           property :date_fields, type: "array", description: "The date fields to filter on." do
