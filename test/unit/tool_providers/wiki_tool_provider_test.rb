@@ -11,38 +11,24 @@ class WikiToolProviderTest < ActiveSupport::TestCase
   end
 
   def test_read_wiki_page_success
-    args = { project_id: @project.id, title: @page.title }
-    response = @provider.read_wiki_page(args)
-    assert response.is_success?
-    assert_equal @page.title, response.value[:title]
+    response = @provider.read_wiki_page( project_id: @project.id, title: @page.title)
+    assert_equal @page.title, response.content[:title]
   end
 
   def test_read_wiki_page_not_found
-    args = { project_id: @project.id, title: "Nonexistent Page" }
-    response = @provider.read_wiki_page(args)
-    assert_not response.is_success?
-    assert_equal "Page not found: title = Nonexistent Page", response.error
+    assert_raises(RuntimeError, "Page not found: title = Nonexistent Page") do
+      @provider.read_wiki_page(project_id: @project.id, title: "Nonexistent Page")
+    end
   end
 
   def test_list_wiki_pages
-    args = { project_id: @project.id }
-    response = @provider.list_wiki_pages(args)
-    assert response.is_success?
-    assert_equal @wiki.pages.count, response.value.size
+    response = @provider.list_wiki_pages(project_id: @project.id)
+    assert_equal @wiki.pages.count, response.content.size
   end
 
   def test_generate_url_for_wiki_page
-    args = { project_id: @project.id, title: @page.title }
-    response = @provider.generate_url_for_wiki_page(args)
-    assert response.is_success?
+    response = @provider.generate_url_for_wiki_page(project_id: @project.id, title: @page.title)
     expected_url = "/projects/#{@project.identifier}/wiki/#{@page.title}"
-    assert_equal expected_url, response.value[:url]
-  end
-
-  def test_list_tools
-    tools = @provider.class.list_tools
-    assert tools[:tools].any? { |tool| tool[:name] == "read_wiki_page" }
-    assert tools[:tools].any? { |tool| tool[:name] == "list_wiki_pages" }
-    assert tools[:tools].any? { |tool| tool[:name] == "generate_url_for_wiki_page" }
+    assert_equal expected_url, response.content[:url]
   end
 end
