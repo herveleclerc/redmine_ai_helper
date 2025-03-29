@@ -6,7 +6,7 @@ class LeaderAgentTest < ActiveSupport::TestCase
   context "LeaderAgent" do
     setup do
       @openai_mock = MyOpenAI::DummyOpenAIClient.new
-      OpenAI::Client.stubs(:new).returns(@openai_mock)
+      Langchain::LLM::OpenAI.stubs(:new).returns(@openai_mock)
       @params = {
         access_token: "test_access_token",
         uri_base: "http://example.com",
@@ -56,8 +56,7 @@ end
 module MyOpenAI
   class DummyOpenAIClient
     def chat(params = {})
-      proc = params[:parameters][:stream]
-      messages = params[:parameters][:messages]
+      messages = params[:messages]
       message = messages.last[:content]
 
       answer = "test answer"
@@ -67,25 +66,21 @@ module MyOpenAI
         answer = {
           "steps": [
             { "agent": "leader", "step": "my_projectという名前のプロジェクトのIDを教えてください" },
-          ]
+          ],
         }.to_json
       else
         answer = "test answer"
       end
 
-      chunk = {
-        "id": "response_id",
-        "object": "chat.completion.chunk",
-        "created": Time.now.to_i,
-        "model": "gpt-3.5-turbo-0613",
-        "choices": [
-          { "index": 0,
-            "delta": { "content": answer },
-            "finish_reason": nil },
-        ],
-      }.deep_stringify_keys
-
-      proc.call(chunk, nil) if proc
+      if block_given?
+        { "index" => 0, "delta" => { "content" => "ら" }, "logprobs" => nil, "finish_reason" => nil }
+        chunk = {
+          "index": 0,
+          "delta": { "content": answer },
+          "finish_reason": nil,
+        }.deep_stringify_keys
+        yield(chunk)
+      end
 
       response = { "choices": [{ "message": { "content": answer } }] }.deep_stringify_keys
       response

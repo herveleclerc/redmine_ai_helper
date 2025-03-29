@@ -1,6 +1,4 @@
-require "redmine_ai_helper/tool_provider"
 require "redmine_ai_helper/logger"
-require "openai"
 
 module RedmineAiHelper
   class BaseAgent
@@ -31,8 +29,25 @@ module RedmineAiHelper
       params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
       @model ||= Setting.plugin_redmine_ai_helper["model"]
       @project = params[:project]
+      llm_options = {
+        uri_base: params[:uri_base],
+      }
 
-      @client = OpenAI::Client.new(params)
+      @client = Langchain::LLM::OpenAI.new(
+        api_key: params[:access_token],
+        llm_options: llm_options,
+        default_options: {
+          chat_completion_mode_name: @modle,
+        },
+      )
+    end
+
+    def assistant
+      @assistant ||= Langchain::Assistant.new(
+        llm: llm,
+        instructions: system_prompt,
+        tools: available_tool_providers,
+      )
     end
 
     # List all tools provided by this tool provider.
@@ -90,19 +105,13 @@ module RedmineAiHelper
         end
       end
       answer = ""
-      @client.chat(
-        parameters: {
-          model: @model,
-          messages: messages_with_systemprompt,
-          stream: proc do |chunk, bytesize|
-            content = chunk.dig("choices", 0, "delta", "content")
-            if callback
-              callback.call(content)
-            end
-            answer += content if content
-          end,
-        },
-      )
+      @client.chat(messages: messages) do |chunk|
+        content = chunk.dig("delta", "content") rescue nil
+        if callback
+          callback.call(content)
+        end
+        answer += content if content
+      end
       answer
     end
 
@@ -133,7 +142,6 @@ module RedmineAiHelper
       end
       pre_tasks
     end
-
 
     def decompose_task(messages)
       prompt = <<~EOS
@@ -185,7 +193,7 @@ module RedmineAiHelper
               }
             }
           }
-        }ß
+        }
         ----
         タスクの例:
         「チケットID 3のチケットのステータスを完了に変更する」
@@ -246,10 +254,9 @@ module RedmineAiHelper
         ai_helper_logger.error "error: #{e.full_message}"
         TaskResponse.create_error e.message
       end
-
     end
 
-     # select the toos to solve the task
+    # select the toos to solve the task
     def select_tool(task, messages, pre_tasks = [], previous_error = nil)
       tools = ToolProvider.list_tools
 
@@ -304,7 +311,6 @@ module RedmineAiHelper
       RedmineAiHelper::Util::JsonExtractor.extract(json)
     end
 
-
     class TaskResponse < RedmineAiHelper::ToolResponse
     end
   end
@@ -341,9 +347,9 @@ module RedmineAiHelper
         agent = Object.const_get(a[:class]).new
         {
           agent_name: a[:name],
-          backstory: agent.backstory
+          backstory: agent.backstory,
         }
-     }
+      }
     end
 
     def find_agent(name)
