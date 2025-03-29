@@ -43,10 +43,14 @@ module RedmineAiHelper
     end
 
     def assistant
-      @assistant ||= Langchain::Assistant.new(
-        llm: llm,
+      return @assistant if @assistant
+      tools = available_tool_providers.map { |tool|
+        tool.new
+      }
+      @assistant = Langchain::Assistant.new(
+        llm: @client,
         instructions: system_prompt,
-        tools: available_tool_providers,
+        tools: tools,
       )
     end
 
@@ -91,8 +95,10 @@ module RedmineAiHelper
 
     # List all tools provided by available tool providers.
     def available_tools
-      tools = ToolProvider.list_tools
-      tools[:providers] = tools[:providers].filter { |provider| available_tool_providers.include?(provider[:name]) } unless available_tool_providers.empty?
+      tools = []
+      available_tool_providers.each do |provider|
+        tools << provider.function_schemas.to_openai_format
+      end
       tools
     end
 
@@ -235,20 +241,9 @@ module RedmineAiHelper
     # dispatch the tool
     def dispatch(task, messages, pre_tasks = [], previous_error = nil)
       begin
-        response = select_tool(task, messages, pre_tasks, previous_error)
-        tool = response["tool"]
-        ai_helper_logger.debug "tool: #{tool}"
-        return TaskResponse.create_success chat(messages) if tool.blank?
+        response = assistant.add_message_and_run!(content: task)
 
-        provider = ToolProvider.new(@client, @model)
-        result = provider.call_tool(provider: tool["provider"], name: tool["tool"], arguments: tool["arguments"])
-        ai_helper_logger.debug "result: #{result}"
-        if result.is_error?
-          ai_helper_logger.error "error!!!!!!!!!!!!: #{result}"
-          return result
-        end
-
-        res = TaskResponse.create_success result.value
+        res = TaskResponse.create_success response
         res
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
