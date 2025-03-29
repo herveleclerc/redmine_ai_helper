@@ -3,95 +3,29 @@ require "redmine_ai_helper/base_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class UserToolProvider < RedmineAiHelper::BaseToolProvider
-      def self.list_tools()
-        list = {
-          tools: [
-            {
-              name: "list_users",
-              description: "Returns a list of all users. Since the assignee or creator of a ticket may not necessarily be a project member, it is necessary to search for user IDs not only from project members but also from here.
-              The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on.",
-              arguments: {
-                query: {
-                  type: "object",
-                  properties: {
-                    limit: {
-                      type: "integer",
-                      description: "The maximum number of users to return. The default is 100.",
-                      default: 100,
-                    },
-                    status: {
-                      type: "string",
-                      enum: ["active", "locked", "registered"],
-                      description: "The status of the users to return. The default is 'active'.",
-                      default: "active",
-                    },
-                    date_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_name: {
-                            type: "string",
-                            enum: ["created_on", "last_login_on"],
-                            description: "The date field to filter on.",
-                          },
-                          operator: {
-                            type: "string",
-                            enum: ["=", "!=", ">", "<", ">=", "<="],
-                            description: "The operator to use for the filter.",
-                          },
-                          value: {
-                            type: "string",
-                            description: "The value to filter on.",
-                          },
-                          required: ["field_name", "operator", "value"],
-                        },
-                      },
-                      description: "The date fields to filter on.",
-                    },
-                    sort: {
-                      type: "object",
-                      properties: {
-                        field_name: {
-                          type: "string",
-                          enum: ["id", "login", "firstname", "lastname", "created_on", "last_login_on"],
-                          description: "The field to sort on.",
-                          default: "last_login_on",
-                        },
-                        order: {
-                          type: "string",
-                          enum: ["asc", "desc"],
-                          description: "The order to sort in.",
-                          default: "desc",
-                        },
-                        required: ["field_name", "order"],
-                      },
-                      description: "The field to sort on.",
-                    },
-                  },
-                },
-              },
-            },
-            {
-              name: "find_user",
-              description: "Returns a list of users that match the name or login. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on.",
-              arguments: {
-                name: {
-                  type: "string",
-                  description: "The name to search for.",
-                },
-                required: ["name"],
-              },
-            },
-          ],
-        }
-        list
-      end
 
+      define_function :list_users, description: "Returns a list of all users who have logged in within the past year. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on." do
+        property :query, type: "object", description: "The query to filter the users.", required: false do
+          property :limit, type: "integer", description: "The maximum number of users to return. The default is 100."
+          property :status, type: "string", enum: ["active", "locked", "registered"], description: "The status of the users to return. The default is 'active'."
+          property :date_fields, type: "array", description: "The date fields to filter on." do
+            item type: "object", description: "The date field" do
+              property :field_name, type: "string", enum: ["created_on", "last_login_on"], description: "The date field to filter on.", required: true
+              property :operator, type: "string", enum: ["=", "!=", ">", "<", ">=", "<="], description: "The operator to use for the filter.", required: true
+              property :value, type: "string", description: "The value to filter on.", required: true
+            end
+          end
+          property :sort, type: "object", description: "The field to sort on." do
+            property :field_name, type: "string", enum: ["id", "login", "firstname", "lastname", "created_on", "last_login_on"], description: "The field to sort on.", required: true
+            property :order, type: "string", enum: ["asc", "desc"], description: "The order to sort in.", required: true
+          end
+        end
+      end
+      # list_users
+      # args: { query: { limit: 100, status: "active", date_fields: [], sort: { field_name: "last_login_on", order: "desc" } } }
+      # args: { query: { limit: 100, status: "active", date_fields: [], sort: { field_name: "last_login_on", order: "desc" } } }
       # Returns a list of all users who have logged in within the past year
-      def list_users(args = {})
-        sym_args = args.deep_symbolize_keys
-        query = sym_args[:query] || {}
+      def list_users(query: {})
         limit = query[:limit] || 100
         status = query[:status] || "active"
         status_value = { "active" => 1, "registered" => 2, "locked" => 3 }
@@ -126,15 +60,15 @@ module RedmineAiHelper
           }
         end
         json = { users: user_list, total: count }
-        ToolResponse.create_success json
+        tool_response(content: json)
       end
 
+      define_function :find_user, description: "Returns a list of users that match the name or login. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on." do
+        property :name, type: "string", description: "The user name to search for.", required: true
+      end
       # Returns a list of users that match the name or login
       # args: { name: "string" }
-      def find_user(args = {})
-        sym_args = args.deep_symbolize_keys
-        name = sym_args[:name]
-        return ToolResponse.create_error("Name is required.") if name.nil?
+      def find_user(name:)
         users = User.all.filter { |user|
             user.login.downcase.include?(name.downcase) || user.name.downcase.include?(name.downcase)
         }
@@ -151,7 +85,7 @@ module RedmineAiHelper
           }
         end
         json = { users: user_list }
-        ToolResponse.create_success json
+        tool_response(content: json)
       end
     end
   end
