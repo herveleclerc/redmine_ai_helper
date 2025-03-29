@@ -1,6 +1,5 @@
 require "redmine_ai_helper/base_agent"
 require "redmine_ai_helper/util/system_prompt"
-require "redmine_ai_helper/util/json_extractor"
 
 module RedmineAiHelper
   module Agents
