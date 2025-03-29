@@ -10,38 +10,27 @@ class VersionToolProviderTest < ActiveSupport::TestCase
   end
 
   def test_list_versions_success
-    args = { project_id: @project.id }
-    response = @provider.list_versions(args)
-    assert response.is_success?
-    assert_equal @project.versions.count, response.value.size
+    response = @provider.list_versions(project_id: @project.id)
+    assert_equal @project.versions.count, response.content.size
   end
 
   def test_list_versions_project_not_found
-    args = { project_id: 999 }
-    response = @provider.list_versions(args)
-    assert response.is_error?
-    assert_equal "Project not found", response.error
+    assert_raises(RuntimeError, "Project not found") do
+      @provider.list_versions(project_id: 999)
+    end
   end
 
   def test_version_info_success
-    args =  {version_ids: [@version.id]}
-    response = @provider.version_info(args)
-    assert response.is_success?
-    assert_equal @version.id, response.value[:versions].first[:id]
-    assert_equal @version.name, response.value[:versions].first[:name]
+    response = @provider.version_info(version_ids: [@version.id])
+    assert_equal @version.id, response.content.first[:id]
+    assert_equal @version.name, response.content.first[:name]
   end
 
   def test_version_info_not_found
-    args = { version_ids: [999] }
-    response = @provider.version_info(args)
-    assert response.is_error?
-    assert_equal "Version not found: version_id: 999", response.error
+    assert_raises(RuntimeError, "Version not found") do
+      @provider.version_info(version_ids: [999])
+    end
   end
 
-  def test_list_tools
-    tools = RedmineAiHelper::ToolProviders::VersionToolProvider.list_tools
-    assert_not_nil tools
-    assert_equal "list_versions", tools[:tools].first[:name]
-    assert_equal "version_info", tools[:tools].second[:name]
-  end
+
 end

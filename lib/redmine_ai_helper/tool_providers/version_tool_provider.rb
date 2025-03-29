@@ -3,55 +3,15 @@ require "redmine_ai_helper/base_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class VersionToolProvider < RedmineAiHelper::BaseToolProvider
-      def self.list_tools()
-        list = {
-          tools: [
-            {
-              name: "list_versions",
-              description: "List all versions in the project. It returns the version ID, name, description, status, due_date, sharing, wiki_page_title, and created_on.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_id: {
-                      type: "integer",
-                    },
-                  },
-                  required: ["project_id"],
-                },
-              },
-            },
-            {
-              name: "version_info",
-              description: "Read versions from the database and return them as a JSON object. It returns the version ID, project ID, name, description, status, due_date, sharing, wiki_page_title, created_on, estimated_hours, spent_hours, and issues.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    version_ids: {
-                      type: "array",
-                      items: {
-                        type: "integer",
-                      },
-                    },
-                  },
-                  required: ["version_ids"],
-                },
-              },
-            },
-          ],
-        }
-        list
-      end
 
+      define_function :list_versions, description: "List all versions in the project. It returns the version ID, name, description, status, due_date, sharing, wiki_page_title, and created_on." do
+        property :project_id, type: "integer", description: "The project ID of the project to return.", required: true
+      end
       # List all versions in the project.
       # args: { project_id: "integer" }
-      def list_versions(args = {})
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:project_id]
-        return ToolResponse.create_error("Project ID is required.") if project_id.nil?
+      def list_versions(project_id:)
         project = Project.find_by_id(project_id)
-        return ToolResponse.create_error("Project not found") if project.nil? or !project.visible?
+        raise("Project not found") if project.nil? or !project.visible?
         versions = project.versions.filter(&:visible?)
         version_list = versions.map do |version|
           {
@@ -67,20 +27,22 @@ module RedmineAiHelper
           }
         end
 
-        ToolResponse.create_success(version_list)
+        tool_response(content: version_list)
       end
 
+      define_function :version_info, description: "Read a version from the database and return it as a JSON object. It returns the version ID, project ID, name, description, status, due_date, sharing, wiki_page_title, created_on, estimated_hours, spent_hours, and issues." do
+        property :version_ids, type: "array", description: "The version IDs of the versions to return.", required: true do
+          item type: "integer", description: "The version ID of the version to return."
+        end
+      end
       # Read a version from the database and return it as a JSON object.
       # args: { version_ids: "array" }
-      def version_info(args = {})
-        sym_args = args.deep_symbolize_keys
-        version_ids = sym_args[:version_ids]
-        return ToolResponse.create_error("Version ID is required.") if version_ids.nil?
+      def version_info(version_ids:)
         versions = []
 
         version_ids.each do |version_id|
           version = Version.find_by_id(version_id)
-          return ToolResponse.create_error("Version not found: version_id: #{version_id}") if version.nil? or !version.visible?
+          raise("Version not found: version_id: #{version_id}") if version.nil? or !version.visible?
           version_hash = {
             id: version.id,
             project_id: version.project_id,
@@ -106,7 +68,7 @@ module RedmineAiHelper
           }
           versions << version_hash
         end
-        ToolResponse.create_success({versions: versions})
+        tool_response(content: versions)
       end
     end
   end
