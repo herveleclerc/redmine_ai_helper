@@ -3,120 +3,52 @@ require "redmine_ai_helper/base_tool_provider"
 module RedmineAiHelper
   module ToolProviders
     class IssueUpdateToolProvider < RedmineAiHelper::BaseToolProvider
-      def self.list_tools()
-        list = {
-          tools: [
 
-            {
-              name: "create_new_issue",
-              description: "Create a new issue in the database. ",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    project_id: "integer",
-                    tracker_id: "integer",
-                    subject: "string",
-                    status_id: "integer",
-                    priority_id: "integer",
-                    category_id: "integer",
-                    version_id: "integer",
-                    assigned_to_id: "integer",
-                    description: "string",
-                    start_date: "string",
-                    due_date: "string",
-                    done_ratio: "integer",
-                    is_private: { type: "boolean", default: false },
-                    estimated_hours: "float",
-                    custom_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_id: "integer",
-                          value: "string",
-                        },
-                        required: ["field_id", "value"],
-                      },
-                    },
-                  },
-                  required: ["project_id", "tracker_id", "subject", "status_id"],
-                  description: "Project ID, Tracker ID, Status ID and Subject are required. Other fields are optional.",
-                },
-              },
-            },
-            {
-              name: "update_issue",
-              description: "Update an issue in the database. It can also be used to add a comment to the issue.",
-              arguments: {
-                schema: {
-                  type: "object",
-                  properties: {
-                    issue_id: "integer",
-                    subject: "string",
-                    tracker_id: "integer",
-                    status_id: "integer",
-                    priority_id: "integer",
-                    category_id: "integer",
-                    version_id: "integer",
-                    assigned_to_id: "integer",
-                    description: "string",
-                    start_date: "string",
-                    due_date: "string",
-                    done_ratio: "integer",
-                    is_private: "boolean",
-                    estimated_hours: "float",
-                    custom_fields: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          field_id: "integer",
-                          value: "string",
-                        },
-                        required: ["field_id", "value"],
-                      },
-                    },
-                    comment_to_add: {
-                      type: "string",
-                      description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.",
-                    },
-                  },
-                  required: ["issue_id"],
-                  description: "Issue ID is required. Other fields are optional. If you do not specify a field, it will not be updated.",
-                },
-              },
-            },
-          ],
-        }
-        list
+      define_function :create_new_issue, description: "Create a new issue in the database." do
+        property :project_id, type: "integer", description: "The project ID of the issue to create.", required: true
+        property :tracker_id, type: "integer", description: "The tracker ID of the issue to create.", required: true
+        property :subject, type: "string", description: "The subject of the issue to create.", required: true
+        property :status_id, type: "integer", description: "The status ID of the issue to create.", required: true
+        property :priority_id, type: "integer", description: "The priority ID of the issue to create.", required: false
+        property :category_id, type: "integer", description: "The category ID of the issue to create.", required: false
+        property :version_id, type: "integer", description: "The version ID of the issue to create.", required: false
+        property :assigned_to_id, type: "integer", description: "The assigned to ID of the issue to create.", required: false
+        property :description, type: "string", description: "The description of the issue to create.", required: false
+        property :start_date, type: "string", description: "The start date of the issue to create.", required: false
+        property :due_date, type: "string", description: "The due date of the issue to create.", required: false
+        property :done_ratio, type: "integer", description: "The done ratio of the issue to create.", required: false
+        property :is_private, type: "boolean", description: "The is_private of the issue to create.", required: false
+        property :estimated_hours, type: "string", description: "The estimated hours of the issue to create.", required: false
+        property :custom_fields, type: "array", description: "The custom fields of the issue to create.", required: false do
+          item type: "object", description: "The custom field of the issue to create." do
+            property :field_id, type: "integer", description: "The field ID of the custom field.", required: true
+            property :value, type: "string", description: "The value of the custom field.", required: true
+          end
+        end
+        property :validate_only, type: "boolean", description: "If true, only validate the issue and do not create it.", required: false
       end
-
       # Create a new issue in the database.
-      def create_new_issue(args = {}, validate_only = false)
-        sym_args = args.deep_symbolize_keys
-        project_id = sym_args[:project_id]
+      def create_new_issue(project_id:, tracker_id:, subject:, status_id:, priority_id: nil, category_id: nil, version_id: nil, assigned_to_id: nil, description: nil, start_date: nil, due_date: nil, done_ratio: nil, is_private: false, estimated_hours: nil, custom_fields: [], validate_only: false)
         project = Project.find_by(id: project_id)
-        return ToolResponse.create_error("Project not found. id = #{project_id}") unless project
+        raise("Project not found. id = #{project_id}") unless project
 
         issue = Issue.new
         issue.project_id = project_id
         issue.author_id = User.current.id
-        issue.tracker_id = sym_args[:tracker_id]
-        issue.subject = sym_args[:subject]
-        issue.status_id = sym_args[:status_id]
-        issue.priority_id = sym_args[:priority_id]
-        issue.category_id = sym_args[:category_id]
-        issue.fixed_version_id = sym_args[:version_id]
-        issue.assigned_to_id = sym_args[:assigned_to_id]
-        issue.description = sym_args[:description]
-        issue.start_date = sym_args[:start_date]
-        issue.due_date = sym_args[:due_date]
-        issue.done_ratio = sym_args[:done_ratio]
-        issue.is_private = sym_args[:is_private] || false
-        issue.estimated_hours = sym_args[:estimated_hours]
+        issue.tracker_id = tracker_id
+        issue.subject = subject
+        issue.status_id = status_id
+        issue.priority_id = priority_id
+        issue.category_id = category_id
+        issue.fixed_version_id = version_id
+        issue.assigned_to_id = assigned_to_id
+        issue.description = description
+        issue.start_date = start_date
+        issue.due_date = due_date
+        issue.done_ratio = done_ratio
+        issue.is_private = is_private
+        issue.estimated_hours = estimated_hours.to_f if estimated_hours
 
-        custom_fields = sym_args[:custom_fields] || []
         custom_fields.each do |field|
           custom_field = CustomField.find(field[:field_id])
           next unless custom_field
@@ -125,46 +57,65 @@ module RedmineAiHelper
 
         if validate_only
           unless issue.valid?
-            return ToolResponse.create_error("Validation failed. #{issue.errors.full_messages.join(", ")}")
+            raise("Validation failed. #{issue.errors.full_messages.join(", ")}")
           end
-          return ToolResponse.create_success(generate_issue_data(issue))
+          return tool_response(content: generate_issue_data(issue))
         end
         unless issue.save
-          return ToolResponse.create_error("Failed to create a new issue. #{issue.errors.full_messages.join(", ")}")
+          raise("Failed to create a new issue. #{issue.errors.full_messages.join(", ")}")
         end
-        ToolResponse.create_success(generate_issue_data(issue))
+        tool_response(content: generate_issue_data(issue))
       end
 
+      define_function :update_issue, description: "Update an issue in the database." do
+        property :issue_id, type: "integer", description: "The issue ID of the issue to update.", required: true
+        property :subject, type: "string", description: "The subject of the issue to update.", required: false
+        property :tracker_id, type: "integer", description: "The tracker ID of the issue to update.", required: false
+        property :status_id, type: "integer", description: "The status ID of the issue to update.", required: false
+        property :priority_id, type: "integer", description: "The priority ID of the issue to update.", required: false
+        property :category_id, type: "integer", description: "The category ID of the issue to update.", required: false
+        property :version_id, type: "integer", description: "The version ID of the issue to update.", required: false
+        property :assigned_to_id, type: "integer", description: "The assigned to ID of the issue to update.", required: false
+        property :description, type: "string", description: "The description of the issue to update.", required: false
+        property :start_date, type: "string", description: "The start date of the issue to update.", required: false
+        property :due_date, type: "string", description: "The due date of the issue to update.", required: false
+        property :done_ratio, type: "integer", description: "The done ratio of the issue to update.", required: false
+        property :is_private, type: "boolean", description: "The is_private of the issue to update.", required: false
+        property :estimated_hours, type: "string", description: "The estimated hours of the issue to update.", required: false
+        property :custom_fields, type: "array", description: "The custom fields of the issue to update.", required: false do
+          item type: "object", description: "The custom field of the issue to update." do
+            property :field_id, type: "integer", description: "The field ID of the custom field.", required: true
+            property :value, type: "string", description: "The value of the custom field.", required: true
+          end
+        end
+        property :comment_to_add, type: "string", description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.", required: false
+        property :validate_only, type: "boolean", description: "If true, only validate the issue and do not update it.", required: false
+      end
       # Update an issue in the database.
-      # args: { issue_id: issue_id, subject: "string", tracker_id: tracker_id, status_id: status_id, priority_id: priority_id, category_id: category_id, version_id: version_id, assigned_to_id: assigned_to_id, description: "string", start_date: "string", due_date: "string", done_ratio: done_ratio, is_private: is_private, estimated_hours: estimated_hours, custom_fields: [{ field_id: field_id, value: "string" }], comment_to_add: "string" }
-      def update_issue(args = {}, validate_only = false)
-        sym_args = args.deep_symbolize_keys
-        issue_id = sym_args[:issue_id]
+      def update_issue(issue_id:, subject: nil, tracker_id: nil, status_id: nil, priority_id: nil, category_id: nil, version_id: nil, assigned_to_id: nil, description: nil, start_date: nil, due_date: nil, done_ratio: nil, is_private: false, estimated_hours: nil, custom_fields: [], comment_to_add: nil, validate_only: false)
         issue = Issue.find_by(id: issue_id)
-        return ToolResponse.create_error("Issue not found. id = #{issue_id}") unless issue
+        raise("Issue not found. id = #{issue_id}") unless issue
 
-        comment_to_add = sym_args[:comment_to_add]
         if comment_to_add
           issue.init_journal(User.current, comment_to_add)
         else
           issue.init_journal(User.current)
         end
 
-        issue.subject = sym_args[:subject] if sym_args[:subject]
-        issue.tracker_id = sym_args[:tracker_id] if sym_args[:tracker_id]
-        issue.status_id = sym_args[:status_id] if sym_args[:status_id]
-        issue.priority_id = sym_args[:priority_id] if sym_args[:priority_id]
-        issue.category_id = sym_args[:category_id] if sym_args[:category_id]
-        issue.fixed_version_id = sym_args[:version_id] if sym_args[:version_id]
-        issue.assigned_to_id = sym_args[:assigned_to_id] if sym_args[:assigned_to_id]
-        issue.description = sym_args[:description] if sym_args[:description]
-        issue.start_date = sym_args[:start_date] if sym_args[:start_date]
-        issue.due_date = sym_args[:due_date] if sym_args[:due_date]
-        issue.done_ratio = sym_args[:done_ratio] if sym_args[:done_ratio]
-        issue.is_private = sym_args[:is_private] if sym_args[:is_private]
-        issue.estimated_hours = sym_args[:estimated_hours] if sym_args[:estimated_hours]
+        issue.subject = subject if subject
+        issue.tracker_id = tracker_id if tracker_id
+        issue.status_id = status_id if status_id
+        issue.priority_id = priority_id if priority_id
+        issue.category_id = category_id if category_id
+        issue.fixed_version_id = version_id if version_id
+        issue.assigned_to_id = assigned_to_id if assigned_to_id
+        issue.description = description if description
+        issue.start_date = start_date if start_date
+        issue.due_date = due_date if due_date
+        issue.done_ratio = done_ratio if done_ratio
+        issue.is_private = is_private if is_private
+        issue.estimated_hours = estimated_hours.to_f if estimated_hours
 
-        custom_fields = sym_args[:custom_fields] || []
         custom_fields.each do |field|
           custom_field = CustomField.find(field[:field_id])
           next unless custom_field
@@ -173,15 +124,15 @@ module RedmineAiHelper
 
         if validate_only
           unless issue.valid?
-            return ToolResponse.create_error("Validation failed. #{issue.errors.full_messages.join(", ")}")
+            raise("Validation failed. #{issue.errors.full_messages.join(", ")}")
           end
-          return ToolResponse.create_success(generate_issue_data(issue))
+          return tool_response(content: generate_issue_data(issue))
         end
 
         unless issue.save
-          return ToolResponse.create_error("Failed to update the issue #{issue.id}. #{issue.errors.full_messages.join(", ")}")
+          raise("Failed to update the issue #{issue.id}. #{issue.errors.full_messages.join(", ")}")
         end
-        ToolResponse.create_success(generate_issue_data(issue))
+        tool_response(content: generate_issue_data(issue))
       end
 
       private
