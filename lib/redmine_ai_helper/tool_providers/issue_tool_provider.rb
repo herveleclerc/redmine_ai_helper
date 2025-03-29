@@ -448,7 +448,7 @@ module RedmineAiHelper
         def initialize(params, defaults = {})
           @query = IssueQuery.new
           # @query.add_filter("set_filter", "=", "1")
-          inspect = "Initializing query with params: #{params.inspect}"
+
           params[:fields].each do |field|
             operator = params[:operators][field]
             values = params[:values][field]
