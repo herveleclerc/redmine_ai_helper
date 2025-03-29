@@ -1,9 +1,11 @@
+require "langchain"
 require "redmine_ai_helper/logger"
-
+Langchain.logger.level = Logger::ERROR
 module RedmineAiHelper
   class BaseAgent
     attr_accessor :model
     include RedmineAiHelper::Logger
+
 
     class << self
       def myname
@@ -111,7 +113,7 @@ module RedmineAiHelper
         end
       end
       answer = ""
-      @client.chat(messages: messages) do |chunk|
+      @client.chat(messages: messages_with_systemprompt) do |chunk|
         content = chunk.dig("delta", "content") rescue nil
         if callback
           callback.call(content)
