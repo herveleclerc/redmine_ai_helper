@@ -213,7 +213,6 @@ module RedmineAiHelper
 
       newmessages = messages.dup
       newmessages << { role: "user", content: prompt_text }
-
       json = chat(newmessages)
       fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
         llm: @client,
@@ -264,7 +263,7 @@ module RedmineAiHelper
 
     def get_agent_instance(name, option = {})
       agent = find_agent(name)
-      return nil unless agent
+      raise "Agent not found: #{name}" unless agent
       agent_class = Object.const_get(agent[:class])
       agent_class.new(option)
     end
