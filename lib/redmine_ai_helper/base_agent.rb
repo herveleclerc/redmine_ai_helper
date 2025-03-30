@@ -262,10 +262,6 @@ module RedmineAiHelper
       @agents << agent
     end
 
-    def all_agents
-      @agents
-    end
-
     def get_agent_instance(name, option = {})
       agent = find_agent(name)
       return nil unless agent
