@@ -98,9 +98,6 @@ module BaseAgentTestModele
     end
 
     def chat(params = {})
-      messages = params[:messages]
-      message = messages.last[:content]
-
       answer =<<~EOS
       {
           "steps": [
