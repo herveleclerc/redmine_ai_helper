@@ -34,3 +34,9 @@
     });
   </script>
 </p>
+<p>
+  <%= label_tag 'settings[additional_system_prompt]' do %>
+    Additional System Prompt
+  <% end %>
+  <%= text_area_tag 'settings[additional_system_prompt]', @settings['additional_system_prompt'], rows: 20, cols: 20, required: false %>
+</p>
