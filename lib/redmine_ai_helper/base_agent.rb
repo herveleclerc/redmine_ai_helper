@@ -8,9 +8,6 @@ module RedmineAiHelper
     include RedmineAiHelper::Logger
 
     class << self
-      def myname
-        @myname
-      end
 
       def inherited(subclass)
         class_name = subclass.name
