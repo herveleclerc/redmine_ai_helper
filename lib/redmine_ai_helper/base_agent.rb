@@ -114,6 +114,7 @@ module RedmineAiHelper
     def perform_task(messages, option = {}, callback = nil)
       tasks = decompose_task(messages)
       assistant.clear_messages!
+      assistant.add_message(role: "system", content: system_prompt[:content])
       messages.each do |message|
         assistant.add_message(role: message[:role], content: message[:content])
       end
