@@ -3,21 +3,20 @@ require "redmine_ai_helper/agents/leader_agent"
 
 class LeaderAgentTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields
+  setup do
+    @openai_mock = MyOpenAI::DummyOpenAIClient.new
+    Langchain::LLM::OpenAI.stubs(:new).returns(@openai_mock)
+    @params = {
+      access_token: "test_access_token",
+      uri_base: "http://example.com",
+      organization_id: "test_org_id",
+      model: "test_model",
+      project: Project.find(1),
+    }
+    @agent = RedmineAiHelper::Agents::LeaderAgent.new(@params)
+    @messages = [{ role: "user", content: "Hello" }]
+  end
   context "LeaderAgent" do
-    setup do
-      @openai_mock = MyOpenAI::DummyOpenAIClient.new
-      OpenAI::Client.stubs(:new).returns(@openai_mock)
-      @params = {
-        access_token: "test_access_token",
-        uri_base: "http://example.com",
-        organization_id: "test_org_id",
-        model: "test_model",
-        project: Project.find(1),
-      }
-      @agent = RedmineAiHelper::Agents::LeaderAgent.new(@params)
-      @messages = [{ role: "user", content: "Hello" }]
-    end
-
     should "return correct role" do
       assert_equal "leader", @agent.role
     end
@@ -51,41 +50,67 @@ class LeaderAgentTest < ActiveSupport::TestCase
       assert result.is_a?(String)
     end
   end
+
+  context "perform_task" do
+  end
 end
 
 module MyOpenAI
-  class DummyOpenAIClient
+  class DummyOpenAIClient < Langchain::LLM::OpenAI
+    def initialize(params = {})
+      super(api_key: "aaaa")
+    end
+
     def chat(params = {})
-      proc = params[:parameters][:stream]
-      messages = params[:parameters][:messages]
+      messages = params[:messages]
       message = messages.last[:content]
 
       answer = "test answer"
+
       if message.include?("ユーザーが達成したい目的を明確にし")
         answer = "test goal"
+      elsif message.include?("から与えられたタスクを解決するために")
+        answer = {
+          "steps": [
+            {
+              "name": "step1",
+              "step": "チケットを更新するために、必要な情報を整理する。",
+              "tool": {
+                "provider": "issue_tool_provider",
+                "tool_name": "capable_issue_properties",
+              },
+            },
+            {
+              "name": "step2",
+              "step": "前のステップで取得したステータスを使用してチケットを更新する",
+              "tool": {
+                "provider": "issue_tool_provider",
+                "tool_name": "update_issue",
+              },
+            },
+          ],
+
+        }.to_json
       elsif message.include?("というゴールを解決するために")
         answer = {
           "steps": [
-            { "agent": "leader", "step": "my_projectという名前のプロジェクトのIDを教えてください" },
-          ]
+            { "agent": "project_agent", "step": "my_projectという名前のプロジェクトのIDを教えてください" },
+            { "agent": "project_agent", "step": "my_projectの情報を取得してください" },
+          ],
         }.to_json
       else
         answer = "test answer"
       end
 
-      chunk = {
-        "id": "response_id",
-        "object": "chat.completion.chunk",
-        "created": Time.now.to_i,
-        "model": "gpt-3.5-turbo-0613",
-        "choices": [
-          { "index": 0,
-            "delta": { "content": answer },
-            "finish_reason": nil },
-        ],
-      }.deep_stringify_keys
-
-      proc.call(chunk, nil) if proc
+      if block_given?
+        { "index" => 0, "delta" => { "content" => "ら" }, "logprobs" => nil, "finish_reason" => nil }
+        chunk = {
+          "index": 0,
+          "delta": { "content": answer },
+          "finish_reason": nil,
+        }.deep_stringify_keys
+        yield(chunk)
+      end
 
       response = { "choices": [{ "message": { "content": answer } }] }.deep_stringify_keys
       response

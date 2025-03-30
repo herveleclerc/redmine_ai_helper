@@ -1,5 +1,5 @@
 require_relative '../base_agent'
-require_relative '../tool_providers/issue_tool_provider'
+
 module RedmineAiHelper
   module Agents
     class IssueAgent < RedmineAiHelper::BaseAgent
@@ -15,14 +15,18 @@ module RedmineAiHelper
       end
 
       def available_tool_providers
-        ["issue_tool_provider", "project_tool_provider", "user_tool_provider"]
+        [
+          RedmineAiHelper::Tools::IssueTools,
+          RedmineAiHelper::Tools::ProjectTools,
+          RedmineAiHelper::Tools::UserTools
+        ]
       end
 
       private
       def issue_properties
         return "" unless @project
-        provider = RedmineAiHelper::ToolProviders::IssueToolProvider.new
-        properties = provider.capable_issue_properties({project_id: @project.id})
+        provider = RedmineAiHelper::Tools::IssueTools.new
+        properties = provider.capable_issue_properties(project_id: @project.id)
         content = <<~EOS
           ----
           プロジェクトID: #{@project.id} で指定可能なチケットのプロパティは以下の通りです。

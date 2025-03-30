@@ -13,7 +13,7 @@ module RedmineAiHelper
       end
 
       def available_tool_providers
-        ["user_tool_provider"]
+        [RedmineAiHelper::Tools::UserTools]
       end
     end
   end

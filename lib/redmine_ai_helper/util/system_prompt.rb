@@ -16,35 +16,17 @@ module RedmineAiHelper
           mail: User.current.mail,
           timezone: User.current.time_zone,
         }
-        prompt = <<-EOS
-  あなたはRedmine AI Helperプラグインです。Redmineにインストールされており、Redmineのユーザーからの問い合わせに答えます。
-  問い合わせの内容はRedmineの機能やプロジェクト、チケットなどこのRedmineに登録されているデータに関するものが主になります。
-  特に、現在表示しているプロジェクトやページの情報についての問い合わせに答えます。
+        prompt = RedmineAiHelper::Util::PromptLoader.load_template("leader_agent/system_prompt")
+        prompt_text = prompt.format(
+          lang: I18n.t(:general_lang_name),
+          time: Time.now.iso8601,
+          site_info: site_info_json(project: @project),
+          current_page_info: current_page_info_string(),
+          current_user: User.current,
+          current_user_info: current_user_info,
+        )
 
-  注意事項:
-  - あなたがこのRedmineのサイト内のページを示すURLへのリンクを回答する際には、URLにはホスト名やポート番号は含めず、パスのみを含めてください。(例: /projects/redmine_ai_helper/issues/1)
-  - あなたは日本語、英語、中国語などいろいろな国の言語を話すことができますが、あなたが回答する際の言語は、特にユーザーからの指定が無い限りは#{I18n.t(:general_lang_name)}で話します。
-  - ユーザーが「私のチケット」といった場合には、それは「私が作成したチケット」ではなく、「私が担当するチケット」を指します。
-  - ユーザーへの回答は要点をまとめてなるべく箇条書きにする様心がけてください。
-  - **チケットやWikiページの作成や更新、チケットへの回答など、Redmineのデータを作成したり変更する操作を行う際には、ユーザーに必ず確認を取るようにしてください。**
-  - ** データの作成や更新や回答の案を考えてくださいという依頼の場合には、データの作成や更新はせずに、案を提示するだけにしてください**
-
-  以下はあなたの参考知識です。
-  ----
-  参考情報：
-  現在の時刻は#{Time.now.iso8601}です。ただしユーザと時間について会話する場合は、ユーザのタイムゾーンを考慮してください。ユーザーのタイムゾーンがわからない場合には、ユーザーが話している言語や会話から推測してください。
-  JSONで定義したこのRedmineのサイト情報は以下になります。
-  JSONの中のcurrent_projectが現在ユーザーが表示している、このプロジェクトです。ユーザが特にプロジェクトを指定せずにただ「プロジェクト」といった場合にはこのプロジェクトのことです。
-  #{site_info_json(project: @project)}
-
-  #{current_page_info_string()}
-
-  ----
-  あなたと話しているユーザーは"#{User.current}"です。
-  ユーザーの情報を以下に示します。
-  #{current_user_info}
-        EOS
-        prompt
+        prompt_text
       end
 
       def current_page_info_string()
