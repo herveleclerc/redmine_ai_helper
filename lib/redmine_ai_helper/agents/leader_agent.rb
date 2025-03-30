@@ -1,6 +1,5 @@
 require "redmine_ai_helper/base_agent"
 require "redmine_ai_helper/util/system_prompt"
-require "redmine_ai_helper/util/json_extractor"
 
 module RedmineAiHelper
   module Agents
@@ -9,6 +8,7 @@ module RedmineAiHelper
         super(params)
         @system_prompt = RedmineAiHelper::Util::SystemPrompt.new(params)
       end
+
       def backstory
         content = <<~EOS
           あなたは RedmineAIHelper プラグインのリーダーエージェントです。他のエージェントに指示を出し、彼らが答えた内容をまとめ、最終回答をユーザーに返すことがあなたの役割です。
@@ -29,7 +29,6 @@ module RedmineAiHelper
       end
 
       def perform_task(messages, option = {}, callback = nil)
-
         goal = generate_goal(messages)
         ai_helper_logger.debug "goal: #{goal}"
         steps = generate_steps(goal, messages)
@@ -41,8 +40,8 @@ module RedmineAiHelper
 
         chat_room = RedmineAiHelper::ChatRoom.new(goal)
         agent_list = RedmineAiHelper::AgentList.instance
-        steps["steps"].map{ |step| step["agent"] }.uniq.reject{|a| a == "leader_agent" }.each do |agent|
-          agent_instance = agent_list.get_agent_instance(agent, {project: @project})
+        steps["steps"].map { |step| step["agent"] }.uniq.reject { |a| a == "leader_agent" }.each do |agent|
+          agent_instance = agent_list.get_agent_instance(agent, { project: @project })
           chat_room.add_agent(agent_instance)
         end
 
@@ -57,23 +56,10 @@ module RedmineAiHelper
       end
 
       def generate_goal(messages)
-        prompt = <<~EOS
-          ユーザーが達成したい目的を明確にし、各エージェントと共有します。これにより各エージェントが円滑にタスクを実行できます。
-          各エージェントが過去の会話履歴を参照しなくても目的を理解できるように具体的に記述してください。
-          各エージェントがタスクを実行する際には、各種ID情報が非常に重要です。プロジェクトID、チケットID、ユーザーID、リポジトリIDなど、すでに分かっているものは明記して共有してください。
-          データを更新するタスクの場合には、ユーザーの確認が済んでいるのかまだなのかを明確にしてください。
-          ----
-          例1:
-          プロジェクト"my_project"(ID: 1)のチケットID:2の内容を要約してください。
-          ----
-          例2:
-          チケットID:3のに対し、以下の内容を盛り込んでエンドユーザー向けの回答を作成してください。
-          「バグの修正方法がわかりました。来週中に修正物件をリリースします。」
-          ユーザーからはチケットの更新確認は取れていません。
-        EOS
+        prompt = load_prompt("leader_agent/goal")
 
         newmessages = messages.dup
-        newmessages << { role: "system", content: prompt }
+        newmessages << { role: "system", content: prompt.format }
         answer = chat(newmessages)
         answer
       end
@@ -81,43 +67,32 @@ module RedmineAiHelper
       def generate_steps(goal, messages)
         agent_list = RedmineAiHelper::AgentList.instance
         ai_helper_logger.debug "agent_list: #{agent_list.list_agents}"
-        prompt = <<~EOS
-          「#{goal}」というゴールを解決するために、他のエージェントに指示を出してください。
-          各ステップでは、前のステップの実行で得られた結果をどのように利用するかを考慮してください。
-          エージェントの backstory を考慮して、適切なエージェントを選択してください。
-          適切なエージェントが見つからない場合には、"leader" に指示を出してください。
-          エージェントへの指示は、JSON形式で記述してください。
-
-          ** ユーザーへの確認を行うゴールが設定されている場合には、他のエージェントに対してデータを作成したり更新したりする指示を出してはいけません。その場合には他のエージェントには情報を取得する依頼のみ行うことができます。 **
-
-          ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
-          ----
-          エージェントの一覧:
-          #{agent_list.list_agents.reject{|a| a[:agent_name] == "leader_agent"}}
-          ----
-          JSONスキーマ:
-          {
-            type: "object",
-            properties: {
-              steps: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    agent: {
-                      type: "string",
-                      description: "指示を出すエージェントのロール"
-                    },
-                    step: {
-                      type: "string",
-                      description: "指示内容"
-                    }
+        agent_list_string = agent_list.list_agents.reject { |a| a[:agent_name] == "leader_agent" }
+        prompt = load_prompt("leader_agent/generate_steps")
+        json_schema = {
+          type: "object",
+          properties: {
+            steps: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  agent: {
+                    type: "string",
+                    description: "指示を出すエージェントのロール",
                   },
-                  required: ["agent", "step"]
-                }
-              }
-            }
-          }
+                  step: {
+                    type: "string",
+                    description: "指示内容",
+                  },
+                },
+                required: ["agent", "step"],
+              },
+            },
+          },
+        }
+        parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
+        json_examples =<<~EOS
           ----
           適切なエージェントが見つかった場合のJSONの例:
           {
@@ -144,12 +119,23 @@ module RedmineAiHelper
           }
         EOS
 
-        newmessages = messages.dup
-        newmessages << { role: "system", content: prompt }
-        json = chat(newmessages)
-        RedmineAiHelper::Util::JsonExtractor.extract(json)
-      end
+        prompt_text = prompt.format(
+          goal: goal,
+          agent_list: agent_list_string,
+          format_instructions: parser.get_format_instructions,
+          json_examples: json_examples,
+        )
 
+        newmessages = messages.dup
+        newmessages << { role: "system", content: prompt_text }
+        json = chat(newmessages)
+        fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
+          llm: @client,
+          parser: parser
+        )
+        fix_parser.parse(json)
+
+      end
     end
   end
 end

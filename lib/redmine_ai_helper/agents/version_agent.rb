@@ -10,7 +10,7 @@ module RedmineAiHelper
       end
 
       def available_tool_providers
-        ["version_tool_provider"]
+        [RedmineAiHelper::Tools::VersionTools]
       end
     end
   end

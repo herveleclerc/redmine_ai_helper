@@ -1,6 +1,6 @@
-require "redmine_ai_helper/tool_provider"
+require "langchain"
 require "redmine_ai_helper/logger"
-require "openai"
+Langchain.logger.level = Logger::ERROR
 
 module RedmineAiHelper
   class BaseAgent
@@ -8,9 +8,6 @@ module RedmineAiHelper
     include RedmineAiHelper::Logger
 
     class << self
-      def myname
-        @myname
-      end
 
       def inherited(subclass)
         class_name = subclass.name
@@ -31,8 +28,30 @@ module RedmineAiHelper
       params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
       @model ||= Setting.plugin_redmine_ai_helper["model"]
       @project = params[:project]
+      llm_options = {
+        uri_base: params[:uri_base],
+      }
 
-      @client = OpenAI::Client.new(params)
+      @client = Langchain::LLM::OpenAI.new(
+        api_key: params[:access_token],
+        llm_options: llm_options,
+        default_options: {
+          chat_model: @model,
+          temperature: 0.5,
+        },
+      )
+    end
+
+    def assistant
+      return @assistant if @assistant
+      tools = available_tool_providers.map { |tool|
+        tool.new
+      }
+      @assistant = Langchain::Assistant.new(
+        llm: @client,
+        instructions: system_prompt,
+        tools: tools,
+      )
     end
 
     # List all tools provided by this tool provider.
@@ -53,31 +72,23 @@ module RedmineAiHelper
 
     # The content of the system prompt
     def system_prompt
-      content = <<~EOS
-        あなたは RedmineAIHelper プラグインのエージェントです。
-        RedmineAIHelper プラグインは、Redmine のユーザーにRedmine の機能やプロジェクト、チケットなどに関する問い合わせに答えます。
+      time = Time.now.iso8601
+      prompt = load_prompt("base_agent/system_prompt")
+      prompt_text = prompt.format(
+        role: role,
+        backstory: backstory,
+        time: time,
+      )
 
-        あなた方エージェントのチームが作成した最終回答はユーザーのRedmineサイト内に表示さます。もし回答の中にRedmine内のページへのリンクが含まれる場合、そのURLにはホスト名は含めず、"/"から始まるパスのみを記載してください。
-
-        ** あなたのロールは #{role} です。これはとても重要です。忘れないでください。**
-        RedmineAIHelperには複数のロールのエージェントが存在します。
-        あなたは他のエージェントと協力して、RedmineAIHelper のユーザーにサービスを提供します。
-        あなたへの指示は <<leader>> ロールのエージェントから受け取ります。
-        ----
-        現在の時刻は#{Time.now.iso8601}です。
-        ----
-        あなたのバックストーリーは以下の通りです。
-        #{backstory}
-
-      EOS
-
-      return { role: "system", content: content }
+      return { role: "system", content: prompt_text }
     end
 
     # List all tools provided by available tool providers.
     def available_tools
-      tools = ToolProvider.list_tools
-      tools[:providers] = tools[:providers].filter { |provider| available_tool_providers.include?(provider[:name]) } unless available_tool_providers.empty?
+      tools = []
+      available_tool_providers.each do |provider|
+        tools << provider.function_schemas.to_openai_format
+      end
       tools
     end
 
@@ -90,25 +101,22 @@ module RedmineAiHelper
         end
       end
       answer = ""
-      @client.chat(
-        parameters: {
-          model: @model,
-          messages: messages_with_systemprompt,
-          stream: proc do |chunk, bytesize|
-            content = chunk.dig("choices", 0, "delta", "content")
-            if callback
-              callback.call(content)
-            end
-            answer += content if content
-          end,
-        },
-      )
+      @client.chat(messages: messages_with_systemprompt) do |chunk|
+        content = chunk.dig("delta", "content") rescue nil
+        if callback
+          callback.call(content)
+        end
+        answer += content if content
+      end
       answer
     end
 
     def perform_task(messages, option = {}, callback = nil)
       tasks = decompose_task(messages)
-
+      assistant.clear_messages!
+      messages.each do |message|
+        assistant.add_message(role: message[:role], content: message[:content])
+      end
       pre_tasks = []
       tasks["steps"].each do |new_task|
         ai_helper_logger.debug "new_task: #{new_task}"
@@ -129,64 +137,51 @@ module RedmineAiHelper
         }
         ai_helper_logger.debug "pre_task: #{pre_task}"
         pre_tasks << pre_task
-        answer = result.value
+        result.value
       end
       pre_tasks
     end
 
-
     def decompose_task(messages)
-      prompt = <<~EOS
-        leader から与えられたタスクを解決するために必要なステップに分解してください。
-        ステップの分解には以下のJSONに示すtoolsのリストを参考にしてください。一つ一つのステップは文章で作成します。
-        各ステップでは、前のステップの実行で得られた結果をどのように利用するかを考慮してください。
-        それらをまとめて「ステップの分解のJSONのスキーマ」にマッチするJSONを作成してください。
-
-        ２つ以上のステップに分解がする必要がない場合には元のタスクをそのまま一つのステップとして記述してください。
-        タスクを解決するためにツールの実行が不要な場合にはステップを分解する必要はありません。
-
-        ** ステップの目的が情報の収集や取得の場合には、情報を作成したり更新したりするtoolを絶対に選ばないでください。 **
-
-        ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
-        ----
-        ステップの分解のJSONのスキーマ:
-        {
-          "type": "object",
-          "properties": {
-            "steps": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "description": "ステップの名前"
-                  },
-                  "step": {
-                    "type": "string",
-                    "description": "ステップの内容"
-                  },
-                  "tool": {
-                    "type": "object",
-                    "properties": {
-                      "provider": {
-                        "type": "string",
-                        "description": "ツールのプロバイダー"
-                      },
-                      "tool_name": {
-                        "type": "string",
-                        "description": "ツールの名前"
-                      },
+      json_schema = {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "ステップの名前",
+                },
+                "step": {
+                  "type": "string",
+                  "description": "ステップの内容",
+                },
+                "tool": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "description": "ツールのプロバイダー",
                     },
-                    "description": "ツールの情報"
-                  }
-                  required: ["name", "step"]
-                }
-              }
-            }
-          }
-        }ß
-        ----
+                    "tool_name": {
+                      "type": "string",
+                      "description": "ツールの名前",
+                    },
+                  },
+                  "description": "ツールの情報",
+                },
+              },
+              "required": ["name", "step"],
+            },
+          },
+        },
+      }
+      parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
+
+      json_examples =<<~EOS
         タスクの例:
         「チケットID 3のチケットのステータスを完了に変更する」
         JSONの例:
@@ -210,100 +205,42 @@ module RedmineAiHelper
             }
           ]
         }
-        ----
-        tools:
-        #{available_tools}
-        ("\n")}
       EOS
 
+      prompt = load_prompt("base_agent/decompose_task")
+      prompt_text = prompt.format(
+        format_instructions: parser.get_format_instructions,
+        json_examples: json_examples,
+        available_tools: available_tools,
+      )
+
       newmessages = messages.dup
-      newmessages << { role: "user", content: prompt }
-
+      newmessages << { role: "user", content: prompt_text }
       json = chat(newmessages)
+      fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
+        llm: @client,
+        parser: parser
+      )
+      fix_parser.parse(json)
 
-      RedmineAiHelper::Util::JsonExtractor.extract(json)
     end
 
     # dispatch the tool
     def dispatch(task, messages, pre_tasks = [], previous_error = nil)
       begin
-        response = select_tool(task, messages, pre_tasks, previous_error)
-        tool = response["tool"]
-        ai_helper_logger.debug "tool: #{tool}"
-        return TaskResponse.create_success chat(messages) if tool.blank?
+        response = assistant.add_message_and_run!(content: task)
 
-        provider = ToolProvider.new(@client, @model)
-        result = provider.call_tool(provider: tool["provider"], name: tool["tool"], arguments: tool["arguments"])
-        ai_helper_logger.debug "result: #{result}"
-        if result.is_error?
-          ai_helper_logger.error "error!!!!!!!!!!!!: #{result}"
-          return result
-        end
-
-        res = TaskResponse.create_success result.value
+        res = TaskResponse.create_success response
         res
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
         TaskResponse.create_error e.message
       end
-
     end
 
-     # select the toos to solve the task
-    def select_tool(task, messages, pre_tasks = [], previous_error = nil)
-      tools = ToolProvider.list_tools
-
-      previous_error_string = ""
-      if previous_error
-        previous_error_string = "\n----\n前回のツール実行でエラーが発生しました。今回はそのリトライです。前回のエラー内容は以下の通りです。このエラーが再度発生しないようにツールの選択とパラメータの作成してください。\n#{previous_error}"
-      end
-
-      pre_tasks_string = ""
-      if pre_tasks.length > 0
-        pre_tasks_string = <<~EOS
-          このタスクを解決するためにこれまでに実施したステップは以下の通りです。これらの結果を踏まえて、次のステップで使用するツールを選んでください。
-          事前のステップ:
-          #{JSON.pretty_generate(pre_tasks)}
-        EOS
-      end
-
-      prompt = <<~EOS
-        「#{task}」というタスクを解決するのに最適なツールを以下のツールのリストのJSONの中から選択してください。ツールのリストに無いものは含めないでください。
-        #{pre_tasks_string}
-
-        ** ツールは一つだけ選択できます。絶対に2つ以上ツールを選択しないでください。 **
-        選択には過去の会話履歴も参考にしてください。
-        また、そのツールに渡すのに必要な引数も作成してください。
-
-        #{previous_error_string}
-
-        回答は以下の形式のJSONで作成してください。最適なツールがない場合は、tool:にnullを設定してください。
-
-        JSONの例:
-        {
-          tool:
-            {
-              "provider": "issue_tool_provider",
-              "tool": "read_issue",
-              "arguments": {  "id": 1 }
-            }
-        }
-        ** 回答にはJSON以外を含めないでください。解説等は不要です。 **
-        ----
-        ツールのリスト
-        #{tools}
-
-      EOS
-
-      newmessages = messages.dup
-      newmessages << { role: "user", content: prompt }
-
-      json = chat(newmessages)
-
-      ai_helper_logger.debug "json: #{json}"
-      RedmineAiHelper::Util::JsonExtractor.extract(json)
+    def load_prompt(name)
+      RedmineAiHelper::Util::PromptLoader.load_template(name)
     end
-
 
     class TaskResponse < RedmineAiHelper::ToolResponse
     end
@@ -325,13 +262,9 @@ module RedmineAiHelper
       @agents << agent
     end
 
-    def all_agents
-      @agents
-    end
-
     def get_agent_instance(name, option = {})
       agent = find_agent(name)
-      return nil unless agent
+      raise "Agent not found: #{name}" unless agent
       agent_class = Object.const_get(agent[:class])
       agent_class.new(option)
     end
@@ -341,9 +274,9 @@ module RedmineAiHelper
         agent = Object.const_get(a[:class]).new
         {
           agent_name: a[:name],
-          backstory: agent.backstory
+          backstory: agent.backstory,
         }
-     }
+      }
     end
 
     def find_agent(name)

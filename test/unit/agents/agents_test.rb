@@ -7,7 +7,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal ["board_tool_provider"], @agent.available_tool_providers
+      assert_equal [RedmineAiHelper::Tools::BoardTools], @agent.available_tool_providers
     end
   end
 
@@ -17,7 +17,10 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal  ["issue_tool_provider", "project_tool_provider", "user_tool_provider"], @agent.available_tool_providers
+      assert_equal  [RedmineAiHelper::Tools::IssueTools,
+          RedmineAiHelper::Tools::ProjectTools,
+          RedmineAiHelper::Tools::UserTools
+          ], @agent.available_tool_providers
     end
 
     should "return correct backstory" do
@@ -31,7 +34,12 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal ["issue_tool_provider", "issue_update_tool_provider", "project_tool_provider", "user_tool_provider"], @agent.available_tool_providers
+      assert_equal [
+        RedmineAiHelper::Tools::IssueTools,
+        RedmineAiHelper::Tools::IssueUpdateTools,
+        RedmineAiHelper::Tools::ProjectTools,
+        RedmineAiHelper::Tools::UserTools
+        ], @agent.available_tool_providers
     end
 
     should "return correct backstory" do
@@ -45,7 +53,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal ["repository_tool_provider"], @agent.available_tool_providers
+      assert_equal [RedmineAiHelper::Tools::RepositoryTools], @agent.available_tool_providers
     end
   end
 
@@ -55,7 +63,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal ["system_tool_provider"], @agent.available_tool_providers
+      assert_equal [RedmineAiHelper::Tools::SystemTools], @agent.available_tool_providers
     end
   end
 
@@ -65,7 +73,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal ["user_tool_provider"], @agent.available_tool_providers
+      assert_equal [RedmineAiHelper::Tools::UserTools], @agent.available_tool_providers
     end
   end
 
@@ -75,7 +83,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal ["project_tool_provider"], @agent.available_tool_providers
+      assert_equal [RedmineAiHelper::Tools::ProjectTools], @agent.available_tool_providers
     end
   end
 
@@ -85,7 +93,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal ["wiki_tool_provider"], @agent.available_tool_providers
+      assert_equal [RedmineAiHelper::Tools::WikiTools], @agent.available_tool_providers
     end
   end
 
@@ -95,7 +103,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct tool providers" do
-      assert_equal ["version_tool_provider"], @agent.available_tool_providers
+      assert_equal [RedmineAiHelper::Tools::VersionTools], @agent.available_tool_providers
     end
   end
 end

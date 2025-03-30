@@ -12,7 +12,7 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
       organization_id: "test_org_id",
     }
     @openai_mock = DummyOpenAIClientForLlmTest.new
-    OpenAI::Client.stubs(:new).returns(@openai_mock)
+    Langchain::LLM::OpenAI.stubs(:new).returns(@openai_mock)
     @llm = RedmineAiHelper::Llm.new(@params)
     @conversation = AiHelperConversation.new(title: "test task")
     message = AiHelperMessage.new(content: "test task", role: "user")
@@ -39,10 +39,24 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
     { "choices": [{ "message": { "content": message } }] }
   end
 
-  class DummyOpenAIClientForLlmTest
+  class DummyOpenAIClientForLlmTest < Langchain::LLM::OpenAI
+    def initialize(params = {})
+      super(api_key: "aaaa")
+    end
+
+    def chat_answer(message)
+      { "choices": [{ "message": { "content": message } }] }
+    end
+
+    # Dummy implementation of the chat_answer method
+
+    def chat_answer(message)
+      { "choices": [{ "message": { "content": message } }] }
+    end
+
+    # Dummy implementation of the chat method
     def chat(params = {})
-      proc = params[:parameters][:stream]
-      messages = params[:parameters][:messages]
+      messages = params[:messages]
       message = messages.last[:content]
 
       answer = "test answer"
@@ -73,20 +87,15 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         #puts "DummyOpenAIClient#chat params = #{message} called!!!!!!!!!!!!!!!!"
       end
 
-      chunk = {
-        "id": "response_id",
-        "object": "chat.completion.chunk",
-        "created": Time.now.to_i,
-        "model": "gpt-3.5-turbo-0613",
-        "choices": [
-          { "index": 0,
-            "delta": { "content": answer },
-            "finish_reason": nil },
-        ],
-
-      }.deep_stringify_keys
-
-      proc.call(chunk, nil) if proc
+      if block_given?
+        { "index" => 0, "delta" => { "content" => "ら" }, "logprobs" => nil, "finish_reason" => nil }
+        chunk = {
+          "index": 0,
+          "delta": { "content": answer },
+          "finish_reason": nil,
+        }.deep_stringify_keys
+        yield(chunk)
+      end
 
       response = { "choices": [{ "message": { "content": answer } }] }.deep_stringify_keys
       response
