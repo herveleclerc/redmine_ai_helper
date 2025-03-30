@@ -229,6 +229,7 @@ module RedmineAiHelper
     # dispatch the tool
     def dispatch(task, messages, pre_tasks = [], previous_error = nil)
       begin
+        assistant.add_message(role: "assistant", content: "previous error: #{previous_error}") if previous_error
         response = assistant.add_message_and_run!(content: task)
 
         res = TaskResponse.create_success response
@@ -264,8 +265,10 @@ module RedmineAiHelper
     end
 
     def get_agent_instance(name, option = {})
-      agent = find_agent(name)
-      raise "Agent not found: #{name}" unless agent
+      agent_name = name
+      agent_name = "leader_agent" if name == "leader"
+      agent = find_agent(agent_name)
+      raise "Agent not found: #{agent_name}" unless agent
       agent_class = Object.const_get(agent[:class])
       agent_class.new(option)
     end
