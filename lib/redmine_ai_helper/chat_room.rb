@@ -35,17 +35,6 @@ module RedmineAiHelper
       @agents.find { |agent| agent.role == role }
     end
 
-    # Send a message from one agent to another. The message is saved in the messages.
-    # @param [String] from the role of the agent sending the message
-    # @param [String] to the role of the agent receiving the message
-    def send_message(from, to, message, option = {}, proc = nil)
-      add_message(from, message, to)
-      agent = get_agent(to)
-      answer = agent.chat(@messages, option, proc)
-      add_message(to, answer, from)
-      answer
-    end
-
     # Send a task from one agent to another. The task is saved in the messages.
     # @param [String] from the role of the agent sending the task
     # @param [String] to the role of the agent receiving the task
