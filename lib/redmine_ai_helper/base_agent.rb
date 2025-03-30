@@ -113,7 +113,10 @@ module RedmineAiHelper
 
     def perform_task(messages, option = {}, callback = nil)
       tasks = decompose_task(messages)
-
+      assistant.clear_messages!
+      messages.each do |message|
+        assistant.add_message(role: message[:role], content: message[:content])
+      end
       pre_tasks = []
       tasks["steps"].each do |new_task|
         ai_helper_logger.debug "new_task: #{new_task}"
