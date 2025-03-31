@@ -23,23 +23,9 @@ module RedmineAiHelper
     end
 
     def initialize(params = {})
-      params[:access_token] ||= Setting.plugin_redmine_ai_helper["access_token"]
-      params[:uri_base] ||= Setting.plugin_redmine_ai_helper["uri_base"]
-      params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
-      @model ||= Setting.plugin_redmine_ai_helper["model"]
       @project = params[:project]
-      llm_options = {
-        uri_base: params[:uri_base],
-      }
 
-      @client = Langchain::LLM::OpenAI.new(
-        api_key: params[:access_token],
-        llm_options: llm_options,
-        default_options: {
-          chat_model: @model,
-          temperature: 0.5,
-        },
-      )
+      @client = RedmineAiHelper::LlmProvider.get_llm
     end
 
     def assistant

@@ -27,3 +27,12 @@ require File.expand_path(File.dirname(__FILE__) + "/model_factory")
 
 # このファイルと同じフォルダにあるmodel_factory.rbを読み込む
 require_relative "./model_factory"
+
+Setting.plugin_redmine_ai_helper = {
+  "llm" => "OpenAI",
+  "model" => "gpt-3.5-turbo",
+  "access_token" => "test_access_token",
+  "uri_base" => "http://example.com",
+  "organization_id" => "test_org_id",
+  "additional_system_prompt" => "",
+}

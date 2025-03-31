@@ -1,9 +1,12 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
 class AgentsTest < ActiveSupport::TestCase
+  setup do
+  end
   context "BoardAgent" do
     setup do
       @agent = RedmineAiHelper::Agents::BoardAgent.new
+      RedmineAiHelper::LlmProvider.stubs(:get_llm).returns({})
     end
 
     should "return correct tool providers" do

@@ -1,5 +1,14 @@
 
 <p>
+  <%= label_tag 'settings[llm]' do %>
+    LLM<span class="required">*</span>
+  <% end %>
+
+  <%= select_tag 'settings[llm]',
+  options_for_select(RedmineAiHelper::LlmProvider.option_for_select,
+  @settings['llm']) %>
+</p>
+<p>
   <%= label_tag 'settings[access_token]' do %>
     Access Token<span class="required">*</span>
   <% end %>
