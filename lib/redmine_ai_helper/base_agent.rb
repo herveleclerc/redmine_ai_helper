@@ -4,7 +4,7 @@ Langchain.logger.level = Logger::ERROR
 
 module RedmineAiHelper
   class BaseAgent
-    attr_accessor :model
+    attr_accessor :llm_type
     include RedmineAiHelper::Logger
 
     class << self
@@ -26,6 +26,7 @@ module RedmineAiHelper
       @project = params[:project]
 
       @client = RedmineAiHelper::LlmProvider.get_llm
+      @llm_type = RedmineAiHelper::LlmProvider.type
     end
 
     def assistant
@@ -79,16 +80,18 @@ module RedmineAiHelper
     end
 
     def chat(messages, option = {}, callback = nil)
-      messages_with_systemprompt = [system_prompt] + messages
-      messages_with_systemprompt.each do |message|
-        # message[:role] が system でも asssistant でも ユーザーでもない場合はエラー
-        unless %w(system assistant user).include?(message[:role])
-          raise "Invalid role: #{message[:role]}, message: #{message[:content]}"
-        end
-      end
+      new_messages = messages.dup
+      new_messages.unshift(system_prompt) if llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI
+
       answer = ""
-      @client.chat(messages: messages_with_systemprompt) do |chunk|
-        content = chunk.dig("delta", "content") rescue nil
+      chat_params = {
+        messages: new_messages,
+      }
+      chat_params[:system] = system_prompt[:content] if llm_type == RedmineAiHelper::LlmProvider::LLM_ANTHROPIC
+      dig_keyword = "content"
+      dig_keyword = "text" if llm_type == RedmineAiHelper::LlmProvider::LLM_ANTHROPIC
+      @client.chat(chat_params) do |chunk|
+        content = chunk.dig("delta", dig_keyword) rescue nil
         if callback
           callback.call(content)
         end
@@ -100,7 +103,8 @@ module RedmineAiHelper
     def perform_task(messages, option = {}, callback = nil)
       tasks = decompose_task(messages)
       assistant.clear_messages!
-      assistant.add_message(role: "system", content: system_prompt[:content])
+      assistant.add_message(role: "system", content: system_prompt[:content]) if llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI
+      assistant.instructions = system_prompt[:content] if llm_type == RedmineAiHelper::LlmProvider::LLM_ANTHROPIC
       messages.each do |message|
         assistant.add_message(role: message[:role], content: message[:content])
       end
