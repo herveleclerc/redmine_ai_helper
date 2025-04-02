@@ -1,3 +1,5 @@
+require_relative "llm_client/open_ai_provider"
+require_relative "llm_client/anthropic_provider"
 module RedmineAiHelper
   class LlmProvider
     LLM_OPENAI = "OpenAI".freeze
@@ -32,26 +34,5 @@ module RedmineAiHelper
         end
       end
     end
-
-    def config
-      Setting.plugin_redmine_ai_helper
-    end
-
-    def generate_client
-      raise NotImplementedError, "LLM provider not found"
-    end
-
-    def create_chat_param(system_prompt, messages)
-      new_messages = messages.dup
-        new_messages.unshift(system_prompt)
-        {
-          messages: new_messages,
-        }
-    end
-
-    def chunk_converter(chunk)
-      chunk.dig("delta", "content")
-    end
-
   end
 end

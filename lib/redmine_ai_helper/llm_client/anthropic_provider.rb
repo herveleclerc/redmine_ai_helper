@@ -1,6 +1,6 @@
 module RedmineAiHelper
   module LlmClient
-    class AnthropicProvider < RedmineAiHelper::LlmProvider
+    class AnthropicProvider < RedmineAiHelper::LlmClient::BaseProvider
       def generate_client
         client = Langchain::LLM::Anthropic.new(
           api_key: config["access_token"],

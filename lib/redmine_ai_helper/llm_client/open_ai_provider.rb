@@ -1,6 +1,7 @@
+require_relative "base_provider"
 module RedmineAiHelper
   module LlmClient
-    class OpenAiProvider < RedmineAiHelper::LlmProvider
+    class OpenAiProvider < RedmineAiHelper::LlmClient::BaseProvider
       def generate_client
         llm_options = {}
         llm_options[:organization_id] = config["organization_id"] if config["organization_id"].present?
