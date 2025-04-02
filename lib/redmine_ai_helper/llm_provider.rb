@@ -4,11 +4,6 @@ module RedmineAiHelper
     LLM_GEMINI = "Gemini".freeze
     LLM_ANTHROPIC = "Anthropic".freeze
     class << self
-      def get_llm
-        provider = get_llm_provider
-        provider.generate_client
-      end
-
       def get_llm_provider
         case type
         when LLM_OPENAI
@@ -45,5 +40,19 @@ module RedmineAiHelper
     def generate_client
       raise NotImplementedError, "LLM provider not found"
     end
+
+    def create_chat_param(system_prompt, messages)
+      new_messages = messages.dup
+        new_messages.unshift(system_prompt)
+        {
+          messages: new_messages,
+        }
+    end
+
+    def dig_keyword
+      "content"
+    end
+
+    private
   end
 end

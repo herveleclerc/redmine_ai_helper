@@ -130,7 +130,7 @@ module RedmineAiHelper
         newmessages << { role: "user", content: prompt_text }
         json = chat(newmessages)
         fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
-          llm: @client,
+          llm: client,
           parser: parser
         )
         fix_parser.parse(json)

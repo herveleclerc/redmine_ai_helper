@@ -4,7 +4,7 @@ Langchain.logger.level = Logger::ERROR
 
 module RedmineAiHelper
   class BaseAgent
-    attr_accessor :llm_type
+    attr_accessor :llm_type, :llm_provider, :client
     include RedmineAiHelper::Logger
 
     class << self
@@ -24,8 +24,9 @@ module RedmineAiHelper
 
     def initialize(params = {})
       @project = params[:project]
+      @llm_provider = RedmineAiHelper::LlmProvider.get_llm_provider
 
-      @client = RedmineAiHelper::LlmProvider.get_llm
+      @client = @llm_provider.generate_client
       @llm_type = RedmineAiHelper::LlmProvider.type
     end
 
@@ -35,7 +36,7 @@ module RedmineAiHelper
         tool.new
       }
       @assistant = Langchain::Assistant.new(
-        llm: @client,
+        llm: client,
         instructions: system_prompt,
         tools: tools,
       )
@@ -80,17 +81,10 @@ module RedmineAiHelper
     end
 
     def chat(messages, option = {}, callback = nil)
-      new_messages = messages.dup
-      new_messages.unshift(system_prompt) if llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI
-
+      chat_params = @llm_provider.create_chat_param(system_prompt, messages)
+      dig_keyword = @llm_provider.dig_keyword
       answer = ""
-      chat_params = {
-        messages: new_messages,
-      }
-      chat_params[:system] = system_prompt[:content] if llm_type == RedmineAiHelper::LlmProvider::LLM_ANTHROPIC
-      dig_keyword = "content"
-      dig_keyword = "text" if llm_type == RedmineAiHelper::LlmProvider::LLM_ANTHROPIC
-      @client.chat(chat_params) do |chunk|
+      client.chat(chat_params) do |chunk|
         content = chunk.dig("delta", dig_keyword) rescue nil
         if callback
           callback.call(content)
@@ -209,7 +203,7 @@ module RedmineAiHelper
       newmessages << { role: "user", content: prompt_text }
       json = chat(newmessages)
       fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
-        llm: @client,
+        llm: client,
         parser: parser
       )
       fix_parser.parse(json)

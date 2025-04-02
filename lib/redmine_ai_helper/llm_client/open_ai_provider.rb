@@ -15,6 +15,7 @@ module RedmineAiHelper
         raise "OpenAI LLM Create Erro" unless client
         client
       end
+
     end
   end
 end

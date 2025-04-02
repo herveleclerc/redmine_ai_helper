@@ -12,6 +12,18 @@ module RedmineAiHelper
         raise "Anthropic LLM Create Error" unless client
         client
       end
+
+      def create_chat_param(system_prompt, messages)
+        new_messages = messages.dup
+        chat_params = {
+          messages: new_messages,
+        }
+        chat_params[:system] = system_prompt[:content]
+      end
+
+      def dig_keyword
+        "text"
+      end
     end
   end
 end
