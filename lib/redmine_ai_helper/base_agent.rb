@@ -81,11 +81,10 @@ module RedmineAiHelper
     end
 
     def chat(messages, option = {}, callback = nil)
-      chat_params = @llm_provider.create_chat_param(system_prompt, messages)
-      dig_keyword = @llm_provider.dig_keyword
+      chat_params = llm_provider.create_chat_param(system_prompt, messages)
       answer = ""
       client.chat(chat_params) do |chunk|
-        content = chunk.dig("delta", dig_keyword) rescue nil
+        content = llm_provider.chunk_converter(chunk) rescue nil
         if callback
           callback.call(content)
         end
@@ -203,7 +202,7 @@ module RedmineAiHelper
       newmessages << { role: "user", content: prompt_text }
       json = chat(newmessages)
       fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
-        llm: client,
+        llm: @client,
         parser: parser
       )
       fix_parser.parse(json)

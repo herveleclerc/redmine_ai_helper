@@ -49,10 +49,9 @@ module RedmineAiHelper
         }
     end
 
-    def dig_keyword
-      "content"
+    def chunk_converter(chunk)
+      chunk.dig("delta", "content")
     end
 
-    private
   end
 end

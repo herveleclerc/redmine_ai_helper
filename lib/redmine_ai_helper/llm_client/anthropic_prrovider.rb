@@ -21,8 +21,8 @@ module RedmineAiHelper
         chat_params[:system] = system_prompt[:content]
       end
 
-      def dig_keyword
-        "text"
+      def chunk_converter(chunk)
+        chunk.dig("delta", "content")
       end
     end
   end
