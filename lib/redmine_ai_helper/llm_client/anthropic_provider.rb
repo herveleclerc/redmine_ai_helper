@@ -19,6 +19,7 @@ module RedmineAiHelper
           messages: new_messages,
         }
         chat_params[:system] = system_prompt[:content]
+        chat_params
       end
 
       def chunk_converter(chunk)
