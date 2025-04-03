@@ -30,7 +30,7 @@ class RedmineAiHelper::LlmClient::AnthropicProviderTest < ActiveSupport::TestCas
     end
 
     should "convert chunk correctly" do
-      chunk = { "delta" => { "content" => "Test content" } }
+      chunk = { "delta" => { "text" => "Test content" } }
       result = @provider.chunk_converter(chunk)
       assert_equal "Test content", result
     end

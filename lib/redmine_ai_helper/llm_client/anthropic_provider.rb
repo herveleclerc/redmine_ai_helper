@@ -7,6 +7,7 @@ module RedmineAiHelper
           default_options: {
             chat_model: config["model"],
             temperature: 0.5,
+            max_tokens: 2000,
           },
         )
         raise "Anthropic LLM Create Error" unless client
@@ -23,7 +24,7 @@ module RedmineAiHelper
       end
 
       def chunk_converter(chunk)
-        chunk.dig("delta", "content")
+        chunk.dig("delta", "text")
       end
     end
   end
