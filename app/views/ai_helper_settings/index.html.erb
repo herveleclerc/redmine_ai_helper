@@ -4,8 +4,11 @@
 <%= error_messages_for "setting" %>
 <div class="box tabular">
 <p>
-    <%= f.select :model_profile, @model_profiles, include_blank: false, required: true %>
-    <%= button_tag t(:label_new) %>
+    <%
+        options = @model_profiles.map{|p| [p.name, p.id]}
+    %>
+    <%= f.select :model_profile_id, options, include_blank: false, required: true %>
+    <%= link_to t(:label_new), ai_helper_model_profiles_new_url %>
 </p>
 <hr>
 <p><%= f.text_area :additional_instructions %></p>

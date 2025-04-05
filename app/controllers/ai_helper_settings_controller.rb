@@ -16,9 +16,6 @@ class AiHelperSettingsController < ApplicationController
     end
   end
 
-  def new_model_profile
-  end
-
   private
   def find_setting
     @setting = AiHelperSetting.find_or_create

@@ -5,3 +5,7 @@ en:
   label_chat_placeholder: "Type your message here..."
   label_ai_helper_input_newline: "Press Shift + Enter for a new line."
   label_ai_helper_start_new_chat: "Start a new chat"
+  field_llm_model: "Model name"
+  ai_helper:
+    model_profiles:
+      create_profile_title: "New model profile"
