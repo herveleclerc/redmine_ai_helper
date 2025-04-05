@@ -1,0 +1,2 @@
+class AiHelperModelProfile < ApplicationRecord
+end
