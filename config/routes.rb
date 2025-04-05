@@ -9,4 +9,6 @@ RedmineApp::Application.routes.draw do
   get "projects/:id/ai_helper/conversation/:conversation_id", to: "ai_helper#conversation", as: "ai_helper_conversation"
   delete "projects/:id/ai_helper/conversation/:conversation_id", to: "ai_helper#conversation", as: "ai_helper_delete_conversation"
   post "projects/:id/ai_helper/call_llm", to: "ai_helper#call_llm", as: "ai_helper_call_llm"
+  get "ai_helper_settings/index", to: "ai_helper_settings#index", as: "ai_helper_settings"
+  post "ai_helper_settings/index", to: "ai_helper_settings#update", as: "update_ai_helper_settings"
 end

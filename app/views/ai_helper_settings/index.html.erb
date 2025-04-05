@@ -1,1 +1,14 @@
-<h2>AiHelperSettingsController#index</h2>
+<h2><%= t(:label_ai_helper) %></h2>
+
+<%= labelled_form_for @setting do |f| %>
+<%= error_messages_for "setting" %>
+<div class="box tabular">
+<p>
+    <%= f.select :model_profile, @model_profiles, include_blank: false, required: true %>
+    <%= button_tag t(:label_new) %>
+</p>
+<hr>
+<p><%= f.text_area :additional_instructions %></p>
+</div>
+<%= f.submit t(:button_submit) %>
+<% end %>
