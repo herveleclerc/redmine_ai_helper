@@ -1,0 +1,2 @@
+module AiHelperSettingsHelper
+end

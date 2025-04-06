@@ -2,10 +2,12 @@ module RedmineAiHelper
   module LlmClient
     class AnthropicProvider < RedmineAiHelper::LlmClient::BaseProvider
       def generate_client
+        model_profile = AiHelperSetting.find_or_create.model_profile
+        raise "Model Profile not found" unless model_profile
         client = Langchain::LLM::Anthropic.new(
-          api_key: config["access_token"],
+          api_key: model_profile.access_key,
           default_options: {
-            chat_model: config["model"],
+            chat_model: model_profile.llm_model,
             temperature: 0.5,
             max_tokens: 2000,
           },

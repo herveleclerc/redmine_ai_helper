@@ -1,9 +1,6 @@
 module RedmineAiHelper
   module LlmClient
     class BaseProvider
-      def config
-        Setting.plugin_redmine_ai_helper
-      end
 
       def generate_client
         raise NotImplementedError, "LLM provider not found"

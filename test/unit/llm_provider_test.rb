@@ -17,31 +17,40 @@ class LlmProviderTest < ActiveSupport::TestCase
     end
 
     context "get_llm_provider" do
+      setup do
+        @setting = AiHelperSetting.find_or_create
+      end
       teardown do
-        Setting.plugin_redmine_ai_helper["llm"] = "OpenAI"
+        @setting.model_profile.llm_type = "OpenAI"
+        @setting.model_profile.save!
       end
 
       should "return OpenAiProvider when OpenAI is selected" do
-        Setting.plugin_redmine_ai_helper["llm"] = "OpenAI"
+        @setting.model_profile.llm_type = "OpenAI"
+        @setting.model_profile.save!
+
         provider = @llm_provider.get_llm_provider
         assert_instance_of RedmineAiHelper::LlmClient::OpenAiProvider, provider
       end
 
       should "raise NotImplementedError when Gemini is selected" do
-        Setting.plugin_redmine_ai_helper["llm"] = "Gemini"
+        @setting.model_profile.llm_type = "Gemini"
+        @setting.model_profile.save!
         assert_raises(NotImplementedError) do
           @llm_provider.get_llm_provider
         end
       end
 
       should "raise NotImplementedError when Anthropic is selected" do
-        Setting.plugin_redmine_ai_helper["llm"] = "Anthropic"
+        @setting.model_profile.llm_type = "Anthropic"
+        @setting.model_profile.save!
         provider = @llm_provider.get_llm_provider
         assert_instance_of RedmineAiHelper::LlmClient::AnthropicProvider, provider
       end
 
       should "raise NotImplementedError when an unknown LLM is selected" do
-        Setting.plugin_redmine_ai_helper["llm"] = "UnknownLLM"
+        @setting.model_profile.llm_type = "Unknown"
+        @setting.model_profile.save!
         assert_raises(NotImplementedError) do
           @llm_provider.get_llm_provider
         end

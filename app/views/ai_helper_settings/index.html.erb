@@ -1,0 +1,50 @@
+<h2><%= t(:label_ai_helper) %></h2>
+
+<%= labelled_form_for @setting, url: ai_helper_setting_update_url, method: :post do |f| %>
+<%= error_messages_for "setting" %>
+<div class="box tabular">
+    <p>
+        <%
+            options = @model_profiles.map{|p| [p.name, p.id]}
+        %>
+        <%= f.select :model_profile_id, options, include_blank: true, required: true %>
+        <%= link_to t(:label_new), ai_helper_model_profiles_new_url %>
+    </p>
+        <div id="ai_helper_model_profile_description">
+        </div>
+
+    <hr>
+    <p><%= f.text_area :additional_instructions, rows: 12 %></p>
+</div>
+<%= f.submit t(:button_submit) %>
+<% end %>
+
+<script>
+    function loadModelProfile(id) {
+        $.ajax({
+            url: '<%= ai_helper_model_profiles_path%>/' + id,
+            type: 'GET',
+            success: function(data) {
+                $('#ai_helper_model_profile_description').html(data);
+            },
+            error: function() {
+                $('#ai_helper_model_profile_description').html('error');
+            }
+        });
+    }
+
+    function setModelProfile() {
+        var selectedId = $('#ai_helper_setting_model_profile_id').val();
+        if (selectedId) {
+            loadModelProfile(selectedId);
+        } else {
+            $('#ai_helper_model_profile_description').html('');
+        }
+    }
+    $(document).ready(function() {
+        $('#ai_helper_setting_model_profile_id').change(function() {
+            setModelProfile();
+        });
+    });
+    setModelProfile();
+</script>
