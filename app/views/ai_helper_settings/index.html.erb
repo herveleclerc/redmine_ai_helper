@@ -14,7 +14,7 @@
         </div>
 
     <hr>
-    <p><%= f.text_area :additional_instructions %></p>
+    <p><%= f.text_area :additional_instructions, rows: 12 %></p>
 </div>
 <%= f.submit t(:button_submit) %>
 <% end %>
@@ -38,7 +38,7 @@
         if (selectedId) {
             loadModelProfile(selectedId);
         } else {
-            $('#ai_helper_model_profile_description').html('nothing');
+            $('#ai_helper_model_profile_description').html('');
         }
     }
     $(document).ready(function() {

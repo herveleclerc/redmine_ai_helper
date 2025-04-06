@@ -1,3 +1,8 @@
+<hr/>
+<div class="contextual">
+    <%= link_to(sprite_icon('edit', l(:button_edit)), ai_helper_model_profiles_edit_path(@model_profile), :class => 'icon icon-edit') %>
+
+</div>
 <p>
   <%= label_tag "Llm type" %>
   <%= @model_profile.llm_type %>

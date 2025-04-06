@@ -1,0 +1,16 @@
+  <%= error_messages_for "model_profile" %>
+  <div class="box tabular">
+    <p><%= f.select :llm_type, RedmineAiHelper::LlmProvider.option_for_select %></p>
+    <p>
+      <%= f.text_field :name, size: 60, required: true, autocomplete: "off" %>
+    </p>
+    <%
+        access_key = ""
+        access_key = AiHelperModelProfilesController::DUMMY_ACCESS_KEY unless @model_profile.new_record?
+    %>
+    <p><%= f.password_field :access_key, value: access_key, size: 60, required: true %></p>
+    <p>
+      <%= f.text_field :llm_model, size: 60, required: true %>
+    </p>
+
+  </div>

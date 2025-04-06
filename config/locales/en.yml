@@ -9,3 +9,4 @@ en:
   ai_helper:
     model_profiles:
       create_profile_title: "New model profile"
+      edit_profile_title: "Edit model profile"

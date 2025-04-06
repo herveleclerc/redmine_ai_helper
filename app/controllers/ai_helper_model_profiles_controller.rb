@@ -4,6 +4,8 @@ class AiHelperModelProfilesController < ApplicationController
   before_action :find_model_profile, only: [:show, :edit, :update, :destroy]
   self.main_menu = false
 
+  DUMMY_ACCESS_KEY = "___DUMMY_ACCESS_KEY___"
+
   def show
     render partial: 'ai_helper_model_profiles/show'
   end
@@ -25,10 +27,19 @@ class AiHelperModelProfilesController < ApplicationController
   end
 
   def edit
+
   end
 
   def update
-
+    original_access_key = @model_profile.access_key
+    @model_profile.safe_attributes = params[:ai_helper_model_profile]
+    @model_profile.access_key = original_access_key if @model_profile.access_key == DUMMY_ACCESS_KEY
+    if @model_profile.save
+      flash[:notice] = l(:notice_successful_update)
+      redirect_to ai_helper_setting_path
+    else
+      render action: :edit
+    end
   end
 
   def destroy

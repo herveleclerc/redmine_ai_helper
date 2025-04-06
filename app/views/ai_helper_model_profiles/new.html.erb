@@ -1,17 +1,8 @@
 <% html_title l('ai_helper.model_profiles.create_profile_title')%>
 <h2><%= l('ai_helper.model_profiles.create_profile_title') %></h2>
 <%= labelled_form_for @model_profile, html: {autocomplete: "off"} do |f| %>
-  <%= error_messages_for "model_profile" %>
-  <div class="box tabular">
-    <p><%= f.select :llm_type, RedmineAiHelper::LlmProvider.option_for_select %></p>
-    <p>
-      <%= f.text_field :name, size: 60, required: true, autocomplete: "off" %>
-    </p>
-    <p><%= f.password_field :access_key, size: 60, "new-password": false, required: true %></p>
-    <p>
-      <%= f.text_field :llm_model, size: 60, required: true %>
-    </p>
+ <%= render partial: "form", locals: {f: f} %>
 
-  </div>
+
   <%= f.submit t(:button_submit) %>
 <% end %>
