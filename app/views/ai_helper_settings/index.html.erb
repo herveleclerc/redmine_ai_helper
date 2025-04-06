@@ -1,13 +1,13 @@
 <h2><%= t(:label_ai_helper) %></h2>
 
-<%= labelled_form_for @setting do |f| %>
+<%= labelled_form_for @setting, url: ai_helper_setting_update_url, method: :post do |f| %>
 <%= error_messages_for "setting" %>
 <div class="box tabular">
 <p>
     <%
         options = @model_profiles.map{|p| [p.name, p.id]}
     %>
-    <%= f.select :model_profile_id, options, include_blank: false, required: true %>
+    <%= f.select :model_profile_id, options, include_blank: true, required: true %>
     <%= link_to t(:label_new), ai_helper_model_profiles_new_url %>
 </p>
 <hr>
