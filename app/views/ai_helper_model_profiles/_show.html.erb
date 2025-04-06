@@ -2,6 +2,8 @@
 <div class="contextual">
     <%= link_to(sprite_icon('edit', l(:button_edit)), ai_helper_model_profiles_edit_path(@model_profile), :class => 'icon icon-edit') %>
 
+    <%= link_to(sprite_icon('del', l(:button_delete)), ai_helper_model_profiles_destroy_url(id: @model_profile), method: :delete, data: { confirm: l('ai_helper.model_profiles.messages.confirm_delete') }, :class => 'icon icon-del') %>
+
 </div>
 <p>
   <%= label_tag "Llm type" %>

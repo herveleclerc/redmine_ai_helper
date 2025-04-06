@@ -10,3 +10,5 @@ en:
     model_profiles:
       create_profile_title: "New model profile"
       edit_profile_title: "Edit model profile"
+      messages:
+        confirm_delete: "Are you sure you want to delete this model profile?"

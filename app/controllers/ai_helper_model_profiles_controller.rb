@@ -43,6 +43,15 @@ class AiHelperModelProfilesController < ApplicationController
   end
 
   def destroy
+    if @model_profile.destroy
+      flash[:notice] = l(:notice_successful_delete)
+      redirect_to ai_helper_setting_path
+    else
+      flash[:error] = l(:error_failed_delete)
+      redirect_to ai_helper_setting_path
+    end
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
 
   private
