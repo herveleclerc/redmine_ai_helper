@@ -24,7 +24,7 @@ module RedmineAiHelper
           current_page_info: current_page_info_string(),
           current_user: User.current,
           current_user_info: current_user_info,
-          additional_system_prompt: Setting.plugin_redmine_ai_helper["additional_system_prompt"] || "",
+          additional_system_prompt: AiHelperSetting.find_or_create.additional_instructions,
         )
 
         prompt_text

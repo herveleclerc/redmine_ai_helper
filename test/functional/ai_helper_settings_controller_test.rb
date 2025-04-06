@@ -20,7 +20,7 @@ class AiHelperSettingsControllerTest < ActionController::TestCase
   end
 
   should "update setting with valid attributes" do
-    post :update, params: { id: @ai_helper_setting, ai_helper_setting: { moedl_profile_id: @model_profile.id } }
+    post :update, params: { ai_helper_setting: { model_profile_id: @model_profile.id } }
     assert_redirected_to action: :index
     @ai_helper_setting.reload
     assert_equal @model_profile.id, @ai_helper_setting.model_profile_id

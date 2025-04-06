@@ -20,7 +20,8 @@ module RedmineAiHelper
       end
 
       def type
-        Setting.plugin_redmine_ai_helper["llm"]
+        setting = AiHelperSetting.find_or_create
+        setting.model_profile.llm_type
       end
 
       def option_for_select
