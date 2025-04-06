@@ -19,5 +19,4 @@ Redmine::Plugin.register :redmine_ai_helper do
 
   menu :admin_menu, 'icon ah_helper', { controller: 'ai_helper_settings', action: 'index' }, caption: :label_ai_helper
 
-  settings default: { 'model': "gpt-4o-mini" }, partial: "ai_helper/settings"
 end
