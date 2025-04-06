@@ -12,9 +12,11 @@ RedmineApp::Application.routes.draw do
   get "ai_helper_settings/index", to: "ai_helper_settings#index", as: "ai_helper_setting"
   post "ai_helper_settings/index", to: "ai_helper_settings#update", as: "ai_helper_setting_update"
 
+  get "ai_helper_model_profiles", to: "ai_helper_model_profiles#index", as: "ai_helper_model_profiles"
+  get "ai_helper_model_profiles/:id", to: "ai_helper_model_profiles#show", as: "ai_helper_model_profiles_show"
   get "ai_helper_model_profiles/edit", to: "ai_helper_model_profiles#edit", as: "ai_helper_model_profiles_edit"
-  get "ai_helper_model_profiles/new", to: "ai_helper_model_profiles#new", as: "ai_helper_model_profiles_new"
-  post "ai_helper_model_profiles", to: "ai_helper_model_profiles#create", as: "ai_helper_model_profiles"
+  get "ai_helper_model_profiles_new", to: "ai_helper_model_profiles#new", as: "ai_helper_model_profiles_new"
+  post "ai_helper_model_profiles", to: "ai_helper_model_profiles#create", as: "ai_helper_model_profiles_create"
   post "ai_helper_model_profiles/:id", to: "ai_helper_model_profiles#update", as: "ai_helper_model_profiles_update"
   delete "ai_helper_model_profiles/:id", to: "ai_helper_model_profiles#destroy", as: "ai_helper_model_profiles_destroy"
 

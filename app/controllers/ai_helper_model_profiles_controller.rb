@@ -5,6 +5,7 @@ class AiHelperModelProfilesController < ApplicationController
   self.main_menu = false
 
   def show
+    render partial: 'ai_helper_model_profiles/show'
   end
 
   def new
@@ -17,7 +18,7 @@ class AiHelperModelProfilesController < ApplicationController
     @model_profile.safe_attributes = params[:ai_helper_model_profile]
     if @model_profile.save
       flash[:notice] = l(:notice_successful_create)
-      redirect_to ai_helper_settings_path
+      redirect_to ai_helper_setting_path
     else
       render action: :new
     end
@@ -35,6 +36,8 @@ class AiHelperModelProfilesController < ApplicationController
 
   private
   def find_model_profile
+    id = params[:id]
+    return if params[:id].blank?
     @model_profile = AiHelperModelProfile.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render_404
