@@ -25,14 +25,11 @@ module RedmineAiHelper
       end
 
       def option_for_select
-        llms = [
-          LLM_OPENAI,
-          LLM_GEMINI,
-          LLM_ANTHROPIC,
+        [
+          ["OpenAI", LLM_OPENAI],
+          ["Gemini(Experimental)", LLM_GEMINI],
+          ["Anthropic(Experimental)", LLM_ANTHROPIC],
         ]
-        llms.map do |llm|
-          [llm, llm]
-        end
       end
     end
   end
