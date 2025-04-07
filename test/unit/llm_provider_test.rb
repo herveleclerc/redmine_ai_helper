@@ -10,8 +10,8 @@ class LlmProviderTest < ActiveSupport::TestCase
     should "return correct options for select" do
       expected_options = [
         ["OpenAI", "OpenAI"],
-        ["Gemini", "Gemini"],
-        ["Anthropic", "Anthropic"]
+        ["Gemini(Experimental)", "Gemini"],
+        ["Anthropic(Experimental)", "Anthropic"],
       ]
       assert_equal expected_options, @llm_provider.option_for_select
     end
@@ -33,12 +33,11 @@ class LlmProviderTest < ActiveSupport::TestCase
         assert_instance_of RedmineAiHelper::LlmClient::OpenAiProvider, provider
       end
 
-      should "raise NotImplementedError when Gemini is selected" do
+      should "return GeminiProvider when Gemini is selected" do
         @setting.model_profile.llm_type = "Gemini"
         @setting.model_profile.save!
-        assert_raises(NotImplementedError) do
-          @llm_provider.get_llm_provider
-        end
+        provider = @llm_provider.get_llm_provider
+        assert_instance_of RedmineAiHelper::LlmClient::GeminiProvider, provider
       end
 
       should "raise NotImplementedError when Anthropic is selected" do

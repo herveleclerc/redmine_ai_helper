@@ -18,7 +18,7 @@
     ],
     "liveServer.settings.multiRootWorkspaceName": "redmine_ai_helper",
     "[ruby]": {
-      "editor.defaultFormatter": "Shopify.ruby-lsp",
+      "editor.defaultFormatter": "jnbt.vscode-rufo",
       "editor.formatOnSave": true
     },
     "files.associations": {

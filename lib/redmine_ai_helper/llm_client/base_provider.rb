@@ -17,6 +17,15 @@ module RedmineAiHelper
       def chunk_converter(chunk)
         chunk.dig("delta", "content")
       end
+
+      def reset_assistant_messages(assistant:, system_prompt:, messages:)
+        assistant.clear_messages!
+        assistant.add_message(role: "system", content: system_prompt[:content])
+        messages.each do |message|
+          assistant.add_message(role: message[:role], content: message[:content])
+        end
+      end
+
     end
   end
 end

@@ -11,7 +11,7 @@ module RedmineAiHelper
         when LLM_OPENAI
           return RedmineAiHelper::LlmClient::OpenAiProvider.new
         when LLM_GEMINI
-          raise NotImplementedError, "Gemini LLM is not implemented yet"
+          return RedmineAiHelper::LlmClient::GeminiProvider.new
         when LLM_ANTHROPIC
           return RedmineAiHelper::LlmClient::AnthropicProvider.new
         else

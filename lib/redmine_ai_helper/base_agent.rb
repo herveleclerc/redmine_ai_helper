@@ -8,7 +8,6 @@ module RedmineAiHelper
     include RedmineAiHelper::Logger
 
     class << self
-
       def inherited(subclass)
         class_name = subclass.name
         class_name = subclass.to_s if class_name.nil?
@@ -83,24 +82,24 @@ module RedmineAiHelper
     def chat(messages, option = {}, callback = nil)
       chat_params = llm_provider.create_chat_param(system_prompt, messages)
       answer = ""
-      client.chat(chat_params) do |chunk|
+      response = client.chat(chat_params) do |chunk|
         content = llm_provider.chunk_converter(chunk) rescue nil
         if callback
           callback.call(content)
         end
         answer += content if content
       end
+      answer = response.chat_completion if llm_type == RedmineAiHelper::LlmProvider::LLM_GEMINI
       answer
     end
 
     def perform_task(messages, option = {}, callback = nil)
       tasks = decompose_task(messages)
-      assistant.clear_messages!
-      assistant.add_message(role: "system", content: system_prompt[:content]) if llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI
-      assistant.instructions = system_prompt[:content] if llm_type == RedmineAiHelper::LlmProvider::LLM_ANTHROPIC
-      messages.each do |message|
-        assistant.add_message(role: message[:role], content: message[:content])
-      end
+      llm_provider.reset_assistant_messages(
+        assistant: assistant,
+        system_prompt: system_prompt,
+        messages: messages,
+      )
       pre_tasks = []
       tasks["steps"].each do |new_task|
         ai_helper_logger.debug "new_task: #{new_task}"
@@ -165,7 +164,7 @@ module RedmineAiHelper
       }
       parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
 
-      json_examples =<<~EOS
+      json_examples = <<~EOS
         タスクの例:
         「チケットID 3のチケットのステータスを完了に変更する」
         JSONの例:
@@ -203,10 +202,9 @@ module RedmineAiHelper
       json = chat(newmessages)
       fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
         llm: @client,
-        parser: parser
+        parser: parser,
       )
       fix_parser.parse(json)
-
     end
 
     # dispatch the tool
