@@ -10,7 +10,13 @@ class AiHelper {
     var form = $("#ai_helper_chat_form");
     form.on("submit", function (e) {
       e.preventDefault();
+    });
+
+    // #aihelper-chat-submitボタンのクリックイベント
+    $("#aihelper-chat-submit").on("click", function (e) {
+      e.preventDefault();
       submitAction();
+      return false;
     });
 
     // submitAction関数 - Ajax送信の例

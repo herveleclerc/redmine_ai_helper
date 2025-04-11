@@ -25,7 +25,7 @@ module RedmineAiHelper
       ai_helper_logger.info "user:#{User.current}, task: #{task}, option: #{option}"
       begin
         agent = RedmineAiHelper::Agents::LeaderAgent.new(option)
-        answer = agent.perform_task(conversation.messages_for_openai, option, proc)
+        answer = agent.perform_user_request(conversation.messages_for_openai, option, proc)
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
         answer = e.message

@@ -1,0 +1,8 @@
+<% html_title l('ai_helper.model_profiles.create_profile_title')%>
+<h2><%= l('ai_helper.model_profiles.create_profile_title') %></h2>
+<%= labelled_form_for @model_profile, html: {autocomplete: "off"} do |f| %>
+ <%= render partial: "form", locals: {f: f} %>
+
+
+  <%= f.submit t(:button_submit) %>
+<% end %>

@@ -1,14 +1,13 @@
-require "langchain"
 require "redmine_ai_helper/logger"
+require "redmine_ai_helper/assistant"
 Langchain.logger.level = Logger::ERROR
 
 module RedmineAiHelper
   class BaseAgent
-    attr_accessor :model
+    attr_accessor :llm_type, :llm_provider, :client
     include RedmineAiHelper::Logger
 
     class << self
-
       def inherited(subclass)
         class_name = subclass.name
         class_name = subclass.to_s if class_name.nil?
@@ -23,23 +22,11 @@ module RedmineAiHelper
     end
 
     def initialize(params = {})
-      params[:access_token] ||= Setting.plugin_redmine_ai_helper["access_token"]
-      params[:uri_base] ||= Setting.plugin_redmine_ai_helper["uri_base"]
-      params[:organization_id] ||= Setting.plugin_redmine_ai_helper["organization_id"]
-      @model ||= Setting.plugin_redmine_ai_helper["model"]
       @project = params[:project]
-      llm_options = {
-        uri_base: params[:uri_base],
-      }
+      @llm_provider = RedmineAiHelper::LlmProvider.get_llm_provider
 
-      @client = Langchain::LLM::OpenAI.new(
-        api_key: params[:access_token],
-        llm_options: llm_options,
-        default_options: {
-          chat_model: @model,
-          temperature: 0.5,
-        },
-      )
+      @client = @llm_provider.generate_client
+      @llm_type = RedmineAiHelper::LlmProvider.type
     end
 
     def assistant
@@ -47,11 +34,13 @@ module RedmineAiHelper
       tools = available_tool_providers.map { |tool|
         tool.new
       }
-      @assistant = Langchain::Assistant.new(
-        llm: @client,
+      @assistant = RedmineAiHelper::Assistant.new(
+        llm: client,
         instructions: system_prompt,
         tools: tools,
       )
+      @assistant.llm_provider = llm_provider
+      @assistant
     end
 
     # List all tools provided by this tool provider.
@@ -93,31 +82,26 @@ module RedmineAiHelper
     end
 
     def chat(messages, option = {}, callback = nil)
-      messages_with_systemprompt = [system_prompt] + messages
-      messages_with_systemprompt.each do |message|
-        # message[:role] が system でも asssistant でも ユーザーでもない場合はエラー
-        unless %w(system assistant user).include?(message[:role])
-          raise "Invalid role: #{message[:role]}, message: #{message[:content]}"
-        end
-      end
+      chat_params = llm_provider.create_chat_param(system_prompt, messages)
       answer = ""
-      @client.chat(messages: messages_with_systemprompt) do |chunk|
-        content = chunk.dig("delta", "content") rescue nil
+      response = client.chat(chat_params) do |chunk|
+        content = llm_provider.chunk_converter(chunk) rescue nil
         if callback
           callback.call(content)
         end
         answer += content if content
       end
+      answer = response.chat_completion if llm_type == RedmineAiHelper::LlmProvider::LLM_GEMINI
       answer
     end
 
     def perform_task(messages, option = {}, callback = nil)
       tasks = decompose_task(messages)
-      assistant.clear_messages!
-      assistant.add_message(role: "system", content: system_prompt[:content])
-      messages.each do |message|
-        assistant.add_message(role: message[:role], content: message[:content])
-      end
+      llm_provider.reset_assistant_messages(
+        assistant: assistant,
+        system_prompt: system_prompt,
+        messages: messages,
+      )
       pre_tasks = []
       tasks["steps"].each do |new_task|
         ai_helper_logger.debug "new_task: #{new_task}"
@@ -182,7 +166,7 @@ module RedmineAiHelper
       }
       parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
 
-      json_examples =<<~EOS
+      json_examples = <<~EOS
         タスクの例:
         「チケットID 3のチケットのステータスを完了に変更する」
         JSONの例:
@@ -220,10 +204,9 @@ module RedmineAiHelper
       json = chat(newmessages)
       fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
         llm: @client,
-        parser: parser
+        parser: parser,
       )
       fix_parser.parse(json)
-
     end
 
     # dispatch the tool

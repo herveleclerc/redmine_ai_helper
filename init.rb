@@ -11,11 +11,11 @@ Redmine::Plugin.register :redmine_ai_helper do
   author_url "https://github.com/haru"
   requires_redmine :version_or_higher => "6.0.0"
 
-  version "0.3.2"
+  version "0.4.0"
 
   project_module :ai_helper do
     permission :view_ai_helper, { ai_helper: [:chat, :chat_form, :reload, :clear, :call_llm, :history, :conversation] }
   end
 
-  settings default: { 'model': "gpt-4o-mini" }, partial: "ai_helper/settings"
+  menu :admin_menu, "icon ah_helper", { controller: "ai_helper_settings", action: "index" }, caption: :label_ai_helper
 end

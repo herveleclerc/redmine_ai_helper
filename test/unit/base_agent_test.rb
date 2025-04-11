@@ -15,13 +15,12 @@ class RedmineAiHelper::BaseAgentTest < ActiveSupport::TestCase
     }
     @agent = BaseAgentTestModele::TestAgent.new(@params)
     @agent2 = BaseAgentTestModele::TestAgent2.new(@params)
-
   end
 
   context "assistant" do
     should "return the instance of the agent" do
       assistant = @agent.assistant
-      assert_instance_of Langchain::Assistant, assistant
+      assert_instance_of RedmineAiHelper::Assistant, assistant
     end
   end
 
@@ -98,15 +97,15 @@ module BaseAgentTestModele
     end
 
     def chat(params = {})
-      answer =<<~EOS
-      {
-          "steps": [
-            {
-                  "name": "step1",
-                  "step": "チケットを更新するために、必要な情報を整理する。"
-            }
-          ]
-        }
+      answer = <<~EOS
+        {
+            "steps": [
+              {
+                    "name": "step1",
+                    "step": "チケットを更新するために、必要な情報を整理する。"
+              }
+            ]
+          }
       EOS
 
       if block_given?

@@ -28,11 +28,11 @@ module RedmineAiHelper
         }
       end
 
-      def perform_task(messages, option = {}, callback = nil)
+      def perform_user_request(messages, option = {}, callback = nil)
         goal = generate_goal(messages)
-        ai_helper_logger.debug "goal: #{goal}"
+        ai_helper_logger.info "goal: #{goal}"
         steps = generate_steps(goal, messages)
-        ai_helper_logger.debug "steps: #{steps}"
+        ai_helper_logger.info "steps: #{steps}"
 
         if steps["steps"].empty? || steps["steps"].length == 1 && steps["steps"][0]["agent"] == "leader"
           return chat(messages, option, callback)
@@ -50,7 +50,7 @@ module RedmineAiHelper
         end
 
         newmessages = messages + chat_room.messages
-        newmessages << { role: "system", content: "全てのエージェントのタスクが完了しました。最終的なユーザーへの回答を作成してください。" }
+        newmessages << { role: "user", content: "全てのエージェントのタスクが完了しました。最終的なユーザーへの回答を作成してください。" }
         ai_helper_logger.debug "newmessages: #{newmessages}"
         chat(newmessages, option, callback)
       end
@@ -59,7 +59,7 @@ module RedmineAiHelper
         prompt = load_prompt("leader_agent/goal")
 
         newmessages = messages.dup
-        newmessages << { role: "system", content: prompt.format }
+        newmessages << { role: "user", content: prompt.format }
         answer = chat(newmessages)
         answer
       end
@@ -126,11 +126,13 @@ module RedmineAiHelper
           json_examples: json_examples,
         )
 
+        ai_helper_logger.info "prompt_text: #{prompt_text}"
+
         newmessages = messages.dup
-        newmessages << { role: "system", content: prompt_text }
+        newmessages << { role: "user", content: prompt_text }
         json = chat(newmessages)
         fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
-          llm: @client,
+          llm: client,
           parser: parser
         )
         fix_parser.parse(json)

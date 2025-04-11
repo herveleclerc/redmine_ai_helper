@@ -27,3 +27,17 @@ require File.expand_path(File.dirname(__FILE__) + "/model_factory")
 
 # このファイルと同じフォルダにあるmodel_factory.rbを読み込む
 require_relative "./model_factory"
+
+AiHelperModelProfile.delete_all
+profile = AiHelperModelProfile.create!(
+  name: "Test Profile",
+  llm_type: "OpenAI",
+  llm_model: "gpt-3.5-turbo",
+  access_key: "test_key",
+  organization_id: "test_org_id"
+)
+
+setting = AiHelperSetting.find_or_create
+setting.model_profile_id = profile.id
+setting.additional_instructions = "This is a test system prompt."
+setting.save!

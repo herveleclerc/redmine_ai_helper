@@ -45,14 +45,12 @@ class LeaderAgentTest < ActiveSupport::TestCase
       assert steps["steps"].is_a?(Array)
     end
 
-    should "perform task successfully" do
-      result = @agent.perform_task(@messages)
+    should "perform user request successfully" do
+      result = @agent.perform_user_request(@messages)
       assert result.is_a?(String)
     end
   end
 
-  context "perform_task" do
-  end
 end
 
 module MyOpenAI
