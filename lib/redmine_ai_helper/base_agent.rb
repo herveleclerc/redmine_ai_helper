@@ -1,6 +1,6 @@
-require "langchain"
 require "redmine_ai_helper/logger"
-Langchain.logger.level = Logger::ERROR
+require "redmine_ai_helper/assistant"
+# Langchain.loggerl = Logger::ERROR
 
 module RedmineAiHelper
   class BaseAgent
@@ -34,11 +34,13 @@ module RedmineAiHelper
       tools = available_tool_providers.map { |tool|
         tool.new
       }
-      @assistant = Langchain::Assistant.new(
+      @assistant = RedmineAiHelper::Assistant.new(
         llm: client,
         instructions: system_prompt,
         tools: tools,
       )
+      @assistant.llm_provider = llm_provider
+      @assistant
     end
 
     # List all tools provided by this tool provider.
