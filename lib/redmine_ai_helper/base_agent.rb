@@ -1,6 +1,6 @@
 require "redmine_ai_helper/logger"
 require "redmine_ai_helper/assistant"
-# Langchain.loggerl = Logger::ERROR
+Langchain.logger.level = Logger::ERROR
 
 module RedmineAiHelper
   class BaseAgent

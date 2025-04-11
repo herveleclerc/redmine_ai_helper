@@ -40,5 +40,21 @@ class RedmineAiHelper::LlmClient::AnthropicProviderTest < ActiveSupport::TestCas
       result = @provider.chunk_converter(chunk)
       assert_nil result
     end
+
+    should "reset assistant messages correctly" do
+      assistant = mock("Assistant")
+      assistant.expects(:clear_messages!).once
+      assistant.expects(:instructions=).with("System instructions").once
+      assistant.expects(:add_message).with(role: "user", content: "Hello").once
+
+      system_prompt = "System instructions"
+      messages = [{ role: "user", content: "Hello" }]
+
+      @provider.reset_assistant_messages(
+        assistant: assistant,
+        system_prompt: system_prompt,
+        messages: messages,
+      )
+    end
   end
 end
