@@ -8,7 +8,10 @@
             options = @model_profiles.map{|p| [p.display_name, p.id]}
         %>
         <%= f.select :model_profile_id, options, include_blank: true, required: true %>
-        <%= link_to t(:label_new), ai_helper_model_profiles_new_url %>
+        <%= link_to ai_helper_model_profiles_new_url do %>
+            <%= sprite_icon('add') %>
+            <%= t(:label_new) %>
+        <% end %>
     </p>
         <div id="ai_helper_model_profile_description">
         </div>

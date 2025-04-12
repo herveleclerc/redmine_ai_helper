@@ -1,8 +1,10 @@
 require_relative "llm_client/open_ai_provider"
 require_relative "llm_client/anthropic_provider"
+
 module RedmineAiHelper
   class LlmProvider
     LLM_OPENAI = "OpenAI".freeze
+    LLM_OPENAI_COMPATIBLE = "OpenAICompatible".freeze
     LLM_GEMINI = "Gemini".freeze
     LLM_ANTHROPIC = "Anthropic".freeze
     class << self
@@ -10,6 +12,8 @@ module RedmineAiHelper
         case type
         when LLM_OPENAI
           return RedmineAiHelper::LlmClient::OpenAiProvider.new
+        when LLM_OPENAI_COMPATIBLE
+          return RedmineAiHelper::LlmClient::OpenAiCompatibleProvider.new
         when LLM_GEMINI
           return RedmineAiHelper::LlmClient::GeminiProvider.new
         when LLM_ANTHROPIC
@@ -27,6 +31,7 @@ module RedmineAiHelper
       def option_for_select
         [
           ["OpenAI", LLM_OPENAI],
+          ["OpenAI Compatible(Experimental)", LLM_OPENAI_COMPATIBLE],
           ["Gemini(Experimental)", LLM_GEMINI],
           ["Anthropic(Experimental)", LLM_ANTHROPIC],
         ]

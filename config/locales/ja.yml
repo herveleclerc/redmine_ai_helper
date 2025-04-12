@@ -4,3 +4,23 @@ ja:
   label_chat_placeholder: "メッセージを入力してください..."
   label_ai_helper_input_newline: "Shift + Enter で改行します。"
   label_ai_helper_start_new_chat: "新しいチャットを開始"
+  ai_helper:
+    model_profiles:
+      create_profile_title: "新しいモデルプロファイル"
+      edit_profile_title: "モデルプロファイルの編集"
+      messages:
+        confirm_delete: "このモデルプロファイルを削除してもよろしいですか？"
+        must_be_valid_url: "は有効なURLを入力してください"
+  activerecord:
+    models:
+      ai_helper_model_profile: "モデルプロファイル"
+      ai_helper_setting: "AIヘルパー設定"
+    attributes:
+      ai_helper_model_profile:
+        llm_type: "タイプ"
+        llm_model: "モデル名"
+        access_key: "アクセスキー"
+        base_uri: "ベースURI"
+      ai_helper_setting:
+        model_profile_id: "モデル定義"
+        additional_instructions: "追加の指示"

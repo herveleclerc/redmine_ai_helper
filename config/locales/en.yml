@@ -5,10 +5,23 @@ en:
   label_chat_placeholder: "Type your message here..."
   label_ai_helper_input_newline: "Press Shift + Enter for a new line."
   label_ai_helper_start_new_chat: "Start a new chat"
-  field_llm_model: "Model name"
   ai_helper:
     model_profiles:
       create_profile_title: "New model profile"
       edit_profile_title: "Edit model profile"
       messages:
         confirm_delete: "Are you sure you want to delete this model profile?"
+        must_be_valid_url: "must be a valid URL"
+  activerecord:
+    models:
+      ai_helper_model_profile: "Model profile"
+      ai_helper_setting: "AI Helper setting"
+    attributes:
+      ai_helper_model_profile:
+        llm_type: "type"
+        llm_model: "Model name"
+        access_key: "Access key"
+        base_uri: "Base URI"
+      ai_helper_setting:
+        model_profile_id: "Model profile"
+        additional_instructions: "Additional instructions"

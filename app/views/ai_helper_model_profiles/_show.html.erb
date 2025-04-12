@@ -6,14 +6,23 @@
 
 </div>
 <p>
-  <%= label_tag "Llm type" %>
-  <%= @model_profile.llm_type %>
+  <%= label_tag AiHelperModelProfile.human_attribute_name(:llm_type) %>
+  <%= @model_profile.display_llm_type %>
 </p>
 <p>
-  <%= label_tag "Access key" %>
+  <%= label_tag AiHelperModelProfile.human_attribute_name(:access_key) %>
   <%= @model_profile.masked_access_key %>
 </p>
 <p>
-  <%= label_tag l(:field_llm_model) %>
+  <%= label_tag AiHelperModelProfile.human_attribute_name(:llm_model) %>
   <%= @model_profile.llm_model %>
 </p>
+
+<% if@model_profile.llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>
+<p>
+  <%= label_tag AiHelperModelProfile.human_attribute_name(:base_uri) %>
+  <% unless @model_profile.base_uri.blank? %>
+    <%= link_to @model_profile.base_uri, @model_profile.base_uri %>
+  <% end %>
+</p>
+<% end %>
