@@ -10,6 +10,7 @@ class LlmProviderTest < ActiveSupport::TestCase
     should "return correct options for select" do
       expected_options = [
         ["OpenAI", "OpenAI"],
+        ["OpenAI Compatible(Experimental)", "OpenAICompatible"],
         ["Gemini(Experimental)", "Gemini"],
         ["Anthropic(Experimental)", "Anthropic"],
       ]

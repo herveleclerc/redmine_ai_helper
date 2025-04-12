@@ -34,7 +34,8 @@ profile = AiHelperModelProfile.create!(
   llm_type: "OpenAI",
   llm_model: "gpt-3.5-turbo",
   access_key: "test_key",
-  organization_id: "test_org_id"
+  organization_id: "test_org_id",
+  base_uri: "https://api.openai.com/v1",
 )
 
 setting = AiHelperSetting.find_or_create
