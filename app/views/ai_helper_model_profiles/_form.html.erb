@@ -1,16 +1,40 @@
-  <%= error_messages_for "model_profile" %>
-  <div class="box tabular">
-    <p><%= f.select :llm_type, RedmineAiHelper::LlmProvider.option_for_select %></p>
-    <p>
-      <%= f.text_field :name, size: 60, required: true, autocomplete: "off" %>
-    </p>
-    <%
-        access_key = ""
-        access_key = AiHelperModelProfilesController::DUMMY_ACCESS_KEY unless @model_profile.new_record?
-    %>
-    <p><%= f.password_field :access_key, value: access_key, size: 60, required: true %></p>
-    <p>
-      <%= f.text_field :llm_model, size: 60, required: true %>
-    </p>
+<%= error_messages_for "model_profile" %>
+<div class="box tabular">
+  <p><%= f.select :llm_type, RedmineAiHelper::LlmProvider.option_for_select %></p>
+  <p>
+    <%= f.text_field :name, size: 60, required: true, autocomplete: "off" %>
+  </p>
+  <%
+      access_key = ""
+      access_key = AiHelperModelProfilesController::DUMMY_ACCESS_KEY unless @model_profile.new_record?
+  %>
+  <p id="ai-helper-mode-access-key"><%= f.password_field :access_key, value: access_key, size: 60, required: true %></p>
+  <p id="ai-helper-model-llm-model">
+    <%= f.text_field :llm_model, size: 60, required: true %>
+  </p>
 
-  </div>
+  <p id="ai-helper-model-base-uri">
+    <%= f.text_field :base_uri, size: 60, required: true %>
+  </p>
+
+
+</div>
+
+<script>
+  $(document).ready(function() {
+    // LLM type select box change event
+    $('#ai_helper_model_profile_llm_type').change(function() {
+      var selectedValue = $(this).val();
+      if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>') {
+        $('#ai-helper-model-base-uri').show();
+        $('#ai-helper-mode-access-key .required').hide();
+      } else {
+        $('#ai-helper-model-base-uri').hide();
+        $('#ai-helper-mode-access-key .required').show();
+      }
+    });
+
+    // Trigger change event on page load
+    $('#ai_helper_model_profile_llm_type').trigger('change');
+  });
+</script>

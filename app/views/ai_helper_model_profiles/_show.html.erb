@@ -17,3 +17,10 @@
   <%= label_tag l(:field_llm_model) %>
   <%= @model_profile.llm_model %>
 </p>
+
+<% if@model_profile.llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>
+<p>
+  <%= label_tag "Basse URI" %>
+  <%= @model_profile.base_uri %>
+</p>
+<% end %>
