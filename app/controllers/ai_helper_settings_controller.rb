@@ -1,5 +1,5 @@
 class AiHelperSettingsController < ApplicationController
-  layout 'admin'
+  layout "admin"
   before_action :require_admin, :find_setting
   self.main_menu = false
 
@@ -17,8 +17,9 @@ class AiHelperSettingsController < ApplicationController
   end
 
   private
+
   def find_setting
     @setting = AiHelperSetting.find_or_create
-    @model_profiles = AiHelperModelProfile.all
+    @model_profiles = AiHelperModelProfile.order(:name)
   end
 end

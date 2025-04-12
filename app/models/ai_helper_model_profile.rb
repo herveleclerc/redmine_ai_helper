@@ -29,4 +29,10 @@ class AiHelperModelProfile < ApplicationRecord
   def access_key_required?
     llm_type != RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE
   end
+
+  def display_llm_type
+    names = RedmineAiHelper::LlmProvider.option_for_select
+    name = names.find { |n| n[1] == llm_type }
+    name = name[0] if name
+  end
 end
