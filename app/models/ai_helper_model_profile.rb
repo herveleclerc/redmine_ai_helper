@@ -5,7 +5,7 @@ class AiHelperModelProfile < ApplicationRecord
   validates :access_key, presence: true, if: :access_key_required?
   validates :llm_model, presence: true
   validates :base_uri, presence: true, if: :base_uri_required?
-  validates :base_uri, format: { with: URI::regexp(%w[http https]), message: "must be a valid URL" }, if: :base_uri_required?
+  validates :base_uri, format: { with: URI::regexp(%w[http https]), message: l("ai_helper.model_profiles.messages.must_be_valid_url") }, if: :base_uri_required?
 
   safe_attributes "name", "llm_type", "access_key", "organization_id", "base_uri", "version", "llm_model"
 
