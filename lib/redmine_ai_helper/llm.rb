@@ -1,8 +1,6 @@
 require_relative "logger"
 require_relative "base_agent"
 
-
-
 module RedmineAiHelper
   class Llm
     include RedmineAiHelper::Logger
@@ -14,8 +12,6 @@ module RedmineAiHelper
     # @option params [String] :uri_base
     # @option params [String] :organization_id
     def initialize(params = {})
-
-      ai_helper_logger = ai_helper_logger
     end
 
     # chat with the AI
@@ -33,6 +29,5 @@ module RedmineAiHelper
       ai_helper_logger.info "answer: #{answer}"
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
-
   end
 end
