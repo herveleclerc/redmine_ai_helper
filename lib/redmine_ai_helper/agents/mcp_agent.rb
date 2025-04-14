@@ -26,10 +26,6 @@ module RedmineAiHelper
           このRedmineAIHelper プラグインは、MCP (Model Context Protocol) を使用して、さまざまなツールを利用することができます。
           MCPは、AIモデルが外部のツールやサービスと連携するためのプロトコルです。
           MCPを使用することで、あなたはRedmineとは関係のない様々たタスクを実行することができます。
-
-          このRedmineにインストールされているMcpツールは以下の通りです。
-
-          #{JSON.pretty_generate(functions_list)}
         EOS
         content
       end
