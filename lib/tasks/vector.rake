@@ -5,16 +5,30 @@ namespace :redmine do
       namespace :vector do
         desc "Register vector data for Redmine AI Helper"
         task :regist => :environment do
-          plugin_dir = Rails.root.join("plugins/redmine_ai_helper").to_s
-          scm_archive = "#{plugin_dir}/test/redmine_ai_helper_test_repo.git.tgz"
-          puts scm_archive
-          plugin_tmp = "#{plugin_dir}/tmp"
-          puts plugin_tmp
-          system("mkdir -p #{plugin_tmp}")
-          Dir.chdir(plugin_tmp) do
-            system("rm -rf redmine_ai_helper_test_repo.git")
-            system("tar xvfz #{scm_archive}")
+          if enabled?
+            issue_vector_db.generate_schema
+            issues = Issue.order(:id).all
+            issue_vector_db.add_datas(datas: issues)
           end
+        end
+
+        desc "Destroy vector data for Redmine AI Helper"
+        task :destroy => :environment do
+          if enabled?
+            issue_vector_db.destroy_schema
+          end
+        end
+
+        def issue_vector_db
+          erturn nil unless enabled?
+          return @vector_db if @vector_db
+          llm = RedmineAiHelper::LlmProvider.get_llm_provider.generate_client
+          @vector_db = RedmineAiHelper::Vector::IssueVectorDb.new(llm: llm)
+        end
+
+        def enabled?
+          setting = AiHelperSetting.find_or_create
+          setting.vector_search_enabled
         end
       end
     end
