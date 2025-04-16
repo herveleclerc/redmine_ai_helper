@@ -44,29 +44,21 @@ module RedmineAiHelper
       end
 
       def add_datas(datas:)
-        texts = []
-        uuids = []
-        vector_datas = []
         return if datas.empty?
         datas.each do |data|
           next if AiHelperVectorData.exists?(object_id: data.id, index: index_name)
-          text = data_to_jsontext(data)
-          uuid = SecureRandom.uuid
-          texts << text
-          uuids << uuid
-          vector_datas << AiHelperVectorData.new(object_id: data.id, index: index_name, uuid: uuid)
-          print "."
-          if texts.size >= 100
-            client.add_texts(texts: texts, ids: uuids)
-            texts = []
+          begin
+            text = data_to_jsontext(data)
+            uuid = SecureRandom.uuid
+            vector_data = AiHelperVectorData.new(object_id: data.id, index: index_name, uuid: uuid)
+            print "."
+            client.add_texts(texts: [text], ids: [uuid])
+            vector_data.save!
+          rescue => e
+            puts ""
+            puts "Error: #{index_name} ##{data.id}"
+            puts e.message
           end
-          vector_datas.each { |v| v.save! }
-
-          vector_datas = []
-        end
-        unless texts.empty?
-          client.add_texts(texts: texts, ids: uuids)
-          vector_datas.each { |v| v.save! }
         end
         puts ""
       end
