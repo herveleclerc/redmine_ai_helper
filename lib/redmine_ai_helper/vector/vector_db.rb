@@ -62,7 +62,7 @@ module RedmineAiHelper
           end
           vector_datas.each { |v| v.save! }
 
-          vector_data = []
+          vector_datas = []
         end
         unless texts.empty?
           client.add_texts(texts: texts, ids: uuids)
