@@ -1,4 +1,4 @@
-require_relative '../base_agent'
+require_relative "../base_agent"
 
 module RedmineAiHelper
   module Agents
@@ -9,6 +9,8 @@ module RedmineAiHelper
           また、チケットの作成案や更新案などを作成し、実際にデータベースに登録する前に検証することもできます。  ただしチケットの作成やチケットの更新をすることはできません。
           なお、「条件に合ったチケットを探して」「こういう条件のチケット見せて」の様な複数のチケット探すタスクの場合には、チケット検索のURLを返してください。
 
+          なお、チケットのIDやこのRedmine内のページの情報を返す際には、ユーザーがクリックしてすぐに表示できるよう、ハイパーリンクにしてください。
+
           #{issue_properties}
         EOS
         content
@@ -18,11 +20,12 @@ module RedmineAiHelper
         [
           RedmineAiHelper::Tools::IssueTools,
           RedmineAiHelper::Tools::ProjectTools,
-          RedmineAiHelper::Tools::UserTools
+          RedmineAiHelper::Tools::UserTools,
         ]
       end
 
       private
+
       def issue_properties
         return "" unless @project
         provider = RedmineAiHelper::Tools::IssueTools.new

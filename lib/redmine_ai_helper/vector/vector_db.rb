@@ -3,8 +3,11 @@ require "langchain"
 module RedmineAiHelper
   module Vector
     class VectorDb
-      def initialize(llm:)
+      attr_accessor :llm
+
+      def initialize(llm: nil)
         @llm = llm
+        @llm = RedmineAiHelper::LlmProvider.get_llm_provider.generate_client unless @llm
       end
 
       def client
@@ -61,7 +64,7 @@ module RedmineAiHelper
       end
 
       def ask(question:, k: 10)
-        client.ask(question: question, k: k)
+        client.ask(question: question, k: k).chat_completion
       end
 
       def data_to_jsontext(data)

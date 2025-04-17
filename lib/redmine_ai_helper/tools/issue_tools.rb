@@ -1,9 +1,61 @@
+require "langchain"
 require "redmine_ai_helper/base_tools"
 require_relative "./issue_update_tools"
 
 module RedmineAiHelper
   module Tools
     class IssueTools < RedmineAiHelper::BaseTools
+      define_function :search_issues, description: "Search for issues based on various questions. This feature can only be used if the vector search functionality of the Redmine_ai_helper plugin is enabled. If the vector search functionality is enabled, it is recommended to actively use this feature. It returns the issue ID, subject, project, tracker, status, priority, author, assigned_to, description, start_date, due_date, done_ratio, is_private, estimated_hours, total_estimated_hours, spent_hours, total_spent_hours, created_on, updated_on, closed_on, issue_url, attachments, children and relations." do
+        property :question, type: "string", description: "The question content for the issue to search for.", required: true
+        property :limit, type: "integer", description: "The number of issues to retrieve. Default is 10.", required: false
+      end
+
+      def search_issues(question:, limit: 10)
+        raise("The vector search functionality is not enabled.") unless vector_db_enabled?
+        begin
+          json_schema = {
+            type: "object",
+            properties: {
+              issue_ids: {
+                type: "array",
+                items: {
+                  type: "integer",
+                  description: "The issue ID to read.",
+                },
+              },
+            },
+            required: ["issue_ids"],
+          }
+          parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
+          template = <<~EOS
+            以下の質問に該当するチケットを検索し、IDのリストを返してください。
+
+            質問: {question}
+
+            {format_instructions}
+          EOS
+          prompt = Langchain::Prompt::PromptTemplate.new(template: template, input_variables: ["question", "format_instructions"])
+          prompt_text = prompt.format(question: question, format_instructions: parser.get_format_instructions)
+
+          llm_response = issue_vector_db.ask(question: prompt_text, k: limit)
+          issue_ids_json = {}
+          begin
+            issue_ids_json = parser.parse(llm_response)
+          rescue Langchain::OutputParsers::OutputParserException => e
+            fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
+              llm: issue_vector_db.llm,
+              parser: parser,
+            )
+            issue_ids_json = fix_parser.parse(llm_response)
+          end
+        rescue => e
+          ai_helper_logger.error("Error: #{e.message}")
+          ai_helper_logger.error("Backtrace: #{e.backtrace.join("\n")}")
+          raise("Error: #{e.message}")
+        end
+        issue_ids = issue_ids_json["issue_ids"]
+        read_issues(issue_ids: issue_ids)
+      end
 
       define_function :read_issues, description: "Read an issue from the database and return it as a JSON object. It returns the issue ID, subject, project, tracker, status, priority, author, assigned_to, description, start_date, due_date, done_ratio, is_private, estimated_hours, total_estimated_hours, spent_hours, total_spent_hours, created_on, updated_on, closed_on, issue_url, attachments, children and relations." do
         property :issue_ids, type: "array", description: "The issue ID array to read.", required: true do
@@ -24,7 +76,7 @@ module RedmineAiHelper
 
         raise("Issue not found") if issues.empty?
 
-        tool_response(content: {issues: issues})
+        tool_response(content: { issues: issues })
       end
 
       define_function :capable_issue_properties, description: "Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc. You must specify one of project_id, project_name, or project_identifier." do
@@ -107,7 +159,7 @@ module RedmineAiHelper
         property :done_ratio, type: "integer", description: "The done ratio of the issue to create.", required: false
         property :is_private, type: "boolean", description: "Whether the issue is private or not. Default is false."
         property :estimated_hours, type: "string", description: "The estimated hours of the issue to create.", required: false
-        property :custom_fields, type: "array", description:"Custom fields for the new issue." do
+        property :custom_fields, type: "array", description: "Custom fields for the new issue." do
           item type: "object", description: "The custom field of the issue to create." do
             property :field_id, type: "integer", description: "The field ID of the custom field.", required: true
             property :value, type: "string", description: "The value of the custom field.", required: true
@@ -151,65 +203,65 @@ module RedmineAiHelper
 
       define_function :generate_issue_search_url, description: "Generate a URL for searching issues based on the filter conditions. For search items with '_id', specify the ID instead of the name of the search target. If you do not know the ID, you need to call capable_issue_properties in advance to obtain the ID." do
         property :project_id, type: "integer", description: "The project ID of the project to search in.", required: true
-        property :fields, type: "array", description:"Search fields for the issue." do
+        property :fields, type: "array", description: "Search fields for the issue." do
           item type: "object", description: "Search field for the issue." do
             property :field_name, type: "string", description: "The name of the field to search.", required: true
             property :operator, type: "string", description: "The operator to use for the search.", required: true
-            property :values, type: "array", description:"The values to search for.", required: true do
+            property :values, type: "array", description: "The values to search for.", required: true do
               item type: "string", description: "The value to search for."
             end
           end
         end
-        property :date_fields, type: "array", description:"Search fields for the issue." do
+        property :date_fields, type: "array", description: "Search fields for the issue." do
           item type: "object", description: "Search field for the issue." do
             property :field_name, type: "string", description: "The name of the field to search.", required: true
             property :operator, type: "string", description: "The operator to use for the search.", required: true
-            property :values, type: "array", description:"The values to search for.", required: true do
+            property :values, type: "array", description: "The values to search for.", required: true do
               item type: "string", description: "The value to search for."
             end
           end
         end
-        property :time_fields, type: "array", description:"Search fields for the issue." do
+        property :time_fields, type: "array", description: "Search fields for the issue." do
           item type: "object", description: "Search field for the issue." do
             property :field_name, type: "string", description: "The name of the field to search.", required: true
             property :operator, type: "string", description: "The operator to use for the search.", required: true
-            property :values, type: "array", description:"The values to search for.", required: true do
+            property :values, type: "array", description: "The values to search for.", required: true do
               item type: "string", description: "The value to search for."
             end
           end
         end
-        property :number_fields, type: "array", description:"Search fields for the issue." do
+        property :number_fields, type: "array", description: "Search fields for the issue." do
           item type: "object", description: "Search field for the issue." do
             property :field_name, type: "string", description: "The name of the field to search.", required: true
             property :operator, type: "string", description: "The operator to use for the search.", required: true
-            property :values, type: "array", description:"The values to search for.", required: true do
+            property :values, type: "array", description: "The values to search for.", required: true do
               item type: "integer", description: "The value to search for."
             end
           end
         end
-        property :text_fields, type: "array", description:"Search fields for the issue." do
+        property :text_fields, type: "array", description: "Search fields for the issue." do
           item type: "object", description: "Search field for the issue." do
             property :field_name, type: "string", description: "The name of the field to search.", required: true
             property :operator, type: "string", description: "The operator to use for the search.", required: true
-            property :value, type: "array", description:"The values to search for.", required: true do
+            property :value, type: "array", description: "The values to search for.", required: true do
               item type: "string", description: "The value to search for."
             end
           end
         end
-        property :status_field, type: "array", description:"Search fields for the issue." do
+        property :status_field, type: "array", description: "Search fields for the issue." do
           item type: "object", description: "Search field for the issue." do
             property :field_name, type: "string", description: "The name of the field to search.", required: true
             property :operator, type: "string", description: "The operator to use for the search.", required: true
-            property :values, type: "array", description:"The values to search for.", required: true do
+            property :values, type: "array", description: "The values to search for.", required: true do
               item type: "integer", description: "The value to search for."
             end
           end
         end
-        property :custom_fields, type: "array", description:"Search fields for the issue." do
+        property :custom_fields, type: "array", description: "Search fields for the issue." do
           item type: "object", description: "Search field for the issue." do
             property :field_id, type: "integer", description: "The ID of the custom field to search.", required: true
             property :operator, type: "string", description: "The operator to use for the search.", required: true
-            property :values, type: "array", description:"The values to search for.", required: true do
+            property :values, type: "array", description: "The values to search for.", required: true do
               item type: "string", description: "The value to search for."
             end
           end
@@ -274,7 +326,7 @@ module RedmineAiHelper
 
         url = builder.generate_query_string(project)
 
-        tool_response(content: {url: url})
+        tool_response(content: { url: url })
       end
 
       private
@@ -425,6 +477,15 @@ module RedmineAiHelper
         end
 
         errors
+      end
+
+      def vector_db_enabled?
+        setting = AiHelperSetting.find_or_create
+        setting.vector_search_enabled
+      end
+
+      def issue_vector_db
+        @vector_db ||= RedmineAiHelper::Vector::IssueVectorDb.new
       end
 
       # Redmineのチケット検索用URLを作成するクラス
