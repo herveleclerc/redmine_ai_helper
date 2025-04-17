@@ -9,9 +9,10 @@ module RedmineAiHelper
 
       def client
         return nil unless setting.vector_search_enabled
-        @client ||= Langchain::Vectorsearch::Weaviate.new(
+        return @client if @client
+        @client = Langchain::Vectorsearch::Qdrant.new(
           url: setting.vector_search_uri,
-          api_key: setting.vector_search_api_key,
+          api_key: setting.vector_search_api_key || "dummy",
           index_name: index_name,
           llm: @llm,
         )
@@ -27,11 +28,7 @@ module RedmineAiHelper
       end
 
       def generate_schema
-        begin
-          @default_scehma ||= client.get_default_schema
-        rescue Faraday::ResourceNotFound
-          @default_schema = client.create_default_schema
-        end
+        client.create_default_schema
       end
 
       def destroy_schema
@@ -61,6 +58,10 @@ module RedmineAiHelper
           end
         end
         puts ""
+      end
+
+      def ask(question:, k: 10)
+        client.ask(question: question, k: k)
       end
 
       def data_to_jsontext(data)

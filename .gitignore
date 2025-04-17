@@ -70,3 +70,4 @@ yarn-debug.log*
 Gemfile.lock
 config/config.yaml
 .devcontainer/weaviate_data/*
+.devcontainer/qdrant/*

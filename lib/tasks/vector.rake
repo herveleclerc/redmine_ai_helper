@@ -6,9 +6,15 @@ namespace :redmine do
         desc "Register vector data for Redmine AI Helper"
         task :regist => :environment do
           if enabled?
-            issue_vector_db.generate_schema
             issues = Issue.order(:id).all
             issue_vector_db.add_datas(datas: issues)
+          end
+        end
+
+        desc "generate"
+        task :generate => :environment do
+          if enabled?
+            issue_vector_db.generate_schema
           end
         end
 
@@ -20,7 +26,7 @@ namespace :redmine do
         end
 
         def issue_vector_db
-          erturn nil unless enabled?
+          return nil unless enabled?
           return @vector_db if @vector_db
           llm = RedmineAiHelper::LlmProvider.get_llm_provider.generate_client
           @vector_db = RedmineAiHelper::Vector::IssueVectorDb.new(llm: llm)
