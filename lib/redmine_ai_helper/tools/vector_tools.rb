@@ -79,6 +79,15 @@ module RedmineAiHelper
         end
       end
 
+      define_function :analyze_issues, description: "Analyze issues from the database using LLM for multidimensional insights." do
+        property :question, type: "string", description: "The question content for the issue to analyze.", required: true
+      end
+
+      def analyze_issues(question:)
+        raise("The vector search functionality is not enabled.") unless vector_db_enabled?
+        issue_vector_db.ask(question: prompt_text, k: 50).chat_completion
+      end
+
       private
 
       def vector_db_enabled?
