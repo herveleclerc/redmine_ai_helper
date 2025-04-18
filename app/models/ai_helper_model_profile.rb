@@ -1,4 +1,3 @@
-# This is a model for AI Helper model profiles.
 class AiHelperModelProfile < ApplicationRecord
   include Redmine::SafeAttributes
   validates :name, presence: true, uniqueness: true
@@ -11,7 +10,6 @@ class AiHelperModelProfile < ApplicationRecord
   safe_attributes "name", "llm_type", "access_key", "organization_id", "base_uri", "version", "llm_model"
 
   # Replace all characters after the 4th with *
-  # @return [String] The masked access key
   def masked_access_key
     return access_key if access_key.blank? || access_key.length <= 4
     masked_key = access_key.dup
@@ -19,24 +17,19 @@ class AiHelperModelProfile < ApplicationRecord
     masked_key
   end
 
-  # Returns the display name shown in the options menu
-  # @return [String] The masked base URI
   def display_name
     "#{name} (#{llm_type}: #{llm_model})"
   end
 
-  # Returns whether the base URI is required
   def base_uri_required?
     # Check if the llm_type is OpenAICompatible or Gemini
     llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE
   end
 
-  # Returns whether the access key is required
   def access_key_required?
     llm_type != RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE
   end
 
-  # Returns the display name of the LLM type
   def display_llm_type
     names = RedmineAiHelper::LlmProvider.option_for_select
     name = names.find { |n| n[1] == llm_type }
