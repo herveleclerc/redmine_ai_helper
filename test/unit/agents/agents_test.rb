@@ -16,14 +16,16 @@ class AgentsTest < ActiveSupport::TestCase
 
   context "IssueAgent" do
     setup do
-      @agent = RedmineAiHelper::Agents::IssueAgent.new({project: Project.find(1)})
+      @agent = RedmineAiHelper::Agents::IssueAgent.new({ project: Project.find(1) })
     end
 
     should "return correct tool providers" do
-      assert_equal  [RedmineAiHelper::Tools::IssueTools,
-          RedmineAiHelper::Tools::ProjectTools,
-          RedmineAiHelper::Tools::UserTools
-          ], @agent.available_tool_providers
+      assert_equal [
+                     RedmineAiHelper::Tools::IssueTools,
+                     RedmineAiHelper::Tools::ProjectTools,
+                     RedmineAiHelper::Tools::UserTools,
+                     RedmineAiHelper::Tools::IssueSearchTools,
+                   ], @agent.available_tool_providers
     end
 
     should "return correct backstory" do
@@ -33,16 +35,16 @@ class AgentsTest < ActiveSupport::TestCase
 
   context "IssueUpdateAgent" do
     setup do
-      @agent = RedmineAiHelper::Agents::IssueUpdateAgent.new({project: Project.find(1)})
+      @agent = RedmineAiHelper::Agents::IssueUpdateAgent.new({ project: Project.find(1) })
     end
 
     should "return correct tool providers" do
       assert_equal [
-        RedmineAiHelper::Tools::IssueTools,
-        RedmineAiHelper::Tools::IssueUpdateTools,
-        RedmineAiHelper::Tools::ProjectTools,
-        RedmineAiHelper::Tools::UserTools
-        ], @agent.available_tool_providers
+                     RedmineAiHelper::Tools::IssueTools,
+                     RedmineAiHelper::Tools::IssueUpdateTools,
+                     RedmineAiHelper::Tools::ProjectTools,
+                     RedmineAiHelper::Tools::UserTools,
+                   ], @agent.available_tool_providers
     end
 
     should "return correct backstory" do

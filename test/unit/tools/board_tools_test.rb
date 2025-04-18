@@ -12,7 +12,7 @@ class BoardToolsTest < ActiveSupport::TestCase
 
   def test_list_boards_success
     response = @provider.list_boards(project_id: @project.id)
-    assert_equal @project.boards.count, response.content.size
+    assert_equal @project.boards.count, response.size
   end
 
   def test_list_boards_project_not_found
@@ -23,8 +23,8 @@ class BoardToolsTest < ActiveSupport::TestCase
 
   def test_board_info_success
     response = @provider.board_info(board_id: @board.id)
-    assert_equal @board.id, response.content[:id]
-    assert_equal @board.name, response.content[:name]
+    assert_equal @board.id, response[:id]
+    assert_equal @board.name, response[:name]
   end
 
   def test_board_info_not_found
@@ -35,8 +35,8 @@ class BoardToolsTest < ActiveSupport::TestCase
 
   def test_read_message_success
     response = @provider.read_message(message_id: @message.id)
-    assert_equal @message.id, response.content[:id]
-    assert_equal @message.content, response.content[:content]
+    assert_equal @message.id, response[:id]
+    assert_equal @message.content, response[:content]
   end
 
   def test_read_message_not_found
@@ -47,7 +47,7 @@ class BoardToolsTest < ActiveSupport::TestCase
 
   def test_generate_board_url
     response = @provider.generate_board_url(board_id: @board.id)
-    assert_match(%r{boards/\d+}, response.content[:url])
+    assert_match(%r{boards/\d+}, response[:url])
   end
 
   def test_generate_board_url_no_board_id
@@ -64,6 +64,6 @@ class BoardToolsTest < ActiveSupport::TestCase
 
   def test_generate_message_url
     response = @provider.generate_message_url(message_id: @message.id)
-    assert_match(%r{/boards/\d+/topics/\d+}, response.content[:url])
+    assert_match(%r{/boards/\d+/topics/\d+}, response[:url])
   end
 end
