@@ -67,7 +67,7 @@ module RedmineAiHelper
             issue_ids_json = fix_parser.parse(llm_response)
           end
           issue_ids = issue_ids_json["issue_ids"]
-          return tool_response(content: []) if issue_ids.empty?
+          return [] if issue_ids.empty?
           issue_tools = RedmineAiHelper::Tools::IssueTools.new
           response = issue_tools.read_issues(issue_ids: issue_ids)
           ai_helper_logger.info("Response: #{response}")

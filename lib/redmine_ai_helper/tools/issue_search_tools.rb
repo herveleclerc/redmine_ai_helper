@@ -72,7 +72,7 @@ module RedmineAiHelper
         project = Project.find(project_id)
 
         if fields.empty? && date_fields.empty? && time_fields.empty? && number_fields.empty? && text_fields.empty? && status_field.empty? && custom_fields.empty?
-          return tool_response(content: { url: "/projects/#{project.identifier}/issues" })
+          return { url: "/projects/#{project.identifier}/issues" }
         end
 
         validate_errors = generate_issue_search_url_validate(fields, date_fields, time_fields, number_fields, text_fields, status_field, custom_fields)
@@ -125,7 +125,7 @@ module RedmineAiHelper
 
         url = builder.generate_query_string(project)
 
-        tool_response(content: { url: url })
+        { url: url }
       end
 
       private

@@ -3,7 +3,6 @@ require "redmine_ai_helper/base_tools"
 module RedmineAiHelper
   module Tools
     class ProjectTools < RedmineAiHelper::BaseTools
-
       define_function :list_projects, description: "List all projects visible to the current user. It returns the project ID, name, identifier, description, created_on, and last_activity_date." do
         property :dummy, type: "string", description: "dummy property", required: false
       end
@@ -21,7 +20,7 @@ module RedmineAiHelper
             last_activity_date: project.last_activity_date,
           }
         end
-        tool_response(content: list)
+        list
       end
 
       define_function :read_project, description: "Read a project from the database and return it as a JSON object. It returns the project ID, name, identifier, description, homepage, status, is_public, inherit_members, created_on, updated_on, subprojects, and last_activity_date." do
@@ -32,7 +31,6 @@ module RedmineAiHelper
 
       # Read a project from the database.
       def read_project(project_id: nil, project_name: nil, project_identifier: nil)
-
         if project_id
           project = Project.find_by(id: project_id)
         elsif project_name
@@ -66,7 +64,7 @@ module RedmineAiHelper
           end,
           last_activity_date: project.last_activity_date,
         }
-        tool_response(content: project_json)
+        project_json
       end
 
       define_function :project_members, description: "List all members of the projects. It can be used to obtain the ID from the user's name. It can also be used to obtain the roles that the user has in the projects. Member information includes user_id, login, user_name, and roles." do
@@ -77,11 +75,10 @@ module RedmineAiHelper
 
       # List all members of the project.
       def project_members(project_ids:)
-
         projects = Project.where(id: project_ids)
         return ToolResponse.create_error "No projects found" if projects.empty?
 
-        list = projects.filter{|p| accessible_project? p }.map do |project|
+        list = projects.filter { |p| accessible_project? p }.map do |project|
           return ToolResponse.create_error "You don't have permission to view this project" unless accessible_project? project
 
           members = project.members.map do |member|
@@ -103,7 +100,7 @@ module RedmineAiHelper
             members: members,
           }
         end
-        tool_response(content: {projects: list})
+        { projects: list }
       end
 
       define_function :project_enabled_modules, description: "List all enabled modules of the projects. It shows the functions and plugins enabled in this projects." do
@@ -126,7 +123,7 @@ module RedmineAiHelper
           project_id: project_id,
           enabled_modules: enabled_modules,
         }
-        tool_response(content: json)
+        json
       end
 
       define_function :list_project_activities, description: "List all activities of the project. It returns the activity ID, event_datetime, event_type, event_title, event_description, and event_url." do

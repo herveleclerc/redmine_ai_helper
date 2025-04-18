@@ -3,7 +3,6 @@ require "redmine_ai_helper/base_tools"
 module RedmineAiHelper
   module Tools
     class RepositoryTools < RedmineAiHelper::BaseTools
-
       define_function :repository_info, description: "Get information about a repository." do
         property :repository_id, type: "integer", description: "The ID of the repository to get information about.", required: true
       end
@@ -21,7 +20,7 @@ module RedmineAiHelper
           url: url_for(controller: "repositories", action: "show", id: repository.project, repository_id: repository, only_path: true),
         }
 
-        tool_response(content: json)
+        json
       end
 
       define_function :get_revision_info, description: "Get information about a revision in a repository. Returns the author, committed_on, list of path, and comments for the revision." do
@@ -37,20 +36,20 @@ module RedmineAiHelper
         raise("Revision not found: revision = #{revision}") if changeset.nil?
         user = changeset.user
         author_info = {
-            id: user.id,
-            name: user.name,
+          id: user.id,
+          name: user.name,
         } if user
         author_info = changeset.author if author_info.nil?
         revision_info = {
           repository_id: repository_id,
           author: author_info,
           committed_on: changeset.committed_on,
-          paths: changeset.filechanges.map{|f| f.path},
+          paths: changeset.filechanges.map { |f| f.path },
           comments: changeset.comments,
           revision: changeset.revision,
-          related_issues: changeset.issues.filter{|i| i.visible? }.map{|i| {id: i.id, subject: i.subject}},
+          related_issues: changeset.issues.filter { |i| i.visible? }.map { |i| { id: i.id, subject: i.subject } },
         }
-        tool_response(content: revision_info)
+        revision_info
       end
 
       define_function :get_file_info, description: "Get information about a file in a repository." do
@@ -88,7 +87,7 @@ module RedmineAiHelper
           url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
           commit: commit_info,
         }
-        tool_response(content: json)
+        json
       end
 
       define_function :read_file, description: "Read a file in a repository." do
@@ -113,7 +112,7 @@ module RedmineAiHelper
           content: content,
           url_for_this_redmine: url_for(controller: "repositories", action: "entry", id: repository.project, repository_id: repository, path: path, rev: revision, only_path: true),
         }
-        tool_response(content: json)
+        json
       end
 
       define_function :read_diff, description: "Get the diff information for a specified path and revision within the repository. If the path is not specified, the diff information for all files in the revision is returned." do
@@ -142,7 +141,7 @@ module RedmineAiHelper
           diff: diff_text,
         }
 
-        tool_response(content: json)
+        json
       end
     end
   end

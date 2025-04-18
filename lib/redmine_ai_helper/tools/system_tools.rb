@@ -21,7 +21,7 @@ module RedmineAiHelper
           }
         end
         json = { plugins: plugin_list }
-        tool_response(content: json)
+        return json
       end
     end
   end

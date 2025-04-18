@@ -25,7 +25,7 @@ module RedmineAiHelper
 
         raise("Issue not found") if issues.empty?
 
-        tool_response(content: { issues: issues })
+        { issues: issues }
       end
 
       define_function :capable_issue_properties, description: "Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc. You must specify one of project_id, project_name, or project_identifier." do
@@ -90,7 +90,7 @@ module RedmineAiHelper
           end,
         }
 
-        tool_response(content: properties)
+        properties
       end
 
       define_function :validate_new_issue, description: "Validate the parameters for creating a new issue. It can be used to check if the parameters are correct before creating a new issue." do

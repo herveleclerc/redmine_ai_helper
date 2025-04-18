@@ -60,12 +60,12 @@ module RedmineAiHelper
           unless issue.valid?
             raise("Validation failed. #{issue.errors.full_messages.join(", ")}")
           end
-          return tool_response(content: generate_issue_data(issue))
+          return generate_issue_data(issue)
         end
         unless issue.save
           raise("Failed to create a new issue. #{issue.errors.full_messages.join(", ")}")
         end
-        tool_response(content: generate_issue_data(issue))
+        generate_issue_data(issue)
       end
 
       define_function :update_issue, description: "Update an issue in the database." do
@@ -127,13 +127,13 @@ module RedmineAiHelper
           unless issue.valid?
             raise("Validation failed. #{issue.errors.full_messages.join(", ")}")
           end
-          return tool_response(content: generate_issue_data(issue))
+          return generate_issue_data(issue)
         end
 
         unless issue.save
           raise("Failed to update the issue #{issue.id}. #{issue.errors.full_messages.join(", ")}")
         end
-        tool_response(content: generate_issue_data(issue))
+        generate_issue_data(issue)
       end
 
       private
