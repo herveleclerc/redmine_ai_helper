@@ -111,4 +111,22 @@ class AgentsTest < ActiveSupport::TestCase
       assert_equal [RedmineAiHelper::Tools::VersionTools], @agent.available_tool_providers
     end
   end
+
+  context "McpAgent" do
+    setup do
+      @agent = RedmineAiHelper::Agents::McpAgent.new
+    end
+
+    should "return correct role" do
+      assert_equal "mcp_agent", @agent.role
+    end
+
+    should "return correct backstory" do
+      assert @agent.backstory.include?("あなたは RedmineAIHelper プラグインの MCP エージェントです。")
+    end
+
+    should "return correct tool providers" do
+      assert_equal RedmineAiHelper::Util::McpToolsLoader.load, @agent.available_tool_providers
+    end
+  end
 end

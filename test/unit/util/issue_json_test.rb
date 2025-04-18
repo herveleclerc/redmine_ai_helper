@@ -8,6 +8,8 @@ class RedmineAiHelper::Util::IssueJsonTest < ActiveSupport::TestCase
     setup do
       @issue = Issue.first
       @issue.assigned_to = User.find(2)
+
+      @issue.status = IssueStatus.find(2)
       @issue.save!
       issue2 = Issue.find(2)
       issue2.parent = @issue
@@ -21,6 +23,7 @@ class RedmineAiHelper::Util::IssueJsonTest < ActiveSupport::TestCase
       attachment.save!
       @issue.reload
       @test_class = TestClass.new
+      @issue.due_date = Date.today + 7
     end
 
     should "generate correct issue data" do

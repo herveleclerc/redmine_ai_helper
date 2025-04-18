@@ -13,14 +13,6 @@ module RedmineAiHelper
       end
 
       def backstory
-        functions_list = []
-        available_tools.each do |tools|
-          tools.each do |tool|
-            function = tool[:function]
-            functions_list << { name: function[:name], description: function[:description] }
-          end
-        end
-
         content = <<~EOS
           あなたは RedmineAIHelper プラグインの MCP エージェントです。
           このRedmineAIHelper プラグインは、MCP (Model Context Protocol) を使用して、さまざまなツールを利用することができます。
