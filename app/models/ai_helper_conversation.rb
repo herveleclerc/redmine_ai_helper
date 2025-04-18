@@ -1,3 +1,9 @@
+# frozen_string_literal: true
+# This is a model for conversations in the AI Helper plugin.
+# It represents a conversation between a user and the AI assistant.
+#
+# The model contains the messages that are part of the conversation.
+#
 class AiHelperConversation < ApplicationRecord
   has_many :messages, class_name: "AiHelperMessage", foreign_key: "conversation_id", dependent: :destroy
   belongs_to :user
