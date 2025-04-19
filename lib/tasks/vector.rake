@@ -6,22 +6,31 @@ namespace :redmine do
         desc "Register vector data for Redmine AI Helper"
         task :regist => :environment do
           if enabled?
+            puts "Registering vector data for Redmine AI Helper..."
             issues = Issue.order(:id).all
             issue_vector_db.add_datas(datas: issues)
+          else
+            puts "Vector search is not enabled. Skipping registration."
           end
         end
 
         desc "generate"
         task :generate => :environment do
           if enabled?
+            puts "Generating vector index for Redmine AI Helper..."
             issue_vector_db.generate_schema
+          else
+            puts "Vector search is not enabled. Skipping generation."
           end
         end
 
         desc "Destroy vector data for Redmine AI Helper"
         task :destroy => :environment do
           if enabled?
+            puts "Destroying vector data for Redmine AI Helper..."
             issue_vector_db.destroy_schema
+          else
+            puts "Vector search is not enabled. Skipping destruction."
           end
         end
 

@@ -27,7 +27,11 @@ module RedmineAiHelper
       end
 
       def index_name
-        nil
+        raise NotImplementedError, "index_name method must be implemented in subclass"
+      end
+
+      def data_exists?(object_id)
+        raise NotImplementedError, "data_exists? method must be implemented in subclass"
       end
 
       def generate_schema
@@ -46,13 +50,19 @@ module RedmineAiHelper
       def add_datas(datas:)
         return if datas.empty?
         datas.each do |data|
-          next if AiHelperVectorData.exists?(object_id: data.id, index: index_name)
+          vector_data = AiHelperVectorData.find_by(object_id: data.id, index: index_name)
+          next if vector_data and data.updated_on < vector_data.updated_at
           begin
             text = data_to_jsontext(data)
-            uuid = SecureRandom.uuid
-            vector_data = AiHelperVectorData.new(object_id: data.id, index: index_name, uuid: uuid)
+            if (vector_data)
+              client.update_texts(texts: [text], ids: [vector_data.uuid])
+              vector_data.updated_at = Time.now
+            else
+              uuid = SecureRandom.uuid
+              vector_data = AiHelperVectorData.new(object_id: data.id, index: index_name, uuid: uuid)
+              client.add_texts(texts: [text], ids: [uuid])
+            end
             print "."
-            client.add_texts(texts: [text], ids: [uuid])
             vector_data.save!
           rescue => e
             puts ""
@@ -60,7 +70,27 @@ module RedmineAiHelper
             puts e.message
           end
         end
+        clean_vector_data
         puts ""
+      end
+
+      def clean_vector_data
+        AiHelperVectorData.where(index: index_name).each do |vector_data|
+          begin
+            if data_exists?(vector_data.object_id)
+              next
+            end
+            puts "Deleting vector data: #{index_name} ##{vector_data.object_id}"
+            client.remove_texts(ids: [vector_data.uuid])
+            vector_data.destroy!
+            print "."
+          rescue => e
+            puts ""
+            puts "Error: #{index_name} ##{vector_data.object_id}"
+            puts e.message
+            raise e
+          end
+        end
       end
 
       def ask(question:, k: 10)

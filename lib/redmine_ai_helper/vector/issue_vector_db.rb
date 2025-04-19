@@ -7,6 +7,10 @@ module RedmineAiHelper
         "RedmineIssue"
       end
 
+      def data_exists?(object_id)
+        Issue.exists?(id: object_id)
+      end
+
       def data_to_jsontext(issue)
         json = {
           id: issue.id,
