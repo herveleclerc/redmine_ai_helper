@@ -34,7 +34,8 @@ module RedmineAiHelper
       tools = available_tool_providers.map { |tool|
         tool.new
       }
-      @assistant = RedmineAiHelper::Assistant.new(
+      @assistant = RedmineAiHelper::AssistantProvider.get_assistant(
+        llm_type: llm_type,
         llm: client,
         instructions: system_prompt,
         tools: tools,
