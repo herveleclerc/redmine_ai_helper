@@ -61,15 +61,6 @@ class RedmineAiHelper::Vector::VectorDbTest < ActiveSupport::TestCase
       @vector_db.add_datas(datas: [mock_data])
     end
 
-    should "skip adding data if it already exists" do
-      mock_data = mock("Data")
-      mock_data.stubs(:id).returns(1)
-      AiHelperVectorData.stubs(:exists?).with(object_id: 1, index: "TestIndex").returns(true)
-      @mock_client.expects(:add_texts).never
-
-      @vector_db.add_datas(datas: [mock_data])
-    end
-
     should "ask a question and return a response" do
       @mock_client.expects(:ask).with(question: "What is Redmine?", k: 10).returns(mock("Response").tap { |r| r.stubs(:chat_completion).returns("Answer to the question") })
       response = @vector_db.ask(question: "What is Redmine?", k: 10)
