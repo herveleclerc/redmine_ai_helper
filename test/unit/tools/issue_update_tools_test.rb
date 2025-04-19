@@ -1,18 +1,17 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
 class IssueUpdateToolsTest < ActiveSupport::TestCase
-  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users,  :issue_categories, :versions, :custom_fields
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields
 
   def setup
     @provider = RedmineAiHelper::Tools::IssueUpdateTools.new
   end
 
   context "IssueUpdateTools" do
-
     context "create_new_issue" do
       should "create issue" do
-        response = @provider.create_new_issue(project_id: 1, tracker_id: 1, status_id: 1,subject: "test issue", description: "test description")
-        assert response.content[:id].present?
+        response = @provider.create_new_issue(project_id: 1, tracker_id: 1, status_id: 1, subject: "test issue", description: "test description")
+        assert response[:id].present?
       end
 
       should "return error with invalid project" do
@@ -35,13 +34,13 @@ class IssueUpdateToolsTest < ActiveSupport::TestCase
 
       should "create issue with custom fields" do
         response = @provider.create_new_issue(project_id: 1, tracker_id: 1, status_id: 1, subject: "test issue", description: "test description", custom_fields: [{ field_id: 1, value: "MySQL" }])
-        assert response.content[:id].present?
+        assert response[:id].present?
       end
 
       context "validate_only is true" do
         should "validate issue" do
           response = @provider.create_new_issue(project_id: 1, tracker_id: 1, status_id: 1, subject: "test issue", description: "test description", validate_only: true)
-          assert response.content[:issue_id].nil?
+          assert response[:issue_id].nil?
         end
 
         should "return error with invalid project" do

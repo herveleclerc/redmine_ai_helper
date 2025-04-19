@@ -3,7 +3,6 @@ require "redmine_ai_helper/base_tools"
 module RedmineAiHelper
   module Tools
     class UserTools < RedmineAiHelper::BaseTools
-
       define_function :list_users, description: "Returns a list of all users who have logged in within the past year. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on." do
         property :query, type: "object", description: "The query to filter the users.", required: true do
           property :limit, type: "integer", description: "The maximum number of users to return. The default is 100."
@@ -60,7 +59,7 @@ module RedmineAiHelper
           }
         end
         json = { users: user_list, total: count }
-        tool_response(content: json)
+        json
       end
 
       define_function :find_user, description: "Returns a list of users that match the name or login. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on." do
@@ -70,7 +69,7 @@ module RedmineAiHelper
       # args: { name: "string" }
       def find_user(name:)
         users = User.all.filter { |user|
-            user.login.downcase.include?(name.downcase) || user.name.downcase.include?(name.downcase)
+          user.login.downcase.include?(name.downcase) || user.name.downcase.include?(name.downcase)
         }
         user_list = []
         users.map do |user|
@@ -85,7 +84,7 @@ module RedmineAiHelper
           }
         end
         json = { users: user_list }
-        tool_response(content: json)
+        json
       end
     end
   end

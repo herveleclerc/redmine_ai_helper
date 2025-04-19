@@ -1,7 +1,7 @@
-# lib/tasks/my_plugin_tasks.rake
+# generate git repository for Redmine AI Helper tests
 namespace :redmine do
   namespace :plugins do
-    namespace :redmine_ai_helper do
+    namespace :ai_helper do
       desc "Setup SCM for Redmine AI Helper tests"
       task :setup_scm => :environment do
         # タスクの処理を書く
