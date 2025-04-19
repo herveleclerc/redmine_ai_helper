@@ -125,8 +125,10 @@ class AgentsTest < ActiveSupport::TestCase
       assert @agent.backstory.include?("あなたは RedmineAIHelper プラグインの MCP エージェントです。")
     end
 
-    should "return correct tool providers" do
-      assert_equal RedmineAiHelper::Util::McpToolsLoader.load, @agent.available_tool_providers
+    context "mcp_agent" do
+      should "return correct tool providers" do
+        assert_equal RedmineAiHelper::Util::McpToolsLoader.load, @agent.available_tool_providers
+      end
     end
   end
 end

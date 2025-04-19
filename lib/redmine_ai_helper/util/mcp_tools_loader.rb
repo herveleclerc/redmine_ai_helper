@@ -6,8 +6,6 @@ module RedmineAiHelper
       include Singleton
       include RedmineAiHelper::Logger
 
-      CONFIG_FILE = Rails.root.join("config", "ai_helper", "config.json")
-
       def self.load
         loader.generate_tools_instances
       end
@@ -19,12 +17,12 @@ module RedmineAiHelper
       def generate_tools_instances
         return @list if @list and @list.length > 0
         # Check if the config file exists
-        unless File.exist?(CONFIG_FILE)
+        unless File.exist?(config_file)
           return []
         end
 
         # Load the configuration file
-        config = JSON.parse(File.read(CONFIG_FILE))
+        config = JSON.parse(File.read(config_file))
 
         mcp_servers = config["mcpServers"]
         return [] unless mcp_servers
@@ -37,9 +35,14 @@ module RedmineAiHelper
             list << tool_class
           rescue => e
             ai_helper_logger.info "Error generating tool class for #{name}: #{e.message}"
+            throw "Error generating tool class for #{name}: #{e.message}"
           end
         end
         @list = list
+      end
+
+      def config_file
+        @config_file ||= Rails.root.join("config", "ai_helper", "config.json").to_s
       end
     end
   end

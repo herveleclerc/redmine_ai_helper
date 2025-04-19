@@ -77,3 +77,5 @@ bundle exec rake db:migrate
 bundle exec rake redmine:plugins:migrate
 
 bundle exec rake redmine:plugins:ai_helper:setup_scm
+
+ap-get update && apt-get install -y npm
