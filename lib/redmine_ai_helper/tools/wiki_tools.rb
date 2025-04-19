@@ -44,7 +44,7 @@ module RedmineAiHelper
           end,
         }
 
-        tool_response(content: json)
+        json
       end
 
       define_function :list_wiki_pages, description: "List all wiki pages in the project. It includes the title, author, created_on, and updated_on." do
@@ -67,7 +67,7 @@ module RedmineAiHelper
             updated_on: page.updated_on,
           }
         end
-        tool_response(content: json)
+        json
       end
 
       define_function :generate_url_for_wiki_page, description: "Generate a URL for a wiki page." do
@@ -83,7 +83,7 @@ module RedmineAiHelper
         page = wiki.pages.find_by(title: title)
         raise("Page not found: title = #{title}") if !page || !page.visible?
         url = "#{project_wiki_page_path(wiki.project, page.title)}"
-        tool_response(content: {url: url})
+        { url: url }
       end
     end
   end

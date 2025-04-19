@@ -3,7 +3,6 @@ require "redmine_ai_helper/base_tools"
 module RedmineAiHelper
   module Tools
     class BoardTools < RedmineAiHelper::BaseTools
-
       define_function :list_boards, description: "List all boards in the project. It returns the board ID, project ID, name, description, messages_count, and last_message." do
         property :project_id, type: "integer", description: "The project ID of the project to return.", required: true
       end
@@ -11,7 +10,7 @@ module RedmineAiHelper
       def list_boards(project_id:)
         project = Project.find_by(id: project_id)
         raise("Project not found") if project.nil?
-        boards = project.boards.filter{|b| b.visible?}
+        boards = project.boards.filter { |b| b.visible? }
         board_list = []
         boards.each do |board|
           board_list << {
@@ -20,10 +19,10 @@ module RedmineAiHelper
             description: board.description,
             messages_count: board.messages_count,
             parent_board_id: board.parent_id,
-            url_for_board: "#{project_board_path(board.project, board)}"
+            url_for_board: "#{project_board_path(board.project, board)}",
           }
         end
-        tool_response(content: board_list)
+        return board_list
       end
 
       define_function :board_info, description: "Read a board from the database and return it as a JSON object. It returns the board ID, project ID, name, description, messages_count, and messages." do
@@ -40,8 +39,8 @@ module RedmineAiHelper
           name: board.name,
           description: board.description,
           url_for_board: "#{project_board_path(board.project, board)}",
-          messages: board.messages.filter{|m| m.visible? }.map do |message|
-            hash ={
+          messages: board.messages.filter { |m| m.visible? }.map do |message|
+            hash = {
               id: message.id,
               content: message.content,
               created_on: message.created_on,
@@ -54,7 +53,7 @@ module RedmineAiHelper
             hash
           end,
         }
-        tool_response(content: board_hash)
+        board_hash
       end
 
       define_function :read_message, description: "Read a message from the database and return it as a JSON object. It returns the message ID, board ID, parent_id, subject, content, author, created_on, updated_on, and replies." do
@@ -91,7 +90,7 @@ module RedmineAiHelper
           end,
         }
 
-        tool_response(content: message_hash)
+        message_hash
       end
 
       define_function :generate_url_for_board, description: "Generate a URL for the specified board. It returns the board's URL." do
@@ -104,7 +103,7 @@ module RedmineAiHelper
         raise("Board not found") if board.nil? || !board.visible?
         url = "#{project_board_path(board.project, board)}"
 
-        tool_response(content: {url: url})
+        { url: url }
       end
 
       define_function :generate_url_for_message, description: "Generate a URL for the specified message. It returns the message's URL." do
@@ -118,7 +117,7 @@ module RedmineAiHelper
         raise("Message not found") if message.nil? || !message.visible?
         url = "#{board_message_path(message.board, message)}"
 
-        tool_response(content: {url: url})
+        { url: url }
       end
     end
   end

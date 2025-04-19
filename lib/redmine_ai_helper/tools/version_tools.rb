@@ -3,7 +3,6 @@ require "redmine_ai_helper/base_tools"
 module RedmineAiHelper
   module Tools
     class VersionTools < RedmineAiHelper::BaseTools
-
       define_function :list_versions, description: "List all versions in the project. It returns the version ID, name, description, status, due_date, sharing, wiki_page_title, and created_on." do
         property :project_id, type: "integer", description: "The project ID of the project to return.", required: true
       end
@@ -27,7 +26,7 @@ module RedmineAiHelper
           }
         end
 
-        tool_response(content: version_list)
+        version_list
       end
 
       define_function :version_info, description: "Read a version from the database and return it as a JSON object. It returns the version ID, project ID, name, description, status, due_date, sharing, wiki_page_title, created_on, estimated_hours, spent_hours, and issues." do
@@ -68,7 +67,7 @@ module RedmineAiHelper
           }
           versions << version_hash
         end
-        tool_response(content: versions)
+        versions
       end
     end
   end

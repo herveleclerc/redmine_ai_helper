@@ -19,11 +19,11 @@ class ProjectToolsTest < ActiveSupport::TestCase
     enabled_module.save!
 
     response = @provider.list_projects()
-    assert_equal 2, response.content.size
+    assert_equal 2, response.size
     project1 = Project.find(1)
     project2 = Project.find(2)
     [project1, project2].each_with_index do |project, index|
-      value = response.content[index]
+      value = response[index]
       assert_equal project.id, value[:id]
       assert_equal project.name, value[:name]
     end
@@ -33,24 +33,24 @@ class ProjectToolsTest < ActiveSupport::TestCase
     project = Project.find(1)
 
     response = @provider.read_project(project_id: project.id)
-    assert_equal project.id, response.content[:id]
-    assert_equal project.name, response.content[:name]
+    assert_equal project.id, response[:id]
+    assert_equal project.name, response[:name]
   end
 
   def test_read_project_by_name
     project = Project.find(1)
 
     response = @provider.read_project(project_name: project.name)
-    assert_equal project.id, response.content[:id]
-    assert_equal project.name, response.content[:name]
+    assert_equal project.id, response[:id]
+    assert_equal project.name, response[:name]
   end
 
   def test_read_project_by_identifier
     project = Project.find(1)
 
     response = @provider.read_project(project_identifier: project.identifier)
-    assert_equal project.id, response.content[:id]
-    assert_equal project.name, response.content[:name]
+    assert_equal project.id, response[:id]
+    assert_equal project.name, response[:name]
   end
 
   def test_read_project_not_found
@@ -70,8 +70,8 @@ class ProjectToolsTest < ActiveSupport::TestCase
     members = project.members
 
     response = @provider.project_members(project_ids: [project.id])
-    assert_equal members.size, response.content[:projects][0][:members].size
-    assert_equal members.first.user_id, response.content[:projects][0][:members].first[:user_id]
+    assert_equal members.size, response[:projects][0][:members].size
+    assert_equal members.first.user_id, response[:projects][0][:members].first[:user_id]
   end
 
   def test_project_enabled_modules
@@ -79,8 +79,8 @@ class ProjectToolsTest < ActiveSupport::TestCase
     enabled_modules = project.enabled_modules
 
     response = @provider.project_enabled_modules(project_id: project.id)
-    assert_equal enabled_modules.size, response.content[:enabled_modules].size
-    assert_equal enabled_modules.first.name, response.content[:enabled_modules].first[:name]
+    assert_equal enabled_modules.size, response[:enabled_modules].size
+    assert_equal enabled_modules.first.name, response[:enabled_modules].first[:name]
   end
 
   def test_list_project_activities
@@ -92,6 +92,4 @@ class ProjectToolsTest < ActiveSupport::TestCase
       @provider.list_project_activities(project_id: project.id, author_id: author.id)
     end
   end
-
-
 end

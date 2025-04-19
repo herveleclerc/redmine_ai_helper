@@ -11,8 +11,8 @@ class WikiToolsTest < ActiveSupport::TestCase
   end
 
   def test_read_wiki_page_success
-    response = @provider.read_wiki_page( project_id: @project.id, title: @page.title)
-    assert_equal @page.title, response.content[:title]
+    response = @provider.read_wiki_page(project_id: @project.id, title: @page.title)
+    assert_equal @page.title, response[:title]
   end
 
   def test_read_wiki_page_not_found
@@ -23,12 +23,12 @@ class WikiToolsTest < ActiveSupport::TestCase
 
   def test_list_wiki_pages
     response = @provider.list_wiki_pages(project_id: @project.id)
-    assert_equal @wiki.pages.count, response.content.size
+    assert_equal @wiki.pages.count, response.size
   end
 
   def test_generate_url_for_wiki_page
     response = @provider.generate_url_for_wiki_page(project_id: @project.id, title: @page.title)
     expected_url = "/projects/#{@project.identifier}/wiki/#{@page.title}"
-    assert_equal expected_url, response.content[:url]
+    assert_equal expected_url, response[:url]
   end
 end

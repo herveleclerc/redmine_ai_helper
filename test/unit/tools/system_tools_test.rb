@@ -8,6 +8,6 @@ class SystemToolsTest < ActiveSupport::TestCase
   def test_list_plugins
     response = @provider.list_plugins
 
-    assert response.content[:plugins].any?
+    assert response[:plugins].any?
   end
 end

@@ -17,6 +17,21 @@
         </div>
 
     <hr>
+    <p>
+        <%= f.check_box :vector_search_enabled %>
+    </p>
+    <div id="ai-helper-vector-search">
+        <p>
+            <%= f.text_field :vector_search_uri, size: 60, required: true %>
+        </p>
+        <p>
+            <%= f.text_field :vector_search_api_key, size: 60 %>
+        </p>
+        <p>
+            <%= f.text_field :embedding_model, size: 60 %>
+        </p>
+    </div>
+    <hr>
     <p><%= f.text_area :additional_instructions, rows: 12 %></p>
 </div>
 <%= f.submit t(:button_submit) %>
@@ -44,10 +59,24 @@
             $('#ai_helper_model_profile_description').html('');
         }
     }
+
+    function setVectorSearchVisible() {
+        var vectorSearchEnabled = $('#ai_helper_setting_vector_search_enabled').is(':checked');
+        if (vectorSearchEnabled) {
+            $('#ai-helper-vector-search').show();
+        } else {
+            $('#ai-helper-vector-search').hide();
+        }
+    }
+
     $(document).ready(function() {
         $('#ai_helper_setting_model_profile_id').change(function() {
             setModelProfile();
         });
+        $('#ai_helper_setting_vector_search_enabled').change(function() {
+            setVectorSearchVisible();
+        });
     });
     setModelProfile();
+    setVectorSearchVisible();
 </script>

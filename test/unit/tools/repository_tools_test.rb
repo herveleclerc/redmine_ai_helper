@@ -18,9 +18,9 @@ class RepositoryToolsTest < ActiveSupport::TestCase
 
   def test_repository_info_success
     response = @provider.repository_info(repository_id: @repository.id)
-    assert_equal @repository.id, response.content[:id]
-    assert_equal "Git", response.content[:type]
-    assert_equal "test", response.content[:name]
+    assert_equal @repository.id, response[:id]
+    assert_equal "Git", response[:type]
+    assert_equal "test", response[:name]
   end
 
   def test_repository_info_not_found
@@ -31,9 +31,9 @@ class RepositoryToolsTest < ActiveSupport::TestCase
 
   def test_get_file_info_success
     response = @provider.get_file_info(repository_id: @repository.id, path: "README.md", revision: "main")
-    assert_equal 119, response.content[:size]
-    assert_equal "file", response.content[:type]
-    assert response.content[:is_text]
+    assert_equal 119, response[:size]
+    assert_equal "file", response[:type]
+    assert response[:is_text]
   end
 
   def test_get_file_info_not_found
@@ -43,8 +43,8 @@ class RepositoryToolsTest < ActiveSupport::TestCase
   end
 
   def test_read_file_success
-    response = @provider.read_file(repository_id: @repository.id, path: "README.md", revision: "main" )
-    assert response.content[:content].include?("some text")
+    response = @provider.read_file(repository_id: @repository.id, path: "README.md", revision: "main")
+    assert response[:content].include?("some text")
   end
 
   def test_read_file_not_found
@@ -63,9 +63,9 @@ class RepositoryToolsTest < ActiveSupport::TestCase
     changeset = @repository.changesets.second
     revision = changeset.revision
     response = @provider.get_revision_info(repository_id: @repository.id, revision: revision)
-    assert_equal revision, response.content[:revision]
-    assert_equal changeset.committed_on, response.content[:committed_on]
-    assert_equal changeset.comments, response.content[:comments]
+    assert_equal revision, response[:revision]
+    assert_equal changeset.committed_on, response[:committed_on]
+    assert_equal changeset.comments, response[:comments]
   end
 
   def test_get_revision_info_not_found
@@ -82,6 +82,6 @@ class RepositoryToolsTest < ActiveSupport::TestCase
     changeset = @repository.changesets.second
     revision = changeset.revision
     response = @provider.read_diff(repository_id: @repository.id, revision: revision)
-    assert response.content[:diff].include?("diff --git")
+    assert response[:diff].include?("diff --git")
   end
 end
