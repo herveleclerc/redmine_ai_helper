@@ -6,6 +6,7 @@ namespace :redmine do
         desc "Register vector data for Redmine AI Helper"
         task :regist => :environment do
           if enabled?
+            issue_vector_db.generate_schema
             puts "Registering vector data for Redmine AI Helper..."
             issues = Issue.order(:id).all
             issue_vector_db.add_datas(datas: issues)

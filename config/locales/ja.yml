@@ -27,3 +27,4 @@ ja:
         vector_search_enabled: "ベクトル検索を有効にする"
         vector_search_uri: "URI"
         vector_search_api_key: "APIキー"
+        embedding_model: "埋め込みモデル"

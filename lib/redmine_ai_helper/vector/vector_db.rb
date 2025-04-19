@@ -93,6 +93,10 @@ module RedmineAiHelper
         end
       end
 
+      def similarity_search(question:, k: 10)
+        client.similarity_search(query: question, k: k)
+      end
+
       def ask(question:, k: 10)
         client.ask(question: question, k: k).chat_completion
       end

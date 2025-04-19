@@ -28,3 +28,4 @@ en:
         vector_search_enabled: "Enable vector search"
         vector_search_uri: "URI"
         vector_search_api_key: "API key"
+        embedding_model: "Embedding model"
