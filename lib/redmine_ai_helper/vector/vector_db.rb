@@ -110,21 +110,28 @@ module RedmineAiHelper
       # Cleans up the vector data by removing any data that no longer exists in Redmine.
       def clean_vector_data
         AiHelperVectorData.where(index: index_name).each do |vector_data|
-          begin
-            if data_exists?(vector_data.object_id)
-              next
-            end
-            puts "Deleting vector data: #{index_name} ##{vector_data.object_id}"
-            client.remove_texts(ids: [vector_data.uuid])
-            vector_data.destroy!
-            print "."
-          rescue => e
-            puts ""
-            puts "Error: #{index_name} ##{vector_data.object_id}"
-            puts e.message
-            raise e
+          if data_exists?(vector_data.object_id)
+            next
           end
+          puts "Deleting vector data: #{index_name} ##{vector_data.object_id}"
+          client.remove_texts(ids: [vector_data.uuid])
+          vector_data.destroy!
+          print "."
         end
+      end
+
+      # search issues from vector db with filter fo payload.
+      # @param query [String] The query string to search for.
+      # @param filter [Hash] The filter to apply to the search.
+      # @param k [Integer] The number of results to return.
+      # @return [Array] An array of issues that match the query and filter.
+      def ask_with_filter(query:, filter: nil, k: 20)
+        return [] unless client
+        client.ask_with_filter(
+          query: query,
+          k: k,
+          filter: filter,
+        )
       end
 
       # Searches for similar data in the vector database.

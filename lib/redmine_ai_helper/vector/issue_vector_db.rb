@@ -9,21 +9,6 @@ module RedmineAiHelper
         "RedmineIssue"
       end
 
-      # TODO: Move to base class.
-      # search issues from vector db with filter fo payload.
-      # @param query [String] The query string to search for.
-      # @param filter [Hash] The filter to apply to the search.
-      # @param k [Integer] The number of results to return.
-      # @return [Array] An array of issues that match the query and filter.
-      def ask_with_filter(query:, filter: nil, k: 20)
-        return [] unless client
-        client.ask_with_filter(
-          query: query,
-          k: k,
-          filter: filter,
-        )
-      end
-
       # Checks whether an Issue with the specified ID exists.
       # @param object_id [Integer] The ID of the issue to check.
       def data_exists?(object_id)

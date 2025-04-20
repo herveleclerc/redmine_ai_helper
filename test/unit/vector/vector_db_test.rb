@@ -64,13 +64,23 @@ class RedmineAiHelper::Vector::VectorDbTest < ActiveSupport::TestCase
         assert issues.length, AiHelperVectorData.all.length
       end
 
-      should "clean_vector_data deletes data" do
-        issues = Issue.all
-        @issue_vector_db.add_datas(datas: issues)
-        issues.first.destroy!
-        issues = Issue.all
-        @issue_vector_db.clean_vector_data
-        assert issues.length, AiHelperVectorData.all.length
+      context "clean_vector_data" do
+        should "deletes data" do
+          issues = Issue.all
+          @issue_vector_db.add_datas(datas: issues)
+          issues.first.destroy!
+          issues = Issue.all
+          @issue_vector_db.clean_vector_data
+          assert issues.length, AiHelperVectorData.all.length
+          @issue_vector_db.clean_vector_data
+        end
+      end
+    end
+
+    context "ask_with_filter" do
+      should "return array" do
+        res = @issue_vector_db.ask_with_filter(query: "test")
+        assert_equal res, ["test"]
       end
     end
   end
@@ -92,6 +102,10 @@ class RedmineAiHelper::Vector::VectorDbTest < ActiveSupport::TestCase
 
     def remove_texts(ids:)
       true
+    end
+
+    def ask_with_filter(query:, k: 20, filter: nil)
+      ["test"]
     end
   end
 end
