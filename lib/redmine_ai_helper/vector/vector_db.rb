@@ -1,15 +1,22 @@
+# frozen_string_literal: true
 require "langchain"
 
 module RedmineAiHelper
   module Vector
+    # This class is responsible for managing the vector database.
     class VectorDb
       attr_accessor :llm
 
+      # Initializes the VectorDb with an optional LLM client.
+      # @param llm [Object] The LLM client to use for vector operations.
       def initialize(llm: nil)
         @llm = llm
         @llm = RedmineAiHelper::LlmProvider.get_llm_provider.generate_client unless @llm
       end
 
+      # Returns the vector search client.
+      # Currently, it uses Qdrant as the vector search client.
+      # @return [Object] The vector search client.
       def client
         return nil unless setting.vector_search_enabled
         return @client if @client
@@ -22,22 +29,29 @@ module RedmineAiHelper
         @client
       end
 
+      # Returns the setting for the vector database.
       def setting
         @setting ||= AiHelperSetting.find_or_create
       end
 
+      # Returns the index name for the vector database.
       def index_name
         raise NotImplementedError, "index_name method must be implemented in subclass"
       end
 
+      # This method checks whether the object stored in the vector DB exists in Redmine's database.
+      # It is necessary to implement this method because objects stored in the vector DB may have been deleted in Redmine.
       def data_exists?(object_id)
         raise NotImplementedError, "data_exists? method must be implemented in subclass"
       end
 
+      # Generates the schema for the vector database. Must be executed once before registering data.
       def generate_schema
         client.create_default_schema
       end
 
+      # Destroys the schema for the vector database.
+      # Data cannot be registered again until generate_schema is executed once more.
       def destroy_schema
         begin
           client.destroy_default_schema
@@ -47,6 +61,8 @@ module RedmineAiHelper
         AiHelperVectorData.where(index: index_name).destroy_all
       end
 
+      # Registers datas into the vector database.
+      # @param datas [Array] The array of data to be registered.
       def add_datas(datas:)
         return if datas.empty?
         datas.each do |data|
@@ -69,6 +85,11 @@ module RedmineAiHelper
         puts ""
       end
 
+      # Registers a single data into the vector database.
+      # @param vector_data [AiHelperVectorData] The vector data to be registered.
+      # @param data [Object] The data to be registered.
+      # @param retry_flag [Boolean] A flag indicating whether to retry the registration.
+      # @return [AiHelperVectorData] The registered vector data.
       def add_data(vector_data:, data:, retry_flag: false)
         json = data_to_json(data)
         text = json[:content]
@@ -86,6 +107,7 @@ module RedmineAiHelper
         vector_data.save!
       end
 
+      # Cleans up the vector data by removing any data that no longer exists in Redmine.
       def clean_vector_data
         AiHelperVectorData.where(index: index_name).each do |vector_data|
           begin
@@ -105,14 +127,26 @@ module RedmineAiHelper
         end
       end
 
+      # Searches for similar data in the vector database.
+      # @param question [String] The query string to search for.
+      # @param k [Integer] The number of results to return.
+      # @return [Array] An array of similar data that match the query.
       def similarity_search(question:, k: 10)
         client.similarity_search(query: question, k: k)
       end
 
+      # Searches for similar data in the vector database with a filter.
+      # @param question [String] The query string to search for.
+      # @param filter [Hash] The filter to apply to the search.
+      # @param k [Integer] The number of results to return.
+      # @return [Array] An array of similar data that match the query and filter.
       def ask(question:, k: 10)
         client.ask(question: question, k: k).chat_completion
       end
 
+      # Converts the data to JSON format.
+      # @param data [Object] The data to be converted to JSON.
+      # @return [String] The JSON representation of the data.
       def data_to_jsontext(data)
         data.to_json
       end

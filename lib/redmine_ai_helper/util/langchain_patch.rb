@@ -1,8 +1,11 @@
+# frozen_string_literal: true
 require "langchain"
 
 module RedmineAiHelper
   module Util
     module LangchainPatch
+      # A patch to enable recursive calls for creating Object properties when automatically
+      # generating Tool definitions in MCPTools
       refine Langchain::ToolDefinition::ParameterBuilder do
         def build_properties_from_json(json)
           properties = json["properties"] || {}

@@ -1,6 +1,10 @@
+# This file is part of Redmine AI Helper plugin for Redmine.
 module RedmineAiHelper
   module Util
     module IssueJson
+      # Generates a JSON representation of an issue.
+      # @param issue [Issue] The issue to be represented in JSON.
+      # @return [Hash] A hash representing the issue in JSON format.
       def generate_issue_data(issue)
         {
           id: issue.id,
