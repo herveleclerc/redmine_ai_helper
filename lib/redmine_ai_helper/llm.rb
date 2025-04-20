@@ -1,20 +1,23 @@
+# frozen_string_literal: true
 require_relative "logger"
 require_relative "base_agent"
 
 module RedmineAiHelper
+
+  # A class that is directly called from the controller to interact with AI using LLM.
+  # TODO: クラス名を変えたい
   class Llm
     include RedmineAiHelper::Logger
     attr_accessor :model
 
-    # initialize the client
-    # @param [Hash] params
-    # @option params [String] :access_token
-    # @option params [String] :uri_base
-    # @option params [String] :organization_id
     def initialize(params = {})
     end
 
     # chat with the AI
+    # @param conversation [Conversation] The conversation object
+    # @param proc [Proc] A block to be executed after the task is sent
+    # @param option [Hash] Options for the task
+    # @return [AiHelperMessage] The AI's response
     def chat(conversation, proc, option = {})
       task = conversation.messages.last.content
       ai_helper_logger.info "#### ai_helper: chat start ####"

@@ -1,10 +1,10 @@
+# frozen_string_literal: true
 # generate git repository for Redmine AI Helper tests
 namespace :redmine do
   namespace :plugins do
     namespace :ai_helper do
       desc "Setup SCM for Redmine AI Helper tests"
       task :setup_scm => :environment do
-        # タスクの処理を書く
         plugin_dir = Rails.root.join("plugins/redmine_ai_helper").to_s
         scm_archive = "#{plugin_dir}/test/redmine_ai_helper_test_repo.git.tgz"
         puts scm_archive

@@ -1,4 +1,7 @@
+# frozen_string_literal: true
 module RedmineAiHelper
+  # ツールからのレスポンスを格納するクラス
+  # TODO: 不要かも
   class ToolResponse
     attr_reader :status, :value, :error
     ToolResponse::STATUS_SUCCESS = "success"
