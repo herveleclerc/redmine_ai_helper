@@ -1,8 +1,12 @@
-require_relative '../base_agent'
+# frozen_string_literal: true
+require_relative "../base_agent"
+
 module RedmineAiHelper
   module Agents
+    # IssueUpdateAgent is a specialized agent for handling Redmine issue updates.
     class IssueUpdateAgent < RedmineAiHelper::BaseAgent
       def backstory
+        # TODO: 英語にする
         content = <<~EOS
           あなたは RedmineAIHelper プラグインのチケットアップデートエージェントです。Redmine のチケットの作成や、更新を行います。また、チケットのコメントの追加も行います。チケットの情報取得は行いません。
           --
@@ -19,15 +23,17 @@ module RedmineAiHelper
           RedmineAiHelper::Tools::IssueTools,
           RedmineAiHelper::Tools::IssueUpdateTools,
           RedmineAiHelper::Tools::ProjectTools,
-          RedmineAiHelper::Tools::UserTools
+          RedmineAiHelper::Tools::UserTools,
         ]
       end
 
       private
+
       def issue_properties
         return "" unless @project
         provider = RedmineAiHelper::Tools::IssueTools.new
         properties = provider.capable_issue_properties(project_id: @project.id)
+        # TODO: 英語にする
         content = <<~EOS
           ----
           プロジェクトID: #{@project.id} で指定可能なチケットのプロパティは以下の通りです。

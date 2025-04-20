@@ -1,8 +1,11 @@
+# frozen_string_literal: true
 require "redmine_ai_helper/base_agent"
 require "redmine_ai_helper/util/system_prompt"
 
 module RedmineAiHelper
   module Agents
+    # LeaderAgent is an agent responsible for giving instructions to other agents,
+    # summarizing their responses, and providing the final answer to the user.
     class LeaderAgent < RedmineAiHelper::BaseAgent
       def initialize(params = {})
         super(params)
@@ -28,6 +31,7 @@ module RedmineAiHelper
         }
       end
 
+      # Perform a user request by generating a goal and steps for the agents to follow.
       def perform_user_request(messages, option = {}, callback = nil)
         goal = generate_goal(messages)
         ai_helper_logger.info "goal: #{goal}"
@@ -50,11 +54,13 @@ module RedmineAiHelper
         end
 
         newmessages = messages + chat_room.messages
+        # TODO: 英語にする
         newmessages << { role: "user", content: "全てのエージェントのタスクが完了しました。最終的なユーザーへの回答を作成してください。" }
         ai_helper_logger.debug "newmessages: #{newmessages}"
         chat(newmessages, option, callback)
       end
 
+      # Generate a goal for the agents to follow based on the user's request.
       def generate_goal(messages)
         prompt = load_prompt("leader_agent/goal")
 
@@ -64,6 +70,7 @@ module RedmineAiHelper
         answer
       end
 
+      # Generate steps for the agents to follow based on the goal.
       def generate_steps(goal, messages)
         agent_list = RedmineAiHelper::AgentList.instance
         ai_helper_logger.debug "agent_list: #{agent_list.list_agents}"
@@ -79,11 +86,11 @@ module RedmineAiHelper
                 properties: {
                   agent: {
                     type: "string",
-                    description: "指示を出すエージェントのロール",
+                    description: "指示を出すエージェントのロール", # TODO: 英語にする
                   },
                   step: {
                     type: "string",
-                    description: "指示内容",
+                    description: "指示内容", # TODO: 英語にする
                   },
                 },
                 required: ["agent", "step"],
@@ -92,7 +99,8 @@ module RedmineAiHelper
           },
         }
         parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
-        json_examples =<<~EOS
+        # TODO: 英語にする
+        json_examples = <<~EOS
           ----
           適切なエージェントが見つかった場合のJSONの例:
           {
@@ -133,10 +141,9 @@ module RedmineAiHelper
         json = chat(newmessages)
         fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
           llm: client,
-          parser: parser
+          parser: parser,
         )
         fix_parser.parse(json)
-
       end
     end
   end

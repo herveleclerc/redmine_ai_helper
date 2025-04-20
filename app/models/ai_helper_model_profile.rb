@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+# AiHelperModelProfile model for managing AI Helper model profiles
 class AiHelperModelProfile < ApplicationRecord
   include Redmine::SafeAttributes
   validates :name, presence: true, uniqueness: true
@@ -17,22 +19,26 @@ class AiHelperModelProfile < ApplicationRecord
     masked_key
   end
 
+  # Returns the String which is displayed in the select box
   def display_name
     "#{name} (#{llm_type}: #{llm_model})"
   end
 
+  # returns true if base_uri is required.
   def base_uri_required?
-    # Check if the llm_type is OpenAICompatible or Gemini
+    # Check if the llm_type is OpenAICompatible
     llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE
   end
 
+  # returns true if access_key is required.
   def access_key_required?
     llm_type != RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE
   end
 
+  # Returns the LLM type name for display
   def display_llm_type
     names = RedmineAiHelper::LlmProvider.option_for_select
     name = names.find { |n| n[1] == llm_type }
-    name = name[0] if name
+    name = names[0] if name
   end
 end
