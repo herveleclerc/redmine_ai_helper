@@ -1,7 +1,9 @@
+# frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
+    # UserTools is a specialized tool for handling Redmine user-related queries.
     class UserTools < RedmineAiHelper::BaseTools
       define_function :list_users, description: "Returns a list of all users who have logged in within the past year. The user information includes the following items: id, login, firstname, lastname, created_on, last_login_on." do
         property :query, type: "object", description: "The query to filter the users.", required: true do
@@ -20,10 +22,18 @@ module RedmineAiHelper
           end
         end
       end
-      # list_users
-      # args: { query: { limit: 100, status: "active", date_fields: [], sort: { field_name: "last_login_on", order: "desc" } } }
-      # args: { query: { limit: 100, status: "active", date_fields: [], sort: { field_name: "last_login_on", order: "desc" } } }
-      # Returns a list of all users who have logged in within the past year
+      # list_users.
+      # @param query [Hash] The query to filter the users.
+      # @option query [Integer] :limit The maximum number of users to return. The default is 100.
+      # @option query [String] :status The status of the users to return. The default is 'active'.
+      # @option query [Array<Hash>] :date_fields The date fields to filter on.
+      # @option query [String] :date_fields[].field_name The date field to filter on. Can be 'created_on' or 'last_login_on'.
+      # @option query [String] :date_fields[].operator The operator to use for the filter. Can be '=', '!=', '>', '<', '>=', or '<='.
+      # @option query [String] :date_fields[].value The value to filter on.
+      # @option query [Hash] :sort The field to sort on.
+      # @option query [String] :sort.field_name The field to sort on. Can be 'id', 'login', 'firstname', 'lastname', 'created_on', or 'last_login_on'.
+      # @option query [String] :sort.order The order to sort in. Can be 'asc' or 'desc'.
+      # @return [Hash] A hash containing the list of users and the total count.
       def list_users(query: {})
         limit = query[:limit] || 100
         status = query[:status] || "active"
@@ -66,7 +76,8 @@ module RedmineAiHelper
         property :name, type: "string", description: "The user name to search for.", required: true
       end
       # Returns a list of users that match the name or login
-      # args: { name: "string" }
+      # @param name [String] The user name to search for.
+      # @return [Hash] A hash containing the list of users.
       def find_user(name:)
         users = User.all.filter { |user|
           user.login.downcase.include?(name.downcase) || user.name.downcase.include?(name.downcase)

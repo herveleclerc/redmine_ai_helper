@@ -1,8 +1,12 @@
+# frozen_string_literal: true
 require_relative "base_provider"
 
 module RedmineAiHelper
   module LlmClient
+    # OpenAiCompatibleProvider is a specialized provider for OpenAI-compatible LLMs.
     class OpenAiCompatibleProvider < RedmineAiHelper::LlmClient::BaseProvider
+      # Generate a client for OpenAI-compatible LLMs.
+      # @return [OpenAiCompatible] The OpenAI-compatible client.
       def generate_client
         model_profile = AiHelperSetting.find_or_create.model_profile
         raise "Model Profile not found" unless model_profile
@@ -23,11 +27,17 @@ module RedmineAiHelper
         client
       end
 
+      # Many LLMs with OpenAI API-compatible APIs do not implement tool calls,
+      # so we implement compatibility features ourselves.
       class OpenAiCompatible < Langchain::LLM::OpenAI
         def initialize(**kwargs)
           super(**kwargs)
         end
 
+        # Override the chat method to handle tool calls.
+        # @param [Hash] params Parameters for the chat request.
+        # @param [Proc] block Block to handle the response.
+        # @return [Langchain::LLM::OpenAIResponse] The response from the chat.
         def chat(params = {}, &block)
           tools = params[:tools] || []
           messages = params[:messages] || []
@@ -44,6 +54,11 @@ module RedmineAiHelper
           selected
         end
 
+        # Select tools based on the provided messages and available tools.
+        # @param [Array] messages Messages to analyze.
+        # @param [Array] tools Available tools for selection.
+        # @return [Langchain::LLM::OpenAIResponse] The response containing selected tools.
+        # @raise [ArgumentError] If tools are not provided.
         def select_tools(messages:, tools:)
           json_schema = {
             type: "object",
@@ -55,22 +70,22 @@ module RedmineAiHelper
                   properties: {
                     id: {
                       type: "string",
-                      description: "ツールのID",
+                      description: "ツールのID", # TODO: 英語にする
                     },
                     type: {
                       type: "string",
-                      description: "function 固定",
+                      description: "function 固定", # TODO: 英語にする
                     },
                     function: {
                       type: "object",
                       properties: {
                         name: {
                           type: "string",
-                          description: "ツールの名前",
+                          description: "ツールの名前", # TODO: 英語にする
                         },
                         arguments: {
                           type: "string",
-                          description: "ツールの引数のJSON文字列表現",
+                          description: "ツールの引数のJSON文字列表現", # TODO: 英語にする
                         },
                       },
                       required: ["name", "arguments"],
@@ -83,6 +98,7 @@ module RedmineAiHelper
             required: ["tool_calls"],
           }
           parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
+          # TODO: 英語にする
           prompt = <<~EOS
             ユーザーのメッセージを解析して、ユーザの要求を解決するために最適なツールを選択してください。
 
@@ -111,6 +127,8 @@ module RedmineAiHelper
           EOS
 
           new_messages = messages.dup
+          # TODO: 英語にする
+          # Some LLMs may throw an error if user messages are consecutive, so insert an assistant message in between.
           new_messages << Langchain::Assistant::Messages::OpenAIMessage.new(role: "assistant", content: "お任せください").to_hash
           new_messages << Langchain::Assistant::Messages::OpenAIMessage.new(role: "user", content: prompt).to_hash
           response = chat(messages: new_messages)
@@ -155,6 +173,7 @@ module RedmineAiHelper
               next
             end
             if message[:tool_calls].is_a?(Array)
+              # TODO: 英語にする
               prompt = <<~EOS
                 回答を作成するために、以下のツールを実行して結果を教えてください。結果に基づいて回答を作成します。
                 tool:
@@ -165,6 +184,7 @@ module RedmineAiHelper
             end
           end
 
+          # TODO: 英語にする
           prompt = <<~EOS
             あなたの指定したツールを実行したところ、以下の実行結果が得られました。この結果を元に、あなたの最終的な回答をしてください。
 

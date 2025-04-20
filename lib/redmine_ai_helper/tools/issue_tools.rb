@@ -1,9 +1,11 @@
+# frozen_string_literal: true
 require "langchain"
 require "redmine_ai_helper/base_tools"
 require "redmine_ai_helper/util/issue_json"
 
 module RedmineAiHelper
   module Tools
+    # IssueTools is a specialized tool provider for handling Redmine issue-related queries.
     class IssueTools < RedmineAiHelper::BaseTools
       include RedmineAiHelper::Util::IssueJson
       define_function :read_issues, description: "Read an issue from the database and return it as a JSON object. It returns the issue ID, subject, project, tracker, status, priority, author, assigned_to, description, start_date, due_date, done_ratio, is_private, estimated_hours, total_estimated_hours, spent_hours, total_spent_hours, created_on, updated_on, closed_on, issue_url, attachments, children and relations." do
@@ -11,7 +13,9 @@ module RedmineAiHelper
           item type: "integer", description: "The issue ID to read."
         end
       end
-      # Read an issue from the database and return it as a JSON object.
+      # Read an issue from the database.
+      # @param issue_ids [Array<Integer>] The issue ID array to read.
+      # @return [Hash] A hash containing issue information.
       def read_issues(issue_ids:)
         raise("Issue ID array is required.") if issue_ids.empty?
         issues = []
@@ -34,6 +38,10 @@ module RedmineAiHelper
         property :project_identifier, type: "string", description: "The project identifier of the project to return.", required: false
       end
       # Return properties that can be assigned to an issue for the specified project, such as status, tracker, custom fields, etc.
+      # @param project_id [Integer] The project ID of the project to return.
+      # @param project_name [String] The project name of the project to return.
+      # @param project_identifier [String] The project identifier of the project to return.
+      # @return [Hash] A hash containing issue properties.
       def capable_issue_properties(project_id: nil, project_name: nil, project_identifier: nil)
         project = nil
         if project_id
@@ -116,6 +124,22 @@ module RedmineAiHelper
         end
       end
       # Validate the parameters for creating a new issue
+      # @param project_id [Integer] The project ID of the project to create the issue in.
+      # @param tracker_id [Integer] The tracker ID of the issue to create.
+      # @param subject [String] The subject of the issue to create.
+      # @param status_id [Integer] The status ID of the issue to create.
+      # @param priority_id [Integer] The priority ID of the issue to create.
+      # @param category_id [Integer] The category ID of the issue to create.
+      # @param version_id [Integer] The version ID of the issue to create.
+      # @param assigned_to_id [Integer] The assigned_to ID of the issue to create.
+      # @param description [String] The description of the issue to create.
+      # @param start_date [String] The start date of the issue to create.
+      # @param due_date [String] The due date of the issue to create.
+      # @param done_ratio [Integer] The done ratio of the issue to create.
+      # @param is_private [Boolean] Whether the issue is private or not. Default is false.
+      # @param estimated_hours [String] The estimated hours of the issue to create.
+      # @param custom_fields [Array<Hash>] The custom fields of the issue to create.
+      # @return [Hash] A hash containing the validation result.
       def validate_new_issue(project_id:, tracker_id:, subject:, status_id:, priority_id: nil, category_id: nil, version_id: nil, assigned_to_id: nil, description: nil, start_date: nil, due_date: nil, done_ratio: nil, is_private: false, estimated_hours: nil, custom_fields: [])
         issue_update_provider = IssueUpdateTools.new
         return issue_update_provider.create_new_issue(project_id: project_id, tracker_id: tracker_id, subject: subject, status_id: status_id, priority_id: priority_id, category_id: category_id, version_id: version_id, assigned_to_id: assigned_to_id, description: description, start_date: start_date, due_date: due_date, done_ratio: done_ratio, is_private: is_private, estimated_hours: estimated_hours, custom_fields: custom_fields, validate_only: true)
@@ -145,6 +169,23 @@ module RedmineAiHelper
         property :comment_to_add, type: "string", description: "Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.", required: false
       end
       # Validate the parameters for updating an issue
+      # @param issue_id [Integer] The issue ID of the issue to update.
+      # @param subject [String] The subject of the issue to update.
+      # @param tracker_id [Integer] The tracker ID of the issue to update.
+      # @param status_id [Integer] The status ID of the issue to update.
+      # @param priority_id [Integer] The priority ID of the issue to update.
+      # @param category_id [Integer] The category ID of the issue to update.
+      # @param version_id [Integer] The version ID of the issue to update.
+      # @param assigned_to_id [Integer] The assigned_to ID of the issue to update.
+      # @param description [String] The description of the issue to update.
+      # @param start_date [String] The start date of the issue to update.
+      # @param due_date [String] The due date of the issue to update.
+      # @param done_ratio [Integer] The done ratio of the issue to update.
+      # @param is_private [Boolean] Whether the issue is private or not. Default is false.
+      # @param estimated_hours [String] The estimated hours of the issue to update.
+      # @param custom_fields [Array<Hash>] The custom fields of the issue to update.
+      # @param comment_to_add [String] Comment to add to the issue. To insert a newline, you need to insert a blank line. Otherwise, it will be concatenated into a single line.
+      # @return [Hash] A hash containing the validation result.
       def validate_update_issue(issue_id:, subject: nil, tracker_id: nil, status_id: nil, priority_id: nil, category_id: nil, version_id: nil, assigned_to_id: nil, description: nil, start_date: nil, due_date: nil, done_ratio: nil, is_private: false, estimated_hours: nil, custom_fields: [], comment_to_add: nil)
         issue_update_provider = IssueUpdateTools.new
         return issue_update_provider.update_issue(issue_id: issue_id, subject: subject, tracker_id: tracker_id, status_id: status_id, priority_id: priority_id, category_id: category_id, version_id: version_id, assigned_to_id: assigned_to_id, description: description, start_date: start_date, due_date: due_date, done_ratio: done_ratio, is_private: is_private, estimated_hours: estimated_hours, custom_fields: custom_fields, comment_to_add: comment_to_add, validate_only: true)

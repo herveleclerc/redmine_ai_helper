@@ -1,12 +1,17 @@
+# frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
+    # Tools for handling Redmine board-related queries.
     class BoardTools < RedmineAiHelper::BaseTools
       define_function :list_boards, description: "List all boards in the project. It returns the board ID, project ID, name, description, messages_count, and last_message." do
         property :project_id, type: "integer", description: "The project ID of the project to return.", required: true
       end
+
       # List all boards in the project.
+      # @param project_id [Integer] The project ID of the project to return.
+      # @return [Array<Hash>] An array of hashes containing board information.
       def list_boards(project_id:)
         project = Project.find_by(id: project_id)
         raise("Project not found") if project.nil?
@@ -25,11 +30,13 @@ module RedmineAiHelper
         return board_list
       end
 
-      define_function :board_info, description: "Read a board from the database and return it as a JSON object. It returns the board ID, project ID, name, description, messages_count, and messages." do
+      define_function :board_info, description: "Read a board from the database. It returns the board ID, project ID, name, description, messages_count, and messages." do
         property :board_id, type: "integer", description: "The board ID of the board to return.", required: true
       end
 
-      # Read a board from the database and return it as a JSON object.
+      # Read a board from the database.
+      # @param board_id [Integer] The board ID of the board to return.
+      # @return [Hash] A hash containing board information.
       def board_info(board_id:)
         board = Board.find_by(id: board_id)
         raise("Board not found") if board.nil?
@@ -56,10 +63,12 @@ module RedmineAiHelper
         board_hash
       end
 
-      define_function :read_message, description: "Read a message from the database and return it as a JSON object. It returns the message ID, board ID, parent_id, subject, content, author, created_on, updated_on, and replies." do
+      define_function :read_message, description: "Read a message from the database. It returns the message ID, board ID, parent_id, subject, content, author, created_on, updated_on, and replies." do
         property :message_id, type: "integer", description: "The message ID of the message to return.", required: true
       end
       # Read a message from the database and return it as a JSON object.
+      # @param message_id [Integer] The message ID of the message to return.
+      # @return [Hash] A hash containing message information.
       def read_message(message_id:)
         message = Message.find_by(id: message_id)
         raise("Message not found") if message.nil? || !message.visible?
@@ -97,6 +106,8 @@ module RedmineAiHelper
         property :board_id, type: "integer", description: "The board ID of the board to return.", required: true
       end
       # Generate a URL for the specified board.
+      # @param board_id [Integer] The board ID of the board to return.
+      # @return url.
       def generate_board_url(board_id:)
         raise("Board ID not provided") unless board_id
         board = Board.find_by(id: board_id)
@@ -111,6 +122,8 @@ module RedmineAiHelper
       end
 
       # Generate a URL for the specified message.
+      # @param message_id [Integer] The message ID of the message to return.
+      # @return url.
       def generate_message_url(message_id:)
         raise("Message ID not provided") unless message_id
         message = Message.find_by(id: message_id)

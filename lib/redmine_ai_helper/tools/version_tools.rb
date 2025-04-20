@@ -1,13 +1,16 @@
+# frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
+    # VersionTools is a specialized tool for handling Redmine version-related queries.
     class VersionTools < RedmineAiHelper::BaseTools
       define_function :list_versions, description: "List all versions in the project. It returns the version ID, name, description, status, due_date, sharing, wiki_page_title, and created_on." do
         property :project_id, type: "integer", description: "The project ID of the project to return.", required: true
       end
       # List all versions in the project.
-      # args: { project_id: "integer" }
+      # @param project_id [Integer] The project ID of the project to return.
+      # @return [Array<Hash>] An array of hashes containing version information.
       def list_versions(project_id:)
         project = Project.find_by_id(project_id)
         raise("Project not found") if project.nil? or !project.visible?
@@ -35,7 +38,8 @@ module RedmineAiHelper
         end
       end
       # Read a version from the database and return it as a JSON object.
-      # args: { version_ids: "array" }
+      # @param version_ids [Array<Integer>] The version IDs of the versions to return.
+      # @return [Array<Hash>] An array of hashes containing version information.
       def version_info(version_ids:)
         versions = []
 

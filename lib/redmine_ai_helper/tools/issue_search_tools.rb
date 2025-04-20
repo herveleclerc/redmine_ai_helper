@@ -1,5 +1,6 @@
 module RedmineAiHelper
   module Tools
+    # A class that provides functionality to the Agent for retrieving issue information
     class IssueSearchTools < RedmineAiHelper::BaseTools
       define_function :generate_url, description: "Generate a URL for searching issues based on the filter conditions. For search items with '_id', specify the ID instead of the name of the search target. If you do not know the ID, you need to call capable_issue_properties in advance to obtain the ID." do
         property :project_id, type: "integer", description: "The project ID of the project to search in.", required: true
@@ -68,6 +69,16 @@ module RedmineAiHelper
         end
       end
       # Generate a URL with query strings to search for issues based on filter conditions
+      # @param project_id [Integer] The project ID of the project to search in.
+      # @param fields [Array] Search fields for the issue.
+      # @param date_fields [Array] Search fields for the issue.
+      # @param time_fields [Array] Search fields for the issue.
+      # @param number_fields [Array] Search fields for the issue.
+      # @param text_fields [Array] Search fields for the issue.
+      # @param status_field [Array] Search fields for the issue.
+      # @param custom_fields [Array] Search fields for the issue.
+      # @return [Hash] A hash containing the generated URL.
+      # @raise [ArgumentError] If the project is not found or if there are validation errors.
       def generate_url(project_id:, fields: [], date_fields: [], time_fields: [], number_fields: [], text_fields: [], status_field: [], custom_fields: [])
         project = Project.find(project_id)
 
@@ -174,24 +185,15 @@ module RedmineAiHelper
         errors
       end
 
-      # Redmineのチケット検索用URLを作成するクラス
-      # # 使用例
-      # params = {
-      #   fields: ["tracker_id", "created_on"],
-      #   operators: { "tracker_id" => "=", "created_on" => "><" },
-      #   values: { "tracker_id" => ["2"], "created_on" => ["2025-01-01", "2025-01-31"] },
-      # }
-      # defaults = {}
-      # builder = IssueQueryBuilder.new(params, defaults)
-      # カスタムフィールドのフィルターを追加
-      # ここでは値を配列として渡します
-      # builder.add_custom_field_filter(1, "=", ["example_value1", "example_value2"])
-      # project = Project.find(1)
-      # puts builder.generate_query_string(project)
+      # IssueQueryBuilder is a class that builds a query for searching issues in Redmine.
       #
       class IssueQueryBuilder
         include Rails.application.routes.url_helpers
 
+        # Initializes a new IssueQueryBuilder instance.
+        # @param params [Hash] The parameters for the query.
+        # @param defaults [Hash] The default parameters for the query.
+        # @return [IssueQueryBuilder] The initialized IssueQueryBuilder instance.
         def initialize(params, defaults = {})
           @query = IssueQuery.new
           # @query.add_filter("set_filter", "=", "1")
@@ -205,11 +207,19 @@ module RedmineAiHelper
           @query.sort_criteria = [["priority", "desc"], ["updated_on", "desc"]]
         end
 
+        # Adds a custom field filter to the query.
+        # @param custom_field_id [Integer] The ID of the custom field.
+        # @param operator [String] The operator to use for the filter.
+        # @param values [Array] The values to filter by.
+        # @return [void]
         def add_custom_field_filter(custom_field_id, operator, values)
           field = "cf_#{custom_field_id}"
           @query.add_filter(field, operator, values)
         end
 
+        # Generates a query string for the project.
+        # @param project [Project] The project to generate the query string for.
+        # @return [String] The generated query string.
         def generate_query_string(project)
           query_params = @query.as_params
           query_params.delete(:set_filter)

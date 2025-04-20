@@ -1,8 +1,12 @@
+# frozen_string_literal: true
 require_relative "base_provider"
 
 module RedmineAiHelper
   module LlmClient
+    # OpenAiProvider is a specialized provider for handling OpenAI-related queries.
     class OpenAiProvider < RedmineAiHelper::LlmClient::BaseProvider
+      # Generate a client for OpenAI LLM
+      # @return [Langchain::LLM::OpenAI] the OpenAI client
       def generate_client
         setting = AiHelperSetting.find_or_create
         model_profile = setting.model_profile
