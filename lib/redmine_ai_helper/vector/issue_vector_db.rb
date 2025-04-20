@@ -58,8 +58,8 @@ module RedmineAiHelper
           version_name: issue.fixed_version&.name,
           category_name: issue.category&.name,
         }
-        content = issue.subject + " " + issue.description
-        content += " " + issue.journals.map { |journal| journal.notes }.join(" ")
+        content = "#{issue.subject} #{issue.description}"
+        content += " " + issue.journals.map { |journal| journal.notes.to_s }.join(" ")
 
         return { content: content, payload: payload }
       end
