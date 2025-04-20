@@ -13,7 +13,7 @@ module RedmineAiHelper
       def client
         return nil unless setting.vector_search_enabled
         return @client if @client
-        @client = Langchain::Vectorsearch::Qdrant.new(
+        @client = RedmineAiHelper::Vector::Qdrant.new(
           url: setting.vector_search_uri,
           api_key: setting.vector_search_api_key || "dummy",
           index_name: index_name,
@@ -53,14 +53,16 @@ module RedmineAiHelper
           vector_data = AiHelperVectorData.find_by(object_id: data.id, index: index_name)
           next if vector_data and data.updated_on < vector_data.updated_at
           begin
-            text = data_to_jsontext(data)
+            json = data_to_json(data)
+            text = json[:content]
+            payload = json[:payload]
             if (vector_data)
-              client.update_texts(texts: [text], ids: [vector_data.uuid])
+              client.add_texts(texts: [text], ids: [vector_data.uuid], payload: payload)
               vector_data.updated_at = Time.now
             else
               uuid = SecureRandom.uuid
               vector_data = AiHelperVectorData.new(object_id: data.id, index: index_name, uuid: uuid)
-              client.add_texts(texts: [text], ids: [uuid])
+              client.add_texts(texts: [text], ids: [uuid], payload: payload)
             end
             print "."
             vector_data.save!
