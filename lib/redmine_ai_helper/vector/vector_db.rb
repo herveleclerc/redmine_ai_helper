@@ -53,27 +53,37 @@ module RedmineAiHelper
           vector_data = AiHelperVectorData.find_by(object_id: data.id, index: index_name)
           next if vector_data and data.updated_on < vector_data.updated_at
           begin
-            json = data_to_json(data)
-            text = json[:content]
-            payload = json[:payload]
-            if (vector_data)
-              client.add_texts(texts: [text], ids: [vector_data.uuid], payload: payload)
-              vector_data.updated_at = Time.now
-            else
-              uuid = SecureRandom.uuid
-              vector_data = AiHelperVectorData.new(object_id: data.id, index: index_name, uuid: uuid)
-              client.add_texts(texts: [text], ids: [uuid], payload: payload)
-            end
-            print "."
-            vector_data.save!
+            add_data(vector_data: vector_data, data: data)
           rescue => e
-            puts ""
-            puts "Error: #{index_name} ##{data.id}"
-            puts e.message
+            begin
+              add_data(vector_data: vector_data, data: data, retry_flag: true)
+            rescue => e
+              puts ""
+              puts "Error: #{index_name} ##{data.id}"
+              puts e.message
+            end
           end
+          print "."
         end
         clean_vector_data
         puts ""
+      end
+
+      def add_data(vector_data:, data:, retry_flag: false)
+        json = data_to_json(data)
+        text = json[:content]
+        text = text[0..1500] if retry_flag and text.length
+        payload = json[:payload]
+        if (vector_data)
+          client.add_texts(texts: [text], ids: [vector_data.uuid], payload: payload)
+          vector_data.updated_at = Time.now
+        else
+          uuid = SecureRandom.uuid
+          vector_data = AiHelperVectorData.new(object_id: data.id, index: index_name, uuid: uuid)
+          client.add_texts(texts: [text], ids: [uuid], payload: payload)
+        end
+
+        vector_data.save!
       end
 
       def clean_vector_data
