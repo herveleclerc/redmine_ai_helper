@@ -120,121 +120,9 @@ module RedmineAiHelper
     # @param callback [Proc] A callback function to be called with each chunk of the response.
     # @return [Array] The result of the task.
     def perform_task(messages, option = {}, callback = nil)
-      tasks = decompose_task(messages)
-      llm_provider.reset_assistant_messages(
-        assistant: assistant,
-        system_prompt: system_prompt,
-        messages: messages,
-      )
-      pre_tasks = []
-      tasks["steps"].each do |new_task|
-        ai_helper_logger.debug "new_task: #{new_task}"
-        result = nil
-        previous_error = nil
-        max_retry = 3
-        max_retry.times do |i|
-          result = dispatch(new_task["step"], messages, pre_tasks, previous_error)
-          break if result.is_success?
-
-          previous_error = result.error
-          ai_helper_logger.debug "retry: #{i}"
-        end
-        pre_task = {
-          "name": new_task["name"],
-          "step": new_task["step"],
-          "result": result.value,
-        }
-        ai_helper_logger.debug "pre_task: #{pre_task}"
-        pre_tasks << pre_task
-        result.value
-      end
-      pre_tasks
-    end
-
-    # Decomposes a task into smaller steps using the assistant.
-    # @param messages [Array] The messages to be sent to the assistant.
-    # @return [Hash] The decomposed task.
-    def decompose_task(messages)
-      json_schema = {
-        "type": "object",
-        "properties": {
-          "steps": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "description": "ステップの名前", # TODO: 英語にする
-                },
-                "step": {
-                  "type": "string",
-                  "description": "ステップの内容", # TODO: 英語にする
-                },
-                "tool": {
-                  "type": "object",
-                  "properties": {
-                    "provider": {
-                      "type": "string",
-                      "description": "ツールのプロバイダー", # TODO: 英語にする
-                    },
-                    "tool_name": {
-                      "type": "string",
-                      "description": "ツールの名前", # TODO: 英語にする
-                    },
-                  },
-                  "description": "ツールの情報", # TODO: 英語にする
-                },
-              },
-              "required": ["name", "step"], # TODO: 英語にする
-            },
-          },
-        },
-      }
-      parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
-
-      # TODO: 例文を英語にする
-      json_examples = <<~EOS
-        タスクの例:
-        「チケットID 3のチケットのステータスを完了に変更する」
-        JSONの例:
-        {
-          "steps": [
-            {
-                  "name": "step1",
-                  "step": "チケットを更新するために、必要な情報を整理する。",
-                  "tool": {
-                    "provider": "issue_tool_provider",
-                    "tool_name": "capable_issue_properties"
-                  }
-            },
-            {
-                  "name": "step2",
-                  "step": "前のステップで取得したステータスを使用してチケットを更新する",
-                  "tool": {
-                    "provider": "issue_tool_provider",
-                    "tool_name": "update_issue",
-                  }
-            }
-          ]
-        }
-      EOS
-
-      prompt = load_prompt("base_agent/decompose_task")
-      prompt_text = prompt.format(
-        format_instructions: parser.get_format_instructions,
-        json_examples: json_examples,
-        available_tools: available_tools,
-      )
-
-      newmessages = messages.dup
-      newmessages << { role: "user", content: prompt_text }
-      json = chat(newmessages)
-      fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
-        llm: @client,
-        parser: parser,
-      )
-      fix_parser.parse(json)
+      new_messages = messages.dup
+      task = new_messages.pop
+      return dispatch(task, new_messages)
     end
 
     # dispatch the tool
@@ -243,7 +131,7 @@ module RedmineAiHelper
     # @param pre_tasks [Array] The pre-tasks to be sent to the assistant. TODO: 使っていない
     # @param previous_error [String] The previous error message (optional).
     # @return [TaskResponse] The response from the task.
-    def dispatch(task, messages, pre_tasks = [], previous_error = nil)
+    def dispatch(task, messages, previous_error = nil)
       begin
         assistant.add_message(role: "assistant", content: "previous error: #{previous_error}") if previous_error
         response = assistant.add_message_and_run!(content: task)
