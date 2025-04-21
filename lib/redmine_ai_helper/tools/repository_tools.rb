@@ -1,12 +1,16 @@
+# frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
+    # RepositoryTools is a specialized tool provider for handling Redmine repository-related queries.
     class RepositoryTools < RedmineAiHelper::BaseTools
       define_function :repository_info, description: "Get information about a repository." do
         property :repository_id, type: "integer", description: "The ID of the repository to get information about.", required: true
       end
       # Get information about a repository.
+      # @param repository_id [Integer] The ID of the repository to get information about.
+      # @return [Hash] A hash containing repository information.
       def repository_info(repository_id:)
         repository = Repository.find_by(id: repository_id)
         raise("Repository not found.") if repository.nil?
@@ -29,6 +33,9 @@ module RedmineAiHelper
       end
       # Get information about a revision in a repository.
       # Returns the author, committed_on, list of path, and comments for the revision.
+      # @param repository_id [Integer] The ID of the repository to get information about.
+      # @param revision [String] The revision to get information about.
+      # @return [Hash] A hash containing revision information.
       def get_revision_info(repository_id:, revision:)
         repository = Repository.find_by_id(repository_id)
         raise("Repository not found: repository_id = #{repository_id}") if repository.nil?
@@ -58,6 +65,10 @@ module RedmineAiHelper
         property :revision, type: "string", description: "The revision to get information about.", required: false
       end
       # Get information about a file in a repository.
+      # @param repository_id [Integer] The ID of the repository to get information about.
+      # @param path [String] The path of the file to get information about.
+      # @param revision [String] The revision to get information about.
+      # @return [Hash] A hash containing file information.
       def get_file_info(repository_id:, path:, revision: "main")
         repository = Repository.find_by(id: repository_id)
         raise("Repository not found.") if repository.nil?
@@ -96,6 +107,10 @@ module RedmineAiHelper
         property :revision, type: "string", description: "The revision to read the file from.", required: false
       end
       # Read a file in a repository.
+      # @param repository_id [Integer] The ID of the repository to read the file from.
+      # @param path [String] The path of the file to read.
+      # @param revision [String] The revision to read the file from.
+      # @return [Hash] A hash containing the file content and URL for the file in Redmine.
       def read_file(repository_id:, path:, revision: "main")
         repository = Repository.find_by(id: repository_id)
         raise("Repository not found.") if repository.nil?
@@ -123,6 +138,11 @@ module RedmineAiHelper
       end
       # Get the diff information for a specified path and revision within the repository.
       # If the path is not specified, the diff information for all files in the revision is returned.
+      # @param repository_id [Integer] The ID of the repository to get diff information from.
+      # @param path [String] The path of the file to get diff information about.
+      # @param revision [String] The revision to get diff information about.
+      # @param revision_to [String] The revision to compare the diff against.
+      # @return [Hash] A hash containing the diff information.
       def read_diff(repository_id:, path: nil, revision:, revision_to: nil)
         repository = Repository.find(repository_id)
         raise("Repository not found.") if repository.nil?

@@ -1,13 +1,19 @@
+# frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
+    # ProjectTools is a specialized tool for handling Redmine project-related queries.
     class ProjectTools < RedmineAiHelper::BaseTools
       define_function :list_projects, description: "List all projects visible to the current user. It returns the project ID, name, identifier, description, created_on, and last_activity_date." do
         property :dummy, type: "string", description: "dummy property", required: false
       end
 
       # List all projects visible to the current user.
+      # A dummy property is defined because at least one property is required in the tool
+      # definition for langchainrb.
+      # @param dummy [String] Dummy property to satisfy the tool definition requirement.
+      # @return [Array<Hash>] An array of hashes containing project information.
       def list_projects(dummy: nil)
         projects = Project.all
         list = projects.select { |p| accessible_project? p }.map do |project|
@@ -30,6 +36,10 @@ module RedmineAiHelper
       end
 
       # Read a project from the database.
+      # @param project_id [Integer] The project ID of the project to return.
+      # @param project_name [String] The project name of the project to return.
+      # @param project_identifier [String] The project identifier of the project to return.
+      # @return [Hash] A hash containing project information.
       def read_project(project_id: nil, project_name: nil, project_identifier: nil)
         if project_id
           project = Project.find_by(id: project_id)
@@ -74,6 +84,8 @@ module RedmineAiHelper
       end
 
       # List all members of the project.
+      # @param project_ids [Array<Integer>] The project IDs of the projects to return.
+      # @return [Array<Hash>] An array of hashes containing member information.
       def project_members(project_ids:)
         projects = Project.where(id: project_ids)
         return ToolResponse.create_error "No projects found" if projects.empty?
@@ -109,6 +121,8 @@ module RedmineAiHelper
 
       # List all modules of the project.
       # It shows the functions and plugins enabled in this project.
+      # @param project_id [Integer] The project ID of the project to return.
+      # @return [Array<Hash>] An array of hashes containing module information.
       def project_enabled_modules(project_id:)
         project = Project.find(project_id)
         return ToolResponse.create_error "Project not found" unless project
@@ -135,6 +149,12 @@ module RedmineAiHelper
       end
 
       # List all activities of the project.
+      # @param project_id [Integer] The project ID of the activities to return.
+      # @param author_id [Integer] The user ID of the author of the activity. If not specified, it will return all activities.
+      # @param limit [Integer] The maximum number of activities to return. If not specified, it will return all activities.
+      # @param start_date [DateTime] The start date of the activities to return.
+      # @param end_date [DateTime] The end date of the activities to return. If not specified, it will return all activities.
+      # @return [Array<Hash>] An array of hashes containing activity information.
       def list_project_activities(project_id:, author_id: nil, limit: nil, start_date: nil, end_date: nil)
         project = Project.find(project_id)
         return ToolResponse.create_error "Project not found" unless project
@@ -167,7 +187,7 @@ module RedmineAiHelper
           }
         end
         json = { "activities": list }
-        ToolResponse.create_success json
+        ToolResponse.create_success json # TODO: jsonだけ返せば良い？
       end
     end
   end

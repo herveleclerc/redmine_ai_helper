@@ -1,6 +1,9 @@
+# frozen_string_literal: true
 module RedmineAiHelper
   module Assistants
+    # GeminiAssistant is a specialized assistant for handling Gemini messages.
     class GeminiAssistant < RedmineAiHelper::Assistant
+      # Adjust the message format to match Gemini. Convert "assistant" role to "model".
       def add_message(role: "user", content: nil, image_url: nil, tool_calls: [], tool_call_id: nil)
         new_role = role
         case role

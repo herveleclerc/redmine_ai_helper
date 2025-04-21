@@ -51,7 +51,8 @@
 		"aliariff.vscode-erb-beautify",
 		"bysabi.prettier-vscode-standard",
 		"GitHub.copilot",
-		"Shunqian.prettier-plus"
+		"Shunqian.prettier-plus",
+		"Gruntfuggly.todo-tree"
 	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [3000, 5432],

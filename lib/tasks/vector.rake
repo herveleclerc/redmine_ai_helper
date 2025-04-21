@@ -1,7 +1,8 @@
-# generate git repository for Redmine AI Helper tests
+# frozen_string_literal: true
 namespace :redmine do
   namespace :plugins do
     namespace :ai_helper do
+      # Rake tasks for initializing, registering, and deleting the vector DB
       namespace :vector do
         desc "Register vector data for Redmine AI Helper"
         task :regist => :environment do

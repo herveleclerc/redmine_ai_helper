@@ -1,25 +1,24 @@
+# frozen_string_literal: true
 require "json"
 
 module RedmineAiHelper
   module Vector
+    # This class is responsible for managing the vector database for issues in Redmine.
     class IssueVectorDb < VectorDb
       def index_name
         "RedmineIssue"
       end
 
-      def ask_with_filter(query:, filter: nil, k: 20)
-        return [] unless client
-        client.ask_with_filter(
-          query: query,
-          k: k,
-          filter: filter,
-        )
-      end
-
+      # Checks whether an Issue with the specified ID exists.
+      # @param object_id [Integer] The ID of the issue to check.
       def data_exists?(object_id)
         Issue.exists?(id: object_id)
       end
 
+      # A method to generate content and payload for registering an issue into the vector database
+      # @param issue [Issue] The issue to be registered.
+      # @return [Hash] A hash containing the content and payload for the issue.
+      # @note This method is used to prepare the data for vector database registration.
       def data_to_json(issue)
         payload = {
           issue_id: issue.id,
@@ -44,8 +43,8 @@ module RedmineAiHelper
           version_name: issue.fixed_version&.name,
           category_name: issue.category&.name,
         }
-        content = issue.subject + " " + issue.description
-        content += " " + issue.journals.map { |journal| journal.notes }.join(" ")
+        content = "#{issue.subject} #{issue.description}"
+        content += " " + issue.journals.map { |journal| journal.notes.to_s }.join(" ")
 
         return { content: content, payload: payload }
       end

@@ -1,14 +1,18 @@
+# frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
 
 module RedmineAiHelper
   module Tools
+    # WikiTools is a specialized tool for handling Redmine wiki-related queries.
     class WikiTools < RedmineAiHelper::BaseTools
-      define_function :read_wiki_page, description: "Read a wiki page from the database and return it as a JSON object. It includes the title, text, author, version, created_on, updated_on, children, parent, and attachments." do
+      define_function :read_wiki_page, description: "Read a wiki page from the database. It includes the title, text, author, version, created_on, updated_on, children, parent, and attachments." do
         property :project_id, type: "integer", description: "The project ID of the wiki page to read.", required: true
         property :title, type: "string", description: "The title of the wiki page to read.", required: true
       end
-      # Read an issue from the database and return it as a JSON object.
-      # args: { title: "string" }
+      # Read an issue from the database.
+      # @param project_id [Integer] The project ID of the wiki page to read.
+      # @param title [String] The title of the wiki page to read.
+      # @return [Hash] A hash containing wiki page information.
       def read_wiki_page(project_id:, title:)
         wiki = Wiki.find_by(project_id: project_id)
         raise("Wiki not found: project_id = #{project_id}") if !wiki || !wiki.visible?
@@ -51,7 +55,9 @@ module RedmineAiHelper
         property :project_id, type: "integer", description: "The project ID of the wiki pages to list.", required: true
       end
       # List all wiki pages in the project.
-      # args: { project_id: "integer" }
+      # @param project_id [Integer] The project ID of the wiki pages to list.
+      # @return [Array<Hash>] An array of hashes containing wiki page information.
+      # @raise [RuntimeError] If the wiki is not found or not visible.
       def list_wiki_pages(project_id:)
         wiki = Wiki.find_by(project_id: project_id)
         raise("Wiki not found: project_id = #{project_id}") if !wiki || !wiki.visible?
@@ -75,8 +81,9 @@ module RedmineAiHelper
         property :title, type: "string", description: "The title of the wiki page to generate a URL for.", required: true
       end
       # Generate a URL for a wiki page.
-      # args: { project_id: "integer", title: "string" }
-      # returns: { url: "string" }
+      # @param project_id [Integer] The project ID of the wiki page to generate a URL for.
+      # @param title [String] The title of the wiki page to generate a URL for.
+      # @return [Hash] A hash containing the URL for the wiki page.
       def generate_url_for_wiki_page(project_id:, title:)
         wiki = Wiki.find_by(project_id: project_id)
         raise("Wiki not found: project_id = #{project_id}") if !wiki || !wiki.visible?

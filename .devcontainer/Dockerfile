@@ -8,6 +8,6 @@ RUN gem install ruby-lsp
 RUN gem install htmlbeautifier
 RUN gem install rubocop
 RUN gem install logger
-RUN apt-get update && apt-get install -y npm
+RUN apt-get update && apt-get install -y npm --no-install-recommends
 USER vscode
 RUN bash -x /install-ble.sh

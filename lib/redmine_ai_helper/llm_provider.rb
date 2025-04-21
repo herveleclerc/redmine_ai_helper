@@ -1,13 +1,17 @@
+# frozen_string_literal: true
 require_relative "llm_client/open_ai_provider"
 require_relative "llm_client/anthropic_provider"
 
 module RedmineAiHelper
+  # This class is responsible for providing the appropriate LLM client based on the LLM type.
   class LlmProvider
     LLM_OPENAI = "OpenAI".freeze
     LLM_OPENAI_COMPATIBLE = "OpenAICompatible".freeze
     LLM_GEMINI = "Gemini".freeze
     LLM_ANTHROPIC = "Anthropic".freeze
     class << self
+      # Returns an instance of the appropriate LLM client based on the system settings.
+      # @return [Object] An instance of the appropriate LLM client.
       def get_llm_provider
         case type
         when LLM_OPENAI
@@ -23,11 +27,15 @@ module RedmineAiHelper
         end
       end
 
+      # Returns the LLM type based on the system settings.
+      # @return [String] The LLM type (e.g., LLM_OPENAI).
       def type
         setting = AiHelperSetting.find_or_create
         setting.model_profile.llm_type
       end
 
+      # Returns the options to display in the settings screen's dropdown menu
+      # @return [Array] An array of options for the select menu.
       def option_for_select
         [
           ["OpenAI", LLM_OPENAI],

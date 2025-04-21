@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module RedmineAiHelper
   module Logger
     def self.included(base)

@@ -1,8 +1,10 @@
+# frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
 require "redmine_ai_helper/util/issue_json"
 
 module RedmineAiHelper
   module Tools
+    # IssueUpdateTools is a specialized tool for handling Redmine issue updates.
     class IssueUpdateTools < RedmineAiHelper::BaseTools
       include RedmineAiHelper::Util::IssueJson
       define_function :create_new_issue, description: "Create a new issue in the database." do

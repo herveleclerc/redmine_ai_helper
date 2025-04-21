@@ -22,6 +22,9 @@ then
   exit 1;
 fi
 
+apt-get update
+apt-get install -y clang
+
 if [ "$REDMINE_VER" = "" ]
 then
   export REDMINE_VER=master
