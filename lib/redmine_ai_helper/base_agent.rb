@@ -136,7 +136,8 @@ module RedmineAiHelper
         assistant.add_message(role: "assistant", content: "previous error: #{previous_error}") if previous_error
         response = assistant.add_message_and_run!(content: task)
 
-        res = TaskResponse.create_success response
+        answer = response.last.content
+        res = TaskResponse.create_success answer
         res
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
