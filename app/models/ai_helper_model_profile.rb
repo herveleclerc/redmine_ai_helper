@@ -39,6 +39,6 @@ class AiHelperModelProfile < ApplicationRecord
   def display_llm_type
     names = RedmineAiHelper::LlmProvider.option_for_select
     name = names.find { |n| n[1] == llm_type }
-    name = names[0] if name
+    name ? name[0] : ""
   end
 end
