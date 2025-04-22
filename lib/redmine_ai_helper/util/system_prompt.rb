@@ -37,6 +37,8 @@ module RedmineAiHelper
         prompt_text
       end
 
+      private
+
       # Generates a string that describes the current page information.
       # @return [String] A string that describes the current page information.
       # @note This method is used to provide context to the AI about the current page.

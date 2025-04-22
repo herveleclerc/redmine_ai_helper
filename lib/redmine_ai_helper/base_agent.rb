@@ -145,6 +145,11 @@ module RedmineAiHelper
       end
     end
 
+    private
+
+    # Loads the prompt template from the specified name.
+    # @param name [String] The name of the prompt template to be loaded.
+    # @return [String] The loaded prompt template.
     def load_prompt(name)
       RedmineAiHelper::Util::PromptLoader.load_template(name)
     end
