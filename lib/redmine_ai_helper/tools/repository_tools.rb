@@ -150,7 +150,17 @@ module RedmineAiHelper
         changeset = repository.find_changeset_by_name(revision)
         raise("Revision not found: revision = #{revision}") if changeset.nil?
 
-        diff_lines = repository.diff(path, revision, revision_to)
+        rev_from = revision
+        rev_to = revision_to
+        if revision_to
+          changeset_to = repository.find_changeset_by_name(revision_to)
+          if changeset_to.committed_on > changeset.committed_on
+            rev_from = revision_to
+            rev_to = revision
+          end
+        end
+
+        diff_lines = repository.diff(path, rev_from, rev_to)
 
         diff_text = diff_lines.join("\n")
         diff_text.force_encoding("UTF-8")
