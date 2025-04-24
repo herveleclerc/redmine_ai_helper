@@ -12,6 +12,9 @@ en:
       messages:
         confirm_delete: "Are you sure you want to delete this model profile?"
         must_be_valid_url: "must be a valid URL"
+    prompts:
+      issue_agent:
+        search_answer_instruction: "In the case of multiple issue search tasks like 'find issues that meet the conditions' or 'show me issues with these conditions', please return the URL for issue search."
   activerecord:
     models:
       ai_helper_model_profile: "Model profile"

@@ -11,6 +11,9 @@ ja:
       messages:
         confirm_delete: "このモデルプロファイルを削除してもよろしいですか？"
         must_be_valid_url: "は有効なURLを入力してください"
+    prompts:
+      issue_agent:
+        search_answer_instruction: "なお、「条件に合ったチケットを探して」「こういう条件のチケット見せて」の様な複数のチケット探すタスクの場合には、チケット検索のURLを返してください。"
   activerecord:
     models:
       ai_helper_model_profile: "モデルプロファイル"

@@ -33,10 +33,9 @@ module RedmineAiHelper
         return "" unless @project
         provider = RedmineAiHelper::Tools::IssueTools.new
         properties = provider.capable_issue_properties(project_id: @project.id)
-        # TODO: 英語にする
         content = <<~EOS
           ----
-          プロジェクトID: #{@project.id} で指定可能なチケットのプロパティは以下の通りです。
+          The following issue properties are available for Project ID: #{@project.id}.
           #{properties}
         EOS
         content
