@@ -26,7 +26,7 @@ ja:
           rev_to: "リビジョンは %{rev} から %{rev_to} です。"
           path: "ファイルパスは %{path} です。"
         repository_revision_page: "リポジトリ「%{repo_name}」のリビジョン情報ページです。リビジョンは %{rev}} です。リポジトリのIDは %{repo_id} です。"
-        repository_otherr_page: "リポジトリの情報ページです"
+        repository_other_page: "リポジトリの情報ページです"
         boards:
           show: "フォーラム「%{board_name}」のページです。フォーラムのIDは %{board_id} です。"
           index: "フォーラム一覧のページです。"

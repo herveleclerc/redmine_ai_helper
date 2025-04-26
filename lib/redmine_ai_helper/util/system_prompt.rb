@@ -84,7 +84,7 @@ module RedmineAiHelper
           when "revision"
             page_name = I18n.t("ai_helper.prompts.current_page_info.repository_revision_page", repo_name: repo.name, repo_id: repo.id, rev: @additional_info["rev"])
           else
-            page_name = I18n.t("ai_helper.prompts.current_page_info.repository_otherr_page")
+            page_name = I18n.t("ai_helper.prompts.current_page_info.repository_other_page")
           end
         when "boards"
           board = Board.find(@content_id) if @content_id
