@@ -12,6 +12,32 @@ ja:
         confirm_delete: "このモデルプロファイルを削除してもよろしいですか？"
         must_be_valid_url: "は有効なURLを入力してください"
     prompts:
+      current_page_info:
+        project_page: "プロジェクト「%{project_name}」の情報ページです"
+        issue_detail_page: "チケット #%{issue_id} の詳細\nユーザが特にIDや名前を指定せずにただ「チケット」といった場合にはこのチケットのことです。"
+        issue_list_page: "チケット一覧"
+        issue_with_action_page: "チケットの%{action_name}ページです"
+        wiki_page: "「%{page_title}」というタイトルのWikiページを表示しています。\nユーザが特にタイトルを指定せずにただ「Wikiページ」や「ページ」といった場合にはこのWikiページのことです。"
+        repository_page: "リポジトリ「%{repo_name}」の情報ページです。リポジトリのIDは %{repo_id} です。"
+        repository_file_page: "リポジトリのファイル情報のページです。表示しているファイルパスは %{path} です。リビジョンは %{rev} です。リポジトリは「 %{repo_name}」です。リポジトリのIDは %{repo_id} です。"
+        repository_diff:
+          page:  "リポジトリ「%{repo_name}」の変更差分ページです。リポジトリのIDは %{repo_id} です。"
+          rev: "リビジョンは %{rev} です。"
+          rev_to: "リビジョンは %{rev} から %{rev_to} です。"
+          path: "ファイルパスは %{path} です。"
+        repository_revision_page: "リポジトリ「%{repo_name}」のリビジョン情報ページです。リビジョンは %{rev}} です。リポジトリのIDは %{repo_id} です。"
+        repository_otherr_page: "リポジトリの情報ページです"
+        boards:
+          show: "フォーラム「%{board_name}」のページです。フォーラムのIDは %{board_id} です。"
+          index: "フォーラム一覧のページです。"
+          other: "フォーラムのページです。"
+        messages:
+          show: "メッセージ「%{subject}」のページです。メッセージのIDは %{message_id}です。"
+          other: "メッセージのページです。"
+        versions:
+          show: "バージョン「%{version_name}」のページです。バージョンのIDは %{version_id} です。"
+          other: "バージョンのページです。"
+        other_page: "%{controller_name}の%{action_name}ページです"
       issue_agent:
         search_answer_instruction: "なお、「条件に合ったチケットを探して」「こういう条件のチケット見せて」の様な複数のチケット探すタスクの場合には、チケット検索のURLを返してください。"
   activerecord:
