@@ -119,11 +119,10 @@ module RedmineAiHelper
         end
 
         return "" if page_name.nil?
-        # TODO: 英語にする
         string = <<-EOS
-  ----
-  現在のユーザが表示しているRedmineのページの情報:
-  ページ名: #{page_name}
+          ----
+          Information about the Redmine page currently being viewed by the user
+          Page name: #{page_name}
         EOS
 
         string
