@@ -54,8 +54,7 @@ module RedmineAiHelper
         end
 
         newmessages = messages + chat_room.messages
-        # TODO: 英語にする
-        newmessages << { role: "user", content: "全てのエージェントのタスクが完了しました。最終的なユーザーへの回答を作成してください。" }
+        newmessages << { role: "user", content: "All agents have completed their tasks. Please create the final response for the user." }
         ai_helper_logger.debug "newmessages: #{newmessages}"
         chat(newmessages, option, callback)
       end
@@ -86,11 +85,11 @@ module RedmineAiHelper
                 properties: {
                   agent: {
                     type: "string",
-                    description: "指示を出すエージェントのロール", # TODO: 英語にする
+                    description: "The role of the agent to assign the task to",
                   },
                   step: {
                     type: "string",
-                    description: "指示内容", # TODO: 英語にする
+                    description: "The content of the instruction",
                   },
                 },
                 required: ["agent", "step"],
@@ -99,29 +98,28 @@ module RedmineAiHelper
           },
         }
         parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
-        # TODO: 英語にする
         json_examples = <<~EOS
           ----
-          適切なエージェントが見つかった場合のJSONの例:
+          Example JSON when appropriate agents are found:
           {
             "steps": [
               {
                 "agent": "project_agent",
-                "step": "my_projectという名前のプロジェクトのIDを教えてください"
+                "step": "Please provide the ID of the project named 'my_project'."
               },
               {
                 "agent": "issue_agent",
-                "step": "前のステップで取得したプロジェクトのIDに関連するチケットを教えてください"
+                "step": "Please provide the tickets related to the project ID obtained in the previous step."
               }
             ]
           }
           ----
-          適切なエージェントが見つからなかった場合のJSONの例:
+          Example JSON when no appropriate agents are found:
           {
             "steps": [
               {
                 "agent": "leader",
-                "step": "「こんにちは」という挨拶に対して返答を作成してください"
+                "step": "Please create a response to the greeting 'Hello'."
               }
             ]
           }

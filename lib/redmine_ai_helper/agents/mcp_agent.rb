@@ -15,13 +15,8 @@ module RedmineAiHelper
       end
 
       def backstory
-        # TODO: 英語にする
-        content = <<~EOS
-          あなたは RedmineAIHelper プラグインの MCP エージェントです。
-          このRedmineAIHelper プラグインは、MCP (Model Context Protocol) を使用して、さまざまなツールを利用することができます。
-          MCPは、AIモデルが外部のツールやサービスと連携するためのプロトコルです。
-          MCPを使用することで、あなたはRedmineとは関係のない様々たタスクを実行することができます。
-        EOS
+        prompt = load_prompt("mcp_agent/backstory")
+        content = prompt.format
         content
       end
     end

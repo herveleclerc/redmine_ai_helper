@@ -6,8 +6,7 @@ module RedmineAiHelper
     # IssueAgent is a specialized agent for handling Redmine issue-related queries.
     class IssueAgent < RedmineAiHelper::BaseAgent
       def backstory
-        # TODO: 英語にする
-        search_answer_instruction = "なお、「条件に合ったチケットを探して」「こういう条件のチケット見せて」の様な複数のチケット探すタスクの場合には、チケット検索のURLを返してください。"
+        search_answer_instruction = I18n.t("ai_helper.prompts.issue_agent.search_answer_instruction")
         search_answer_instruction = "" if vector_db_enabled?
         prompt = load_prompt("issue_agent/backstory")
         prompt.format(issue_properties: issue_properties, search_answer_instruction: search_answer_instruction)
@@ -40,10 +39,9 @@ module RedmineAiHelper
         return "" unless @project
         provider = RedmineAiHelper::Tools::IssueTools.new
         properties = provider.capable_issue_properties(project_id: @project.id)
-        # TODO: 英語にする
         content = <<~EOS
           ----
-          プロジェクトID: #{@project.id} で指定可能なチケットのプロパティは以下の通りです。
+          The following issue properties are available for Project ID: #{@project.id}.
           #{properties}
         EOS
         content

@@ -6,13 +6,8 @@ module RedmineAiHelper
     # SystemAgent is a specialized agent for handling Redmine system-related queries.
     class SystemAgent < RedmineAiHelper::BaseAgent
       def backstory
-        # TODO: 英語にする
-        content = <<~EOS
-          あなたは RedmineAIHelper プラグインのシステムエージェントです。Redmine のシステムに関する問い合わせに答えます。システムとは、
-          - Redmine の設定
-          - インストールされているプラグイン
-          などの情報が含まれます。
-        EOS
+        prompt = load_prompt("system_agent/backstory")
+        content = prompt.format
         content
       end
 

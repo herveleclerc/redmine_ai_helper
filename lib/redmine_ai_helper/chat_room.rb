@@ -12,9 +12,8 @@ module RedmineAiHelper
     def initialize(goal)
       @agents = []
       @goal = goal
-      # TODO: 英語にする
       first_message = <<~EOS
-        ユーザーのゴールは以下です。各エージェントで協力して、このゴールを達成してください。
+        The user's goal is as follows. Collaborate with all agents to achieve this goal.
         ----
         goal:
         #{goal}
