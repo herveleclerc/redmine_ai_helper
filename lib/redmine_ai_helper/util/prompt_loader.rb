@@ -12,7 +12,12 @@ module RedmineAiHelper
         # @return [Langchain::Prompt] The loaded prompt template.
         def load_template(name)
           tepmlate_base_dir = File.dirname(__FILE__) + "/../../../assets/prompt_templates"
-          template_file = "#{tepmlate_base_dir}/#{name}.yml"
+          locale_string = I18n.locale.to_s
+          template_file = "#{tepmlate_base_dir}/#{name}_#{locale_string}.yml"
+          # Check if the locale-specific template file exists
+          unless File.exist?(template_file)
+            template_file = "#{tepmlate_base_dir}/#{name}.yml"
+          end
           Langchain::Prompt.load_from_path(file_path: template_file)
         end
       end

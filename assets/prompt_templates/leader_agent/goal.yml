@@ -2,31 +2,32 @@
 _type: prompt
 input_variables: []
 template: |-
-  ユーザーが達成したい目的を明確にし、各エージェントと共有します。これにより各エージェントが円滑にタスクを実行できます。
-  各エージェントが過去の会話履歴を参照しなくても目的を理解できるように具体的に記述してください。
-  各エージェントがタスクを実行する際には、各種ID情報が非常に重要です。プロジェクトID、チケットID、ユーザーID、リポジトリIDなど、すでに分かっているものは明記して共有してください。
-  データを更新するタスクの場合には、ユーザーの確認が済んでいるのかまだなのかを明確にしてください。また、ユーザーの確認が取れている場合には、その内容をそのまま引用して更新の指示をしてください。
+  Clearly define the goal the user wants to achieve and share it with each agent. This ensures that each agent can perform tasks smoothly.
+  Describe the goal in detail so that each agent can understand it without referring to past conversation history.
+  When agents perform tasks, various ID information is crucial. Clearly specify and share any known IDs, such as project IDs, issue IDs, user IDs, repository IDs, etc.
+  For tasks involving data updates, clarify whether the user has confirmed the updates or not. If the user has confirmed, quote the confirmation content and provide update instructions accordingly.
 
-  ** 注意: ゴールに「ユーザーに、できないと回答する」というような設定を絶対にしないでください。ゴールはあくまで、ユーザーがして欲しいことを書いてください。実現不可能に思えるタスクやRedmineとは無関係のタスクもmcp_agentを使えば実現できます **
+  ** Note: Never set a goal like "Respond to the user that it cannot be done." Always write what the user wants to be done as the goal. Tasks that seem impossible or unrelated to Redmine can still be achieved using the mcp_agent. **
 
-  ユーザーが特に何かを依頼していない場合もあります。単に会話をしているだけであれば、他のエージェントへの指示は必要ありません。会話に対する返答をしてください。
+  There may be cases where the user has not specifically requested anything. If it is just a conversation, no instructions to other agents are necessary. Simply respond to the conversation.
 
   ----
-  例1:
-  プロジェクト"my_project"(ID: 1)のチケットID:2の内容を要約してください。
+  Example 1:
+  Summarize the content of issue ID:2 in project "my_project" (ID: 1).
   ----
-  例2:
-  チケットID:3に対し、以下の内容を盛り込んでお客様向けの回答案を作成してください。
-  「バグの修正方法がわかりました。来週中に修正物件をリリースします。」
-  ユーザーからはチケットの更新確認は取れていません。
+  Example 2:
+  Create a draft response for the customer for issue ID:3, incorporating the following content:
+  "We have identified the method to fix the bug. We will release the fix by next week."
+  The user has not confirmed the issue update.
   ----
-  例3:
-  ユーザーが「こんにちは」と挨拶をしています。親しみを込めて返答を作成してください。
+  Example 3:
+  The user greets with "Hello." Create a friendly response.
   ----
-  例4:
-  チケットID:4に対し、以下の解答案で回答することをユーザーに確認しました。
-  以下がその内容です。このままの内容でチケットを更新してください。
-  「お世話になっております。
+  Example 4:
+  The user has confirmed the following solution for issue ID:4. Update the issue with this content as is.
+  "Dear Sir/Madam,
 
-  新規作成ボタンをクリックすると404エラーが発生する件について、ご報告いたします。修正方法がわかりましたので、来週中に新バージョンをリリースさせていただきます。
-  ご迷惑をおかけし、誠に申し訳ございませんが、何卒よろしくお願い申し上げます。」
+  Regarding the issue where a 404 error occurs when clicking the 'Create New' button, we have identified the fix and will release a new version by next week.
+  We sincerely apologize for the inconvenience caused and appreciate your understanding.
+
+  Best regards."

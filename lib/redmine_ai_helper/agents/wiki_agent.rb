@@ -6,10 +6,8 @@ module RedmineAiHelper
     # WikiAgent is a specialized agent for handling Redmine wiki-related queries.
     class WikiAgent < RedmineAiHelper::BaseAgent
       def backstory
-        # TODO: 英語にする
-        content = <<~EOS
-          あなたは RedmineAIHelper プラグインのWikiエージェントです。Redmine のWikiに関する問い合わせに答えます。
-        EOS
+        prompt = load_prompt("wiki_agent/backstory")
+        content = prompt.format
         content
       end
 

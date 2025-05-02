@@ -6,10 +6,8 @@ module RedmineAiHelper
     # RepositoryAgent is a specialized agent for handling Redmine repository-related queries.
     class RepositoryAgent < RedmineAiHelper::BaseAgent
       def backstory
-        # TODO: 英語にする
-        content = <<~EOS
-          あなたは RedmineAIHelper プラグインのリポジトリトエージェントです。Redmine のリポジトリに関する問い合わせに答えます。
-        EOS
+        prompt = load_prompt("repository_agent/backstory")
+        content = prompt.format
         content
       end
 

@@ -12,9 +12,8 @@ module RedmineAiHelper
     def initialize(goal)
       @agents = []
       @goal = goal
-      # TODO: 英語にする
       first_message = <<~EOS
-        ユーザーのゴールは以下です。各エージェントで協力して、このゴールを達成してください。
+        The user's goal is as follows. Collaborate with all agents to achieve this goal.
         ----
         goal:
         #{goal}
@@ -40,7 +39,7 @@ module RedmineAiHelper
     # @param to [String] The recipient of the message.
     # @return [Array] The list of messages in the chat room.
     def add_message(role, message, to)
-      ai_helper_logger.info "role: #{role}\n @#{to}, #{message}"
+      ai_helper_logger.debug "role: #{role}\n @#{to}, #{message}"
       @messages ||= []
       @messages << { role: "assistant", content: "role: #{role}\n----\nTo: #{to}\n#{message}" }
     end

@@ -6,10 +6,8 @@ module RedmineAiHelper
     # VersionAgent is a specialized agent for handling Redmine version-related queries.
     class VersionAgent < RedmineAiHelper::BaseAgent
       def backstory
-        # TODO: 英語にする
-        content = <<~EOS
-          あなたは RedmineAIHelper プラグインのバージョンエージェントです。Redmine のプロジェクトのロードマップやバージョンに関する問い合わせに答えます。
-        EOS
+        prompt = load_prompt("version_agent/backstory")
+        content = prompt.format
         content
       end
 

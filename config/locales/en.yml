@@ -1,4 +1,3 @@
-# English strings go here for Rails i18n
 en:
   project_module_ai_helper: "AI Helper"
   label_ai_helper: "AI Helper"
@@ -12,13 +11,42 @@ en:
       messages:
         confirm_delete: "Are you sure you want to delete this model profile?"
         must_be_valid_url: "must be a valid URL"
+    prompts:
+      current_page_info:
+        project_page: "This is the information page for the project '%{project_name}'."
+        issue_detail_page: "This is the detail page for issue #%{issue_id}.\nIf the user refers to 'issue' without specifying an ID or name, it refers to this issue."
+        issue_list_page: "This is the issue list page."
+        issue_with_action_page: "This is the %{action_name} page for the issue."
+        wiki_page: "This is the Wiki page titled '%{page_title}'.\nIf the user refers to 'Wiki page' or 'page' without specifying a title, it refers to this Wiki page."
+        repository_page: "This is the information page for the repository '%{repo_name}'. The repository ID is %{repo_id}."
+        repository_file_page: "This is the file information page for the repository. The displayed file path is %{path}. The revision is %{rev}. The repository is '%{repo_name}'. The repository ID is %{repo_id}."
+        repository_diff:
+          page: "This is the diff page for the repository '%{repo_name}'. The repository ID is %{repo_id}."
+          rev: "The revision is %{rev}."
+          rev_to: "The revision is from %{rev} to %{rev_to}."
+          path: "The file path is %{path}."
+        repository_revision_page: "This is the revision information page for the repository '%{repo_name}'. The revision is %{rev}. The repository ID is %{repo_id}."
+        repository_other_page: "This is the information page for the repository."
+        boards:
+          show: "This is the page for the forum '%{board_name}'. The forum ID is %{board_id}."
+          index: "This is the forum list page."
+          other: "This is the page for the forum."
+        messages:
+          show: "This is the page for the message '%{subject}'. The message ID is %{message_id}."
+          other: "This is the page for the message."
+        versions:
+          show: "This is the page for the version '%{version_name}'. The version ID is %{version_id}."
+          other: "This is the page for the version."
+        other_page: "This is the %{action_name} page for %{controller_name}."
+        issue_agent:
+          search_answer_instruction: "For tasks such as finding multiple issues that match certain conditions, like 'Find issues that meet these conditions' or 'Show me issues with these criteria,' please return the URL for the issue search."
   activerecord:
     models:
-      ai_helper_model_profile: "Model profile"
-      ai_helper_setting: "AI Helper setting"
+      ai_helper_model_profile: "Model Profile"
+      ai_helper_setting: "AI Helper Setting"
     attributes:
       ai_helper_model_profile:
-        llm_type: "type"
+        llm_type: "Type"
         llm_model: "Model name"
         access_key: "Access key"
         base_uri: "Base URI"

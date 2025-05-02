@@ -29,7 +29,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct backstory" do
-      assert @agent.backstory.include?("RedmineAIHelper プラグインのチケットエージェントです")
+      assert @agent.backstory.include?("You are a issue agent for the RedmineAIHelper plugin")
     end
   end
 
@@ -48,7 +48,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct backstory" do
-      assert @agent.backstory.include?("RedmineAIHelper プラグインのチケットアップデートエージェントです")
+      assert @agent.backstory.include?("You are the issue update agent of the RedmineAIHelper plugin")
     end
   end
 
@@ -122,7 +122,7 @@ class AgentsTest < ActiveSupport::TestCase
     end
 
     should "return correct backstory" do
-      assert @agent.backstory.include?("あなたは RedmineAIHelper プラグインの MCP エージェントです。")
+      assert @agent.backstory.include?("You are the MCP agent of the RedmineAIHelper plugin")
     end
 
     context "mcp_agent" do

@@ -50,7 +50,6 @@ class LeaderAgentTest < ActiveSupport::TestCase
       assert result.is_a?(String)
     end
   end
-
 end
 
 module MyOpenAI
@@ -65,7 +64,7 @@ module MyOpenAI
 
       answer = "test answer"
 
-      if message.include?("ユーザーが達成したい目的を明確にし")
+      if message.include?("Clearly define the goal the user wants to achieve")
         answer = "test goal"
       elsif message.include?("から与えられたタスクを解決するために")
         answer = {
@@ -89,7 +88,7 @@ module MyOpenAI
           ],
 
         }.to_json
-      elsif message.include?("というゴールを解決するために")
+      elsif message.include?("To achieve the goal of")
         answer = {
           "steps": [
             { "agent": "project_agent", "step": "my_projectという名前のプロジェクトのIDを教えてください" },
