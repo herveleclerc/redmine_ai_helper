@@ -54,21 +54,27 @@ module RedmineAiHelper
     include Singleton
 
     def initialize
+      config_file_path = Rails.root.join("config", "ai_helper", "config.yml")
+      unless File.exist?(config_file_path)
+        @logger = Rails.logger
+        return
+      end
+
       log_file_path = Rails.root.join("log", "ai_helper.log")
 
+      config = YAML.load_file(File.expand_path(config_file_path, __FILE__)) || {}
+      config.deep_symbolize_keys!
+      logger = config[:logger] || {}
+      if logger.empty?
+        @logger = Rails.logger
+        return
+      end
+      log_level = "info"
+      log_level = logger[:level] if logger[:level]
+      log_file_path = Rails.root.join("log", logger[:file]) if logger[:file]
       @logger = ::Logger.new(log_file_path, "daily")
       @logger.formatter = proc do |severity, datetime, progname, msg|
         "[#{datetime}] #{severity} -- #{msg}\n"
-      end
-
-      log_level = "info"
-      config_file_path = Rails.root.join("config", "config.yaml")
-
-      if File.exist?(config_file_path)
-        config = YAML.load_file(File.expand_path(config_file_path, __FILE__))
-        config.deep_symbolize_keys!
-        logger = config[:logger] || {}
-        log_level = logger[:log_level] if logger[:log_level]
       end
       set_log_level(log_level)
     end
