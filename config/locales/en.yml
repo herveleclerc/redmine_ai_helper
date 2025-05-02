@@ -1,4 +1,3 @@
-# English strings go here for Rails i18n
 en:
   project_module_ai_helper: "AI Helper"
   label_ai_helper: "AI Helper"
@@ -41,6 +40,12 @@ en:
         other_page: "This is the %{action_name} page for %{controller_name}."
         issue_agent:
           search_answer_instruction: "For tasks such as finding multiple issues that match certain conditions, like 'Find issues that meet these conditions' or 'Show me issues with these criteria,' please return the URL for the issue search."
+  activerecord:
+    models:
+      ai_helper_model_profile: "Model Profile"
+      ai_helper_setting: "AI Helper Setting"
+    attributes:
+      ai_helper_model_profile:
         llm_type: "type"
         llm_model: "Model name"
         access_key: "Access key"
