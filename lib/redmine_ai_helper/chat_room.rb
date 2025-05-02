@@ -39,7 +39,7 @@ module RedmineAiHelper
     # @param to [String] The recipient of the message.
     # @return [Array] The list of messages in the chat room.
     def add_message(role, message, to)
-      ai_helper_logger.info "role: #{role}\n @#{to}, #{message}"
+      ai_helper_logger.debug "role: #{role}\n @#{to}, #{message}"
       @messages ||= []
       @messages << { role: "assistant", content: "role: #{role}\n----\nTo: #{to}\n#{message}" }
     end

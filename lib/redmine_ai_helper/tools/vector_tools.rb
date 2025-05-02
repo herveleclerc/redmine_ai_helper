@@ -55,7 +55,7 @@ module RedmineAiHelper
           filter_json[:must_not] = create_filter(filter[:must_not]) if filter[:must_not]
 
           response = issue_vector_db.ask_with_filter(query: query_words.join(" "), k: k, filter: filter_json)
-          ai_helper_logger.info("Response: #{response}")
+          ai_helper_logger.debug("Response: #{response}")
           response
         rescue => e
           ai_helper_logger.error("Error: #{e.message}")

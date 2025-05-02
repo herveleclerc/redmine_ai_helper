@@ -34,9 +34,9 @@ module RedmineAiHelper
       # Perform a user request by generating a goal and steps for the agents to follow.
       def perform_user_request(messages, option = {}, callback = nil)
         goal = generate_goal(messages)
-        ai_helper_logger.info "goal: #{goal}"
+        ai_helper_logger.debug "goal: #{goal}"
         steps = generate_steps(goal, messages)
-        ai_helper_logger.info "steps: #{steps}"
+        ai_helper_logger.debug "steps: #{steps}"
 
         if steps["steps"].empty? || steps["steps"].length == 1 && steps["steps"][0]["agent"] == "leader"
           return chat(messages, option, callback)
@@ -132,7 +132,7 @@ module RedmineAiHelper
           json_examples: json_examples,
         )
 
-        ai_helper_logger.info "prompt_text: #{prompt_text}"
+        ai_helper_logger.debug "prompt_text: #{prompt_text}"
 
         newmessages = messages.dup
         newmessages << { role: "user", content: prompt_text }
