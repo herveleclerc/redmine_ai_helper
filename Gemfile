@@ -1,5 +1,5 @@
 gem "ruby-openai", "~> 8.0.0"
-gem "langchainrb", "~> 0.19.4"
+gem "langchainrb", "~> 0.19.5"
 gem "anthropic", "~> 0.4.0"
 # gem "weaviate-ruby", "~> 0.9.2"
 gem "qdrant-ruby", "~> 0.9.9"
