@@ -73,7 +73,7 @@ module RedmineAiHelper
       def generate_steps(goal, messages)
         agent_list = RedmineAiHelper::AgentList.instance
         ai_helper_logger.debug "agent_list: #{agent_list.list_agents}"
-        agent_list_string = agent_list.list_agents.reject { |a| a[:agent_name] == "leader_agent" }
+        agent_list_string = JSON.pretty_generate(agent_list.list_agents.reject { |a| a[:agent_name] == "leader_agent" })
         prompt = load_prompt("leader_agent/generate_steps")
         json_schema = {
           type: "object",
