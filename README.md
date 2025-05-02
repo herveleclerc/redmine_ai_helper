@@ -70,7 +70,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
    - Type: Choose the AI model type (e.g., OpenAI, Anthropic. Strongly recommend using OpenAI)
    - Name: Enter a name for the model profile
    - Access Key: Enter the API key for the AI service
-   - Model name: Specify the AI model name (e.g., gpt-3.1-mini)
+   - Model name: Specify the AI model name (e.g., gpt-4.1-mini)
 3. Select the model profile you created from the dropdown menu and save the settings.
 
 
