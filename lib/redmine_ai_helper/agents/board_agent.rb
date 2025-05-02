@@ -5,7 +5,8 @@ module RedmineAiHelper
     # BoardAgent is a specialized agent for handling Redmine board-related queries.
     class BoardAgent < RedmineAiHelper::BaseAgent
       def backstory
-        content = prompt = load_prompt("board_agent/backstory")
+        prompt = load_prompt("board_agent/backstory")
+        content = prompt.format
         content
       end
 
