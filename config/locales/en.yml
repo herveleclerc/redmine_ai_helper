@@ -46,7 +46,7 @@ en:
       ai_helper_setting: "AI Helper Setting"
     attributes:
       ai_helper_model_profile:
-        llm_type: "type"
+        llm_type: "Type"
         llm_model: "Model name"
         access_key: "Access key"
         base_uri: "Base URI"
