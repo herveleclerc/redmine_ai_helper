@@ -20,7 +20,7 @@ module RedmineAiHelper
     # @return [AiHelperMessage] The AI's response
     def chat(conversation, proc, option = {})
       task = conversation.messages.last.content
-      ai_helper_logger.info "#### ai_helper: chat start ####"
+      ai_helper_logger.debug "#### ai_helper: chat start ####"
       ai_helper_logger.info "user:#{User.current}, task: #{task}, option: #{option}"
       begin
         agent = RedmineAiHelper::Agents::LeaderAgent.new(option)

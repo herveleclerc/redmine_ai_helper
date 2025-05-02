@@ -43,7 +43,7 @@ module RedmineAiHelper
             tool_class = RedmineAiHelper::Tools::McpTools.generate_tool_class(name: name, json: json)
             list << tool_class
           rescue => e
-            ai_helper_logger.info "Error generating tool class for #{name}: #{e.message}"
+            ai_helper_logger.error "Error generating tool class for #{name}: #{e.message}"
             throw "Error generating tool class for #{name}: #{e.message}"
           end
         end
