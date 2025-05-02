@@ -37,7 +37,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
   - Repository source code explanation
   - Other project and Redmine-related inquiries
 - Supports multiple AI models and services
-- Call MCP server
+- MCP server integration
 - Vactor search using Qdrant
 
 # Installation
@@ -89,6 +89,11 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 # Advanced Configuration
 
 ## MCP Server Settings
+
+The "Model Context Protocol (MCP)" is an open standard protocol proposed by Anthropic that allows AI models to interact with external systems such as files, databases, tools, and APIs.
+Reference: https://github.com/modelcontextprotocol/servers
+
+The AI Helper Plugin can use the MCP Server to perform tasks, such as sending issue summaries to Slack.
 
 1. Create `config/ai_helper/config.json` under the root directory of Redmine.
 2. Configure the MCP server as follows (example for Slack):
