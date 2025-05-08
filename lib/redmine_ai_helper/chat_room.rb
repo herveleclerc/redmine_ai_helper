@@ -18,7 +18,7 @@ module RedmineAiHelper
         goal:
         #{goal}
       EOS
-      add_message("leader", first_message, "all")
+      add_message("user", "leader", first_message, "all")
     end
 
     # @return [String] The user's goal.
@@ -38,10 +38,10 @@ module RedmineAiHelper
     # @param message [String] The message content.
     # @param to [String] The recipient of the message.
     # @return [Array] The list of messages in the chat room.
-    def add_message(role, message, to)
-      ai_helper_logger.debug "role: #{role}\n @#{to}, #{message}"
+    def add_message(llm_role, from, message, to)
+      ai_helper_logger.debug "from: #{from}\n @#{to}, #{message}"
       @messages ||= []
-      @messages << { role: "assistant", content: "role: #{role}\n----\nTo: #{to}\n#{message}" }
+      @messages << { role: llm_role, content: "role: #{from}\n----\nTo: #{to}\n#{message}" }
     end
 
     # Get an agent by its role.
@@ -59,7 +59,7 @@ module RedmineAiHelper
     # @param [Proc] proc a block to be executed after the task is sent
     # @return [String] the response from the agent
     def send_task(from, to, task, option = {}, proc = nil)
-      add_message(from, task, to)
+      add_message("user", from, task, to)
       agent = get_agent(to)
       unless agent
         error = "Agent not found: #{to}"
@@ -67,7 +67,7 @@ module RedmineAiHelper
         raise error
       end
       answer = agent.perform_task(@messages, option, proc)
-      add_message(to, answer, from)
+      add_message("assistant", to, answer, from)
       answer
     end
   end
