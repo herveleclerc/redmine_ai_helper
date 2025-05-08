@@ -23,7 +23,7 @@ class RedmineAiHelper::ChatRoomTest < ActiveSupport::TestCase
     end
 
     should "add message" do
-      @chat_room.add_message("leader", "Test message", "all")
+      @chat_room.add_message("user", "leader", "Test message", "all")
       assert_equal 2, @chat_room.messages.size
       assert_match "Test message", @chat_room.messages.last[:content]
     end
