@@ -19,12 +19,11 @@
     - [AI Helper Settings Page](#ai-helper-settings-page)
     - [Creating the Index](#creating-the-index)
     - [Recreating the Index](#recreating-the-index)
+- [Build your own Agent](#build-your-own-agent)
 - [Important Notice](#important-notice)
 - [Contributing](#contributing)
 - [Support](#support)
 - [Credits](#credits)
-
-
 
 The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing project management efficiency through AI-powered support.
 
@@ -37,7 +36,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
   - Repository source code explanation
   - Other project and Redmine-related inquiries
 - Supports multiple AI models and services
-- Call MCP server
+- MCP server integration
 - Vactor search using Qdrant
 
 # Installation
@@ -89,6 +88,11 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 # Advanced Configuration
 
 ## MCP Server Settings
+
+The "Model Context Protocol (MCP)" is an open standard protocol proposed by Anthropic that allows AI models to interact with external systems such as files, databases, tools, and APIs.
+Reference: https://github.com/modelcontextprotocol/servers
+
+The AI Helper Plugin can use the MCP Server to perform tasks, such as sending issue summaries to Slack.
 
 1. Create `config/ai_helper/config.json` under the root directory of Redmine.
 2. Configure the MCP server as follows (example for Slack):
@@ -149,6 +153,25 @@ If you change the embedding model, delete the index and recreate it using the fo
 ```bash
 bundle exec rake redmine:plugins:ai_helper:vector:destroy RAILS_ENV=production
 ```
+
+# Build your own Agent
+
+The AI Helper plugin adopts a multi-agent model. You can create your own agent and integrate it into the AI Helper plugin.
+
+To create your own agent, you need to create the following two files:
+
+- **Agent Implementation**
+   - A class that inherits from `RedmineAiHelper::BaseAgent`
+   - Defines the agent's behavior
+- **Tools**
+   - A class that inherits from `RedmineAiHelper::BaseTools`
+   - Implements the tools used by the agent
+
+Place these files in any location within Redmine and load them.
+
+As an example, there is a plugin called `redmine_fortune` under the `example` directory. Place this plugin in the `plugins` folder of Redmine. This will add a fortune-telling feature to the AI Helper plugin. When you ask, "Tell me my fortune for today," it will return a fortune-telling result.
+
+
 
 # Important Notice
 

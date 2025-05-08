@@ -133,6 +133,16 @@ module RedmineAiHelper
     # @return [TaskResponse] The response from the task.
     def dispatch(task, messages, previous_error = nil)
       begin
+        ai_helper_logger.debug "dispatch: #{task}"
+        ai_helper_logger.debug "messages: #{messages}"
+        ai_helper_logger.debug "instructions: #{assistant.instructions}"
+        system_prompt = assistant.instructions
+        llm_provider.reset_assistant_messages(
+          assistant: assistant,
+          system_prompt: system_prompt,
+          messages: messages,
+        )
+
         assistant.add_message(role: "assistant", content: "previous error: #{previous_error}") if previous_error
         response = assistant.add_message_and_run!(content: task)
 

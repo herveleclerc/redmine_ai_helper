@@ -66,29 +66,7 @@ module MyOpenAI
 
       if message.include?("Clearly define the goal the user wants to achieve")
         answer = "test goal"
-      elsif message.include?("から与えられたタスクを解決するために")
-        answer = {
-          "steps": [
-            {
-              "name": "step1",
-              "step": "チケットを更新するために、必要な情報を整理する。",
-              "tool": {
-                "provider": "issue_tool_provider",
-                "tool_name": "capable_issue_properties",
-              },
-            },
-            {
-              "name": "step2",
-              "step": "前のステップで取得したステータスを使用してチケットを更新する",
-              "tool": {
-                "provider": "issue_tool_provider",
-                "tool_name": "update_issue",
-              },
-            },
-          ],
-
-        }.to_json
-      elsif message.include?("To achieve the goal of")
+      elsif message.include?("to achieve the goal")
         answer = {
           "steps": [
             { "agent": "project_agent", "step": "my_projectという名前のプロジェクトのIDを教えてください" },
@@ -110,7 +88,7 @@ module MyOpenAI
       end
 
       response = { "choices": [{ "message": { "content": answer } }] }.deep_stringify_keys
-      response
+      Langchain::LLM::OpenAIResponse.new(response)
     end
   end
 end
