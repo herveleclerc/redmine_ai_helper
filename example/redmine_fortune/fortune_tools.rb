@@ -1,23 +1,44 @@
 require "redmine_ai_helper/base_tools"
 
+# This class provides fortune-telling features such as omikuji (Japanese fortune-telling) and horoscope predictions.
+# Based on langchainrb's ToolDefinition. The format of define_function follows the specifications of langchainrb.
+# @see https://github.com/patterns-ai-core/langchainrb#creating-custom-tools
 class FortuneTools < RedmineAiHelper::BaseTools
-  define_function :omikuji, description: "おみくじで指定された日付の運勢を占います。" do
-    property :date, type: "string", description: "占いたい日付を'YYYY-MM-DD’で指定してください", required: true
+  # Definition of the Omikuji fortune-telling feature
+  define_function :omikuji, description: "Draw a fortune by Japanese-OMIKUJI for the specified date." do
+    property :date, type: "string", description: "Specify the date to draw the fortune in 'YYYY-MM-DD' format.", required: true
   end
 
+  # Omikuji fortune-telling method
+  # @param date [String] The date for which to draw the fortune.
+  # @return [String] The fortune result.
+  # @example
+  #   omikuji(date: "2023-10-01")
+  #   => "DAI-KICHI/Great blessing"
+  #
+  # @note The date parameter is not used in the fortune drawing process.
   def omikuji(date:)
-    ["大吉", "中吉", "小吉", "末吉", "凶", "大凶"].sample
+    ["DAI-KICHI/Great blessing", "CHU-KICHI/Middle blessing", "SHOU-KICHI/Small blessing", "SUE-KICHI/Future blessing", "KYOU/Curse", "DAI-KYOU/Great curse"].sample
   end
 
-  define_function :horoscope, description: "星座占いで指定された誕生日の人の、その月の運勢を占います。" do
-    property :birthday, type: "string", description: "占いたい人の誕生日を'YYYY-MM-DD'で指定してください", required: true
+  # Definition of the horoscope fortune-telling feature
+  define_function :horoscope, description: "Predict the monthly horoscope for the person with the specified birthday." do
+    property :birthday, type: "string", description: "Specify the birthday of the person to predict in 'YYYY-MM-DD' format.", required: true
   end
 
+  # Horoscope fortune-telling method
+  # @param birthday [String] The birthday of the person to predict.
+  # @return [String] The horoscope result.
+  # @example
+  #   horoscope(birthday: "1990-01-01")
+  #   => "This month's fortune is excellent. Everything you do will go well."
+  #
+  # @note The birthday parameter is not used in the horoscope prediction process.
   def horoscope(birthday:)
-    fortune1 = "今月の運勢は、絶好調です。何をやっても上手くいきます。"
-    fortune2 = "今月の運勢は、まずまずです。特に問題はありません。"
-    fortune3 = "今月の運勢は、あまり良くありません。注意が必要です。"
-    fortune4 = "今月の運勢は、最悪です。何をやっても上手くいきません。"
+    fortune1 = "This month's fortune is excellent. Everything you do will go well."
+    fortune2 = "This month's fortune is so-so. There are no particular problems."
+    fortune3 = "This month's fortune is not very good. Caution is required."
+    fortune4 = "This month's fortune is the worst. Nothing you do will go well."
     [fortune1, fortune2, fortune3, fortune4].sample
   end
 end

@@ -39,6 +39,8 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 - MCP server integration
 - Vactor search using Qdrant
 
+![Image](https://github.com/user-attachments/assets/39f61008-45a3-4807-9c1c-57fba4e06835)
+
 # Installation
 
 1. Extract the plugin to your Redmine plugins folder:
