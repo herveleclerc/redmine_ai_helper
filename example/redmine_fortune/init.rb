@@ -1,4 +1,4 @@
-require_relative "./fortune_agent"
+require_relative "./fortune_agent" # Don't forget to require the agent class
 
 Redmine::Plugin.register :redmine_fortune do
   name "Redmine Fortune plugin"
