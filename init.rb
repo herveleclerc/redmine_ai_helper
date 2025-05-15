@@ -1,4 +1,6 @@
+require "langfuse"
 $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/lib"
+require "redmine_ai_helper/util/config_file"
 require_dependency "redmine_ai_helper/sidebar_hook"
 Dir[File.join(File.dirname(__FILE__), "lib/redmine_ai_helper/agents", "*_agent.rb")].each do |file|
   require file
@@ -21,4 +23,15 @@ Redmine::Plugin.register :redmine_ai_helper do
          controller: "ai_helper_settings", action: "index",
        }, caption: :label_ai_helper, :icon => "ai-helper-robot",
           :plugin => :redmine_ai_helper
+end
+
+config_yml = RedmineAiHelper::Util::ConfigFile.load_config[:langfuse]
+
+if config_yml
+  Langfuse.configure do |config|
+    config.public_key = config_yml[:public_key]
+    config.secret_key = config_yml[:secret_key]
+    config.host = config_yml[:endpoint] || "https://us.cloud.langfuse.com"
+    config.debug = config_yml[:debug] || false
+  end
 end

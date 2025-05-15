@@ -54,18 +54,12 @@ module RedmineAiHelper
     include Singleton
 
     def initialize
-      config_file_path = Rails.root.join("config", "ai_helper", "config.yml")
-      unless File.exist?(config_file_path)
-        @logger = Rails.logger
-        return
-      end
-
       log_file_path = Rails.root.join("log", "ai_helper.log")
 
-      config = YAML.load_file(File.expand_path(config_file_path, __FILE__)) || {}
-      config.deep_symbolize_keys!
-      logger = config[:logger] || {}
-      if logger.empty?
+      config = RedmineAiHelper::Util::ConfigFile.load_config
+
+      logger = config[:logger]
+      unless logger
         @logger = Rails.logger
         return
       end

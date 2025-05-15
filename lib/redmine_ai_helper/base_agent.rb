@@ -8,7 +8,7 @@ Langchain.logger.level = Logger::ERROR
 module RedmineAiHelper
   # Base class for all agents.
   class BaseAgent
-    attr_accessor :llm_type, :llm_provider, :client
+    attr_accessor :llm_type, :llm_provider, :client, :langfuse
     include RedmineAiHelper::Logger
 
     class << self
@@ -30,13 +30,18 @@ module RedmineAiHelper
     end
 
     # @param params [Hash] Parameters for initializing the agent.
-    # TODO: projectしか使っていないのでハッシュのパラメータはやめる
     def initialize(params = {})
       @project = params[:project]
+      @langfuse = params[:langfuse]
       @llm_provider = RedmineAiHelper::LlmProvider.get_llm_provider
 
       @client = @llm_provider.generate_client
+      @client.langfuse = @langfuse if @langfuse
       @llm_type = RedmineAiHelper::LlmProvider.type
+    end
+
+    def langfuse
+      @langfuse
     end
 
     # Returns the LLM client.
@@ -122,7 +127,10 @@ module RedmineAiHelper
     def perform_task(messages, option = {}, callback = nil)
       new_messages = messages.dup
       task = new_messages.pop
-      return dispatch(task, new_messages)
+      langfuse.create_span(name: "perform_task", input: task[:content])
+      response = dispatch(task, new_messages)
+      langfuse.finish_current_span(output: response)
+      response
     end
 
     # dispatch the tool

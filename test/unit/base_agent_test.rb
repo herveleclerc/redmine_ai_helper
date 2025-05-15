@@ -12,6 +12,7 @@ class RedmineAiHelper::BaseAgentTest < ActiveSupport::TestCase
       organization_id: "test_org_id",
       model: "test_model",
       project: @project,
+      langfuse: DummyLangfuse.new,
     }
     @agent = BaseAgentTestModele::TestAgent.new(@params)
     @agent2 = BaseAgentTestModele::TestAgent2.new(@params)
@@ -62,6 +63,24 @@ class RedmineAiHelper::BaseAgentTest < ActiveSupport::TestCase
       assert response
     end
   end
+
+  class DummyLangfuse
+    def initialize(params = {})
+      @params = params
+    end
+
+    def create_span(name:, input:)
+      # Dummy implementation
+    end
+
+    def finish_current_span(output:)
+      # Dummy implementation
+    end
+
+    def flush
+      # Dummy implementation
+    end
+  end
 end
 
 module BaseAgentTestModele
@@ -92,6 +111,8 @@ module BaseAgentTestModele
   end
 
   class DummyOpenAIClient < Langchain::LLM::OpenAI
+    attr_accessor :langfuse
+
     def initialize(params = {})
       super(api_key: "aaaa")
     end

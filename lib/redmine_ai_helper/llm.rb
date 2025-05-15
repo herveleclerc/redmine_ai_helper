@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require_relative "logger"
 require_relative "base_agent"
+require_relative "langfuse_util/langfuse_wrapper"
 
 module RedmineAiHelper
 
@@ -23,8 +24,13 @@ module RedmineAiHelper
       ai_helper_logger.debug "#### ai_helper: chat start ####"
       ai_helper_logger.info "user:#{User.current}, task: #{task}, option: #{option}"
       begin
+        langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: task)
+        option[:langfuse] = langfuse
         agent = RedmineAiHelper::Agents::LeaderAgent.new(option)
+        langfuse.create_span(name: "user request", input: task)
         answer = agent.perform_user_request(conversation.messages_for_openai, option, proc)
+        langfuse.finish_current_span(output: answer)
+        langfuse.flush
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
         answer = e.message
