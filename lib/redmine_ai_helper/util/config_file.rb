@@ -4,7 +4,6 @@ module RedmineAiHelper
       def self.load_config
         config_file_path = Rails.root.join("config", "ai_helper", "config.yml")
         unless File.exist?(config_file_path)
-          RedmineAiHelper::CustomLogger.instance.warn("Config file not found: #{config_file_path}")
           return {}
         end
 
