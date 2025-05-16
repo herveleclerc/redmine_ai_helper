@@ -11,8 +11,9 @@ module RedmineAiHelper
       def chat(params = {}, &block)
         generation = nil
         if @langfuse&.current_span
+          parameters = chat_parameters.to_params(params)
           span = @langfuse.current_span
-          generation = span.create_generation(name: "chat", messages: params[:messages], model: params[:model], temperature: params[:temperature], max_tokens: params[:max_tokens])
+          generation = span.create_generation(name: "chat", messages: params[:messages], model: parameters[:model], temperature: parameters[:temperature], max_tokens: parameters[:max_tokens])
         end
         response = super(params, &block)
         if generation
