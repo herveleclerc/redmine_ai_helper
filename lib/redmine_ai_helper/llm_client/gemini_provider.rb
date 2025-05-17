@@ -8,7 +8,7 @@ module RedmineAiHelper
       def generate_client
         model_profile = AiHelperSetting.find_or_create.model_profile
         raise "Model Profile not found" unless model_profile
-        client = Langchain::LLM::GoogleGemini.new(
+        client = RedmineAiHelper::LangfuseUtil::Gemini.new(
           api_key: model_profile.access_key,
           default_options: {
             chat_model: model_profile.llm_model,
