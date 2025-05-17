@@ -47,6 +47,8 @@ module RedmineAiHelper
           chat_room.add_agent(agent_instance)
         end
 
+        chat_room.share_goal
+
         steps["steps"].each do |step|
           chat_room.send_task("leader", step["agent"], step["step"])
         end
