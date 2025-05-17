@@ -14,7 +14,9 @@ module RedmineAiHelper
       @goal = goal
       first_message = <<~EOS
         The user's goal is as follows. Collaborate with all agents to achieve this goal.
+
         ----
+
         goal:
         #{goal}
       EOS

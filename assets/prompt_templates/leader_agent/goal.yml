@@ -14,6 +14,8 @@ template: |-
 
   There may be cases where the user has not specifically requested anything. If it is just a conversation, no instructions to other agents are necessary. Please respond to the conversation.
 
+  Note that this goal is shared only with other agents. It will not be visible to the user. Therefore, no explanation for the user is necessary.
+
   ----
 
   Example 1:
