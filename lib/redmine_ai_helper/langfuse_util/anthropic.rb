@@ -1,7 +1,7 @@
 module RedmineAiHelper
   module LangfuseUtil
-    # Wrapper for OpenAI.
-    class OpenAi < Langchain::LLM::OpenAI
+    # Wrapper for Anthropic.
+    class Anthropic < Langchain::LLM::Anthropic
       attr_accessor :langfuse
 
       # Override the chat method to handle tool calls.
@@ -13,7 +13,10 @@ module RedmineAiHelper
         if @langfuse&.current_span
           parameters = chat_parameters.to_params(params)
           span = @langfuse.current_span
-          generation = span.create_generation(name: "chat", messages: params[:messages], model: parameters[:model], temperature: parameters[:temperature], max_tokens: parameters[:max_tokens])
+          new_messages = []
+          new_messages << { role: "system", content: params[:system] } if params[:system]
+          new_messages = new_messages + params[:messages]
+          generation = span.create_generation(name: "chat", messages: new_messages, model: parameters[:model], temperature: parameters[:temperature], max_tokens: parameters[:max_tokens])
         end
         response = super(params, &block)
         if generation
