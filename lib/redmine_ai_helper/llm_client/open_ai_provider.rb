@@ -17,7 +17,7 @@ module RedmineAiHelper
         llm_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
         default_options = {
           model: model_profile.llm_model,
-          temperature: 0.5,
+          temperature: model_profile.temperature,
         }
         default_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
         client = RedmineAiHelper::LangfuseUtil::OpenAi.new(

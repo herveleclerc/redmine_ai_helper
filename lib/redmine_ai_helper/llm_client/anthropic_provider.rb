@@ -12,7 +12,7 @@ module RedmineAiHelper
           api_key: model_profile.access_key,
           default_options: {
             chat_model: model_profile.llm_model,
-            temperature: 0.5,
+            temperature: model_profile.temperature,
             max_tokens: 2000,
           },
         )

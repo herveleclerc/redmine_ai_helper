@@ -20,7 +20,7 @@ module RedmineAiHelper
           llm_options: llm_options,
           default_options: {
             chat_model: model_profile.llm_model,
-            temperature: 0.5,
+            temperature: model_profile.temperature,
           },
         )
         raise "OpenAI LLM Create Erro" unless client
