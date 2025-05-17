@@ -12,6 +12,7 @@ class LeaderAgentTest < ActiveSupport::TestCase
       organization_id: "test_org_id",
       model: "test_model",
       project: Project.find(1),
+      langfuse: DummyLangfuse.new,
     }
     @agent = RedmineAiHelper::Agents::LeaderAgent.new(@params)
     @messages = [{ role: "user", content: "Hello" }]
@@ -23,7 +24,7 @@ class LeaderAgentTest < ActiveSupport::TestCase
 
     should "return correct backstory" do
       backstory = @agent.backstory
-      assert backstory.include?("あなたは RedmineAIHelper プラグインのリーダーエージェントです")
+      assert backstory.include?("You are the leader agent of the RedmineAIHelper plugin")
     end
 
     should "return correct system prompt" do
@@ -50,10 +51,30 @@ class LeaderAgentTest < ActiveSupport::TestCase
       assert result.is_a?(String)
     end
   end
+
+  class DummyLangfuse
+    def initialize(params = {})
+      @params = params
+    end
+
+    def create_span(name:, input:)
+      # Dummy implementation
+    end
+
+    def finish_current_span(output:)
+      # Dummy implementation
+    end
+
+    def flush
+      # Dummy implementation
+    end
+  end
 end
 
 module MyOpenAI
   class DummyOpenAIClient < Langchain::LLM::OpenAI
+    attr_accessor :langfuse
+
     def initialize(params = {})
       super(api_key: "aaaa")
     end
@@ -64,9 +85,9 @@ module MyOpenAI
 
       answer = "test answer"
 
-      if message.include?("Clearly define the goal the user wants to achieve")
+      if message.include?("clarify the user's request and set a clear goal")
         answer = "test goal"
-      elsif message.include?("to achieve the goal")
+      elsif message.include?("Please create instructions for other agents")
         answer = {
           "steps": [
             { "agent": "project_agent", "step": "my_projectという名前のプロジェクトのIDを教えてください" },

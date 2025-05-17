@@ -20,7 +20,7 @@ module RedmineAiHelper
           llm_options: llm_options,
           default_options: {
             chat_model: model_profile.llm_model,
-            temperature: 0.5,
+            temperature: model_profile.temperature,
           },
         )
         raise "OpenAI LLM Create Erro" unless client
@@ -29,7 +29,7 @@ module RedmineAiHelper
 
       # Many LLMs with OpenAI API-compatible APIs do not implement tool calls,
       # so we implement compatibility features ourselves.
-      class OpenAiCompatible < Langchain::LLM::OpenAI
+      class OpenAiCompatible < RedmineAiHelper::LangfuseUtil::OpenAi
         def initialize(**kwargs)
           super(**kwargs)
         end

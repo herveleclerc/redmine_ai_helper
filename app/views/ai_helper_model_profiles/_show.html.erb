@@ -17,7 +17,10 @@
   <%= label_tag AiHelperModelProfile.human_attribute_name(:llm_model) %>
   <%= @model_profile.llm_model %>
 </p>
-
+<p>
+  <%= label_tag AiHelperModelProfile.human_attribute_name(:temperature) %>
+  <%= @model_profile.temperature %>
+</p>
 <% if@model_profile.llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>
 <p>
   <%= label_tag AiHelperModelProfile.human_attribute_name(:base_uri) %>

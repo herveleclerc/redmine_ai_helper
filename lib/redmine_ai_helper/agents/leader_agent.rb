@@ -13,10 +13,8 @@ module RedmineAiHelper
       end
 
       def backstory
-        content = <<~EOS
-          あなたは RedmineAIHelper プラグインのリーダーエージェントです。他のエージェントに指示を出し、彼らが答えた内容をまとめ、最終回答をユーザーに返すことがあなたの役割です。
-          また、他のエージェントが実行できないタスクの場合には、自らタスクを実行することもあります。
-        EOS
+        prompt = load_prompt("leader_agent/backstory")
+        content = prompt.format
         content
       end
 
@@ -27,7 +25,7 @@ module RedmineAiHelper
       def system_prompt
         {
           role: "system",
-          content: @system_prompt.prompt + "\n----\n" + backstory,
+          content: "#{@system_prompt.prompt}\n\n#{backstory}",
         }
       end
 
@@ -45,9 +43,11 @@ module RedmineAiHelper
         chat_room = RedmineAiHelper::ChatRoom.new(goal)
         agent_list = RedmineAiHelper::AgentList.instance
         steps["steps"].map { |step| step["agent"] }.uniq.reject { |a| a == "leader_agent" }.each do |agent|
-          agent_instance = agent_list.get_agent_instance(agent, { project: @project })
+          agent_instance = agent_list.get_agent_instance(agent, { project: @project, langfuse: langfuse })
           chat_room.add_agent(agent_instance)
         end
+
+        chat_room.share_goal
 
         steps["steps"].each do |step|
           chat_room.send_task("leader", step["agent"], step["step"])
@@ -55,8 +55,11 @@ module RedmineAiHelper
 
         newmessages = messages + chat_room.messages
         newmessages << { role: "user", content: "All agents have completed their tasks. Please create the final response for the user." }
+        langfuse.create_span(name: "final response", input: newmessages.last[:content])
         ai_helper_logger.debug "newmessages: #{newmessages}"
-        chat(newmessages, option, callback)
+        answer = chat(newmessages, option, callback)
+        langfuse.finish_current_span(output: answer)
+        answer
       end
 
       # Generate a goal for the agents to follow based on the user's request.
@@ -65,7 +68,9 @@ module RedmineAiHelper
 
         newmessages = messages.dup
         newmessages << { role: "user", content: prompt.format }
+        langfuse.create_span(name: "goal generation", input: prompt.format)
         answer = chat(newmessages)
+        langfuse.finish_current_span(output: answer)
         answer
       end
 
@@ -99,8 +104,12 @@ module RedmineAiHelper
         }
         parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
         json_examples = <<~EOS
+
           ----
+
           Example JSON when appropriate agents are found:
+
+          ```json
           {
             "steps": [
               {
@@ -113,8 +122,13 @@ module RedmineAiHelper
               }
             ]
           }
+          ```
+
           ----
+
           Example JSON when no appropriate agents are found:
+
+          ```json
           {
             "steps": [
               {
@@ -123,6 +137,7 @@ module RedmineAiHelper
               }
             ]
           }
+          ```
         EOS
 
         prompt_text = prompt.format(
@@ -136,12 +151,15 @@ module RedmineAiHelper
 
         newmessages = messages.dup
         newmessages << { role: "user", content: prompt_text }
+        langfuse.create_span(name: "steps generation", input: prompt_text)
         json = chat(newmessages)
         fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
           llm: client,
           parser: parser,
         )
-        fix_parser.parse(json)
+        fixed_json = fix_parser.parse(json)
+        langfuse.finish_current_span(output: fixed_json)
+        fixed_json
       end
     end
   end

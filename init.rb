@@ -1,4 +1,6 @@
+require "langfuse"
 $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/lib"
+require "redmine_ai_helper/util/config_file"
 require_dependency "redmine_ai_helper/sidebar_hook"
 Dir[File.join(File.dirname(__FILE__), "lib/redmine_ai_helper/agents", "*_agent.rb")].each do |file|
   require file
@@ -11,7 +13,7 @@ Redmine::Plugin.register :redmine_ai_helper do
   author_url "https://github.com/haru"
   requires_redmine :version_or_higher => "6.0.0"
 
-  version "1.0.0"
+  version "1.0.1"
 
   project_module :ai_helper do
     permission :view_ai_helper, { ai_helper: [:chat, :chat_form, :reload, :clear, :call_llm, :history, :conversation] }

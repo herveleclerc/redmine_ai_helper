@@ -40,9 +40,14 @@ module RedmineAiHelper
         provider = RedmineAiHelper::Tools::IssueTools.new
         properties = provider.capable_issue_properties(project_id: @project.id)
         content = <<~EOS
+
           ----
+
           The following issue properties are available for Project ID: #{@project.id}.
-          #{properties}
+
+          ```json
+          #{JSON.pretty_generate(properties)}
+          ```
         EOS
         content
       end

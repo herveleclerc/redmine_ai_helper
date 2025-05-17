@@ -12,9 +12,16 @@ module RedmineAiHelper
     def initialize(goal)
       @agents = []
       @goal = goal
+      @messages = []
+    end
+
+    # Share the user's goal with all agents in the chat room.
+    def share_goal
       first_message = <<~EOS
         The user's goal is as follows. Collaborate with all agents to achieve this goal.
+
         ----
+
         goal:
         #{goal}
       EOS
@@ -41,7 +48,11 @@ module RedmineAiHelper
     def add_message(llm_role, from, message, to)
       ai_helper_logger.debug "from: #{from}\n @#{to}, #{message}"
       @messages ||= []
-      @messages << { role: llm_role, content: "role: #{from}\n----\nTo: #{to}\n#{message}" }
+      content = "From: #{from}\n\n----\n\nTo: #{to}\n#{message}"
+      @messages << { role: llm_role, content: content }
+      @agents.each do |agent|
+        agent.add_message(role: llm_role, content: content)
+      end
     end
 
     # Get an agent by its role.
@@ -66,7 +77,7 @@ module RedmineAiHelper
         ai_helper_logger.error error
         raise error
       end
-      answer = agent.perform_task(@messages, option, proc)
+      answer = agent.perform_task(option, proc)
       add_message("assistant", to, answer, from)
       answer
     end
