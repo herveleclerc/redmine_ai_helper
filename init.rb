@@ -24,14 +24,3 @@ Redmine::Plugin.register :redmine_ai_helper do
        }, caption: :label_ai_helper, :icon => "ai-helper-robot",
           :plugin => :redmine_ai_helper
 end
-
-config_yml = RedmineAiHelper::Util::ConfigFile.load_config[:langfuse]
-
-if config_yml
-  Langfuse.configure do |config|
-    config.public_key = config_yml[:public_key]
-    config.secret_key = config_yml[:secret_key]
-    config.host = config_yml[:endpoint] || "https://us.cloud.langfuse.com"
-    config.debug = config_yml[:debug] || false
-  end
-end
