@@ -24,7 +24,7 @@ class LeaderAgentTest < ActiveSupport::TestCase
 
     should "return correct backstory" do
       backstory = @agent.backstory
-      assert backstory.include?("あなたは RedmineAIHelper プラグインのリーダーエージェントです")
+      assert backstory.include?("You are the leader agent of the RedmineAIHelper plugin")
     end
 
     should "return correct system prompt" do
@@ -85,9 +85,9 @@ module MyOpenAI
 
       answer = "test answer"
 
-      if message.include?("Clearly define the goal the user wants to achieve")
+      if message.include?("clarify the user's request and set a clear goal")
         answer = "test goal"
-      elsif message.include?("to achieve the goal")
+      elsif message.include?("Please create instructions for other agents")
         answer = {
           "steps": [
             { "agent": "project_agent", "step": "my_projectという名前のプロジェクトのIDを教えてください" },

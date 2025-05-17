@@ -13,10 +13,8 @@ module RedmineAiHelper
       end
 
       def backstory
-        content = <<~EOS
-          あなたは RedmineAIHelper プラグインのリーダーエージェントです。他のエージェントに指示を出し、彼らが答えた内容をまとめ、最終回答をユーザーに返すことがあなたの役割です。
-          また、他のエージェントが実行できないタスクの場合には、自らタスクを実行することもあります。
-        EOS
+        prompt = load_prompt("leader_agent/backstory")
+        content = prompt.format
         content
       end
 
@@ -27,7 +25,7 @@ module RedmineAiHelper
       def system_prompt
         {
           role: "system",
-          content: @system_prompt.prompt + "\n----\n" + backstory,
+          content: "#{@system_prompt.prompt}\n\n#{backstory}",
         }
       end
 
@@ -104,8 +102,12 @@ module RedmineAiHelper
         }
         parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
         json_examples = <<~EOS
+
           ----
+
           Example JSON when appropriate agents are found:
+
+          ```json
           {
             "steps": [
               {
@@ -118,8 +120,13 @@ module RedmineAiHelper
               }
             ]
           }
+          ```
+
           ----
+
           Example JSON when no appropriate agents are found:
+
+          ```json
           {
             "steps": [
               {
@@ -128,6 +135,7 @@ module RedmineAiHelper
               }
             ]
           }
+          ```
         EOS
 
         prompt_text = prompt.format(

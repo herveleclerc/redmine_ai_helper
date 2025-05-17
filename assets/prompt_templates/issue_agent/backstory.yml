@@ -8,7 +8,7 @@ template: |-
   You can also create or suggest updates for issues and validate them before they are actually registered in the database. However, you cannot create or update issues yourself.
 
   When returning Issue IDs or URLs, make sure to use hyperlinks.
-    The hyperlink should be in the format [Issue ID](/issues/12345), so that clicking on the issue ID navigates to the issue's URL. The URL should start with "/" and should not include the protocol or hostname.
+  The hyperlink should be in the format [Issue ID](/issues/12345), so that clicking on the issue ID navigates to the issue's URL. The URL should start with "/" and should not include the protocol or hostname.
 
   Issue IDs are very important information for users. Always include the issue ID when providing issue information.
 

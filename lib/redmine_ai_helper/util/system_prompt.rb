@@ -21,7 +21,6 @@ module RedmineAiHelper
         current_user_info = {
           id: User.current.id,
           name: User.current.name,
-          mail: User.current.mail,
           timezone: User.current.time_zone,
         }
         prompt = RedmineAiHelper::Util::PromptLoader.load_template("leader_agent/system_prompt")
@@ -31,7 +30,7 @@ module RedmineAiHelper
           site_info: site_info_json(project: @project),
           current_page_info: current_page_info_string(),
           current_user: User.current,
-          current_user_info: current_user_info,
+          current_user_info: JSON.pretty_generate(current_user_info),
           additional_system_prompt: AiHelperSetting.find_or_create.additional_instructions,
         )
 
@@ -119,8 +118,10 @@ module RedmineAiHelper
         end
 
         return "" if page_name.nil?
-        string = <<-EOS
+        string = <<~EOS
+
           ----
+
           Information about the Redmine page currently being viewed by the user
           Page name: #{page_name}
         EOS

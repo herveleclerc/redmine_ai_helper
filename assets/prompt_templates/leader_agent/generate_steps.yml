@@ -6,20 +6,33 @@ input_variables:
   - format_instructions
   - json_examples
 template: |-
-  Please provide step-by-step instructions to other agents to achieve the goal "{goal}".
-  In each step, consider how the results obtained from the execution of the previous step can be utilized.
-  Select appropriate agents by considering their backstory. If the backstory aligns with the goal, you may assign tasks to agents even if the questions are not directly related to Redmine.
+  Please create instructions for other agents to solve the user's goal. The goal is as follows:
 
-  Limit the steps to a maximum of 3.
-  Instructions to agents should be written in JSON format.
-  If no suitable agent is available, assign the task to the mcp_agent.
+    ----
 
-  ** If the goal involves confirming something with the user, do not issue instructions to other agents to create or update data. In such cases, only request information retrieval from other agents. **
+    {goal}
 
-  ----
-  List of agents:
-  {agent_list}
-  ----
-  {format_instructions}
+    ----
 
-  {json_examples}
+    Create the instructions step by step.
+    For each step, consider how to utilize the results obtained from the previous step.
+    Select the appropriate agent by considering the agent's backstory. If the backstory fits the goal, you may assign the agent even if the question is not directly related to Redmine.
+
+    - Limit the steps to a maximum of 3.
+    - Write the instructions for the agents in JSON format.
+    - If there is no suitable agent, give the instruction to the mcp_agent.
+
+    **If the goal is to confirm something with the user, do not give instructions to other agents to create or update data. In that case, you may only request other agents to retrieve information.**
+
+    ----
+
+    List of agents:
+    ```json
+    {agent_list}
+    ```
+
+    ----
+
+    {format_instructions}
+
+    {json_examples}
