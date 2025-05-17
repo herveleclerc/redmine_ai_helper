@@ -20,6 +20,7 @@
     - [Creating the Index](#creating-the-index)
     - [Recreating the Index](#recreating-the-index)
 - [Build your own Agent](#build-your-own-agent)
+- [Langfuse integration](#langfuse-integration)
 - [Important Notice](#important-notice)
 - [Contributing](#contributing)
 - [Support](#support)
@@ -173,7 +174,20 @@ Place these files in any location within Redmine and load them.
 
 As an example, there is a plugin called `redmine_fortune` under the `example` directory. Place this plugin in the `plugins` folder of Redmine. This will add a fortune-telling feature to the AI Helper plugin. When you ask, "Tell me my fortune for today," it will return a fortune-telling result.
 
+# Langfuse integration
+By integrating with Langfuse, you can track the usage of the AI Helper Plugin. This allows you to monitor the cost of LLM queries and improve prompts effectively.
 
+
+![Image](https://github.com/user-attachments/assets/35904911-db39-4da7-baf6-a90fe05d9115)
+
+To configure the integration, add the following to `{REDMINE_ROOT}/config/ai_helper/config.yml`:
+
+```yaml
+langfuse:
+  public_key: "pk-lf-************"
+  secret_key: "sk-lf-************"
+  endpoint: https://us.cloud.langfuse.com # Change this to match your environment
+```
 
 # Important Notice
 
