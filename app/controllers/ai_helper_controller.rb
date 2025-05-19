@@ -7,7 +7,7 @@ class AiHelperController < ApplicationController
   include ActionController::Live
   include RedmineAiHelper::Logger
   include AiHelperHelper
-  before_action :find_issue, only: [:issue_summary]
+  before_action :find_issue, only: [:issue_summary, :update_issue_summary]
   before_action :find_project, except: [:issue_summary]
   before_action :find_user, :authorize, :create_session, :find_conversation
 
@@ -61,12 +61,16 @@ class AiHelperController < ApplicationController
 
   # Display the issue summary
   def issue_summary
-    @issue = Issue.find_by(id: params[:issue_id])
-    return render_404 unless @issue
-    @project = @issue.project
-
+    summary = AiHelperSummaryCache.issue_cache(issue_id: @issue.id)
+    if params[:update] == "true" && summary
+      summary.destroy!
+      summary = nil
+    end
     llm = RedmineAiHelper::Llm.new
-    summary = llm.issue_summary(issue: @issue)
+    unless summary
+      content = llm.issue_summary(issue: @issue)
+      summary = AiHelperSummaryCache.update_issue_cache(issue_id: @issue.id, content: content)
+    end
 
     render partial: "ai_helper/issue_summary", locals: { summary: summary }
   end

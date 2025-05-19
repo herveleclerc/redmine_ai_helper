@@ -1,34 +1,50 @@
+<%= javascript_tag do %>
+  function getSummary(update) {
+    var url = "<%= ai_helper_issue_summary_path(id: @issue.id)%>";
+    if (update == true) {
+      url += "?update=true";
+    }
+    $('#ai-helper-summary-area').html('<div class="loader"><%= j l(:ai_helper_loading) %></div>');
 
+    $.ajax({
+      url: url,
+      type: 'GET',
+      dataType: 'html',
+      success: function(data) {
+        $('#ai-helper-summary-area').html(data);
+      },
+      error: function(xhr, status, error) {
+        $('#ai-helper-summary-area').html('<div class="error"><%= j l(:ai_helper_error_occurred) %>: ' + error + '</div>');
+      }
+    });
+  };
+
+  $(document).ready(function() {
+    $('.ai-helper-summary-button').click(function(e) {
+      e.preventDefault();
+      getSummary();
+    });
+  });
+<% end %>
 <fieldset id="options" class="collapsible collapsed">
     <legend onclick="toggleFieldset(this);" class="icon icon-collapsed">
     <%= sprite_icon("angle-right", rtl: true) %>
     <strong><%= l(:ai_helper_issue_summary) %></strong>
     </legend>
     <div class="ai-helper-issue-summary" style="display: none;">
-      <%= link_to l(:ai_helper_issue_summary), '#', class: 'ai-helper-summary-button', id: 'ai-helper-summary-button' %>
-      <div id="ai-helper-summary-area"></div>
+      <%
+        summary = AiHelperSummaryCache.issue_cache(issue_id: @issue.id)
+      %>
+      <div id="ai-helper-summary-area">
+        <% if summary %>
+        <script>
+            getSummary();
+        </script>
+        <% else %>
+        <%= link_to l(:ai_helper_issue_summary), '#', class: 'ai-helper-summary-button', id: 'ai-helper-summary-button' %>
+        <% end %>
+
+      </div>
     </div>
 
 </fieldset>
-
-<%= javascript_tag do %>
-  $(document).ready(function() {
-    $('.ai-helper-summary-button').click(function(e) {
-      e.preventDefault();
-      var url = "<%= ai_helper_issue_summary_path(issue_id: @issue.id)%>"
-      $('#ai-helper-summary-area').html('<div class="loader"><%= j l(:ai_helper_loading) %></div>');
-
-      $.ajax({
-        url: url,
-        type: 'GET',
-        dataType: 'html',
-        success: function(data) {
-          $('#ai-helper-summary-area').html(data);
-        },
-        error: function(xhr, status, error) {
-          $('#ai-helper-summary-area').html('<div class="error"><%= j l(:ai_helper_error_occurred) %>: ' + error + '</div>');
-        }
-      });
-    });
-  });
-<% end %>
