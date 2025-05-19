@@ -38,5 +38,25 @@ module RedmineAiHelper
       ai_helper_logger.info "answer: #{answer}"
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
+
+    # IssueAgentを使用して、issueの要約を取得する
+    # @param issue [Issue] The issue object
+    # return [String] The summary of the issue
+    def issue_summary(issue:)
+      begin
+        prompt = "Please summarize the issue #{issue.id}."
+        langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: prompt)
+        agent = RedmineAiHelper::Agents::IssueAgent.new(project: issue.project, langfuse: langfuse)
+        langfuse.create_span(name: "issue_summary", input: prompt)
+        answer = agent.issue_summary(issue: issue)
+        langfuse.finish_current_span(output: answer)
+        langfuse.flush
+      rescue => e
+        ai_helper_logger.error "error: #{e.full_message}"
+        answer = e.message
+      end
+      ai_helper_logger.info "answer: #{answer}"
+      answer
+    end
   end
 end

@@ -7,7 +7,9 @@ class AiHelperController < ApplicationController
   include ActionController::Live
   include RedmineAiHelper::Logger
   include AiHelperHelper
-  before_action :find_user, :find_project, :authorize, :create_session, :find_conversation
+  before_action :find_issue, only: [:issue_summary]
+  before_action :find_project, except: [:issue_summary]
+  before_action :find_user, :authorize, :create_session, :find_conversation
 
   # Display the chat form in the sidebar
   def chat_form
@@ -55,6 +57,18 @@ class AiHelperController < ApplicationController
   def history
     @conversations = AiHelperConversation.where(user: @user).order(updated_at: :desc).limit(10)
     render partial: "ai_helper/history"
+  end
+
+  # Display the issue summary
+  def issue_summary
+    @issue = Issue.find_by(id: params[:issue_id])
+    return render_404 unless @issue
+    @project = @issue.project
+
+    llm = RedmineAiHelper::Llm.new
+    summary = llm.issue_summary(issue: @issue)
+
+    render partial: "ai_helper/issue_summary", locals: { summary: summary }
   end
 
   # Call the LLM and stream the response

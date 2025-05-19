@@ -106,7 +106,8 @@ module RedmineAiHelper
     # @param callback [Proc] A callback function to be called with each chunk of the response.
     # @return [String] The response from the assistant.
     def chat(messages, option = {}, callback = nil)
-      chat_params = llm_provider.create_chat_param(system_prompt, messages)
+      system_prompt_message = { "role": "system", "content": system_prompt }
+      chat_params = llm_provider.create_chat_param(system_prompt_message, messages)
       answer = ""
       response = client.chat(chat_params) do |chunk|
         content = llm_provider.chunk_converter(chunk) rescue nil

@@ -1,0 +1,17 @@
+---
+_type: prompt
+input_variables:
+  - issue
+template: |-
+  Please summarize the content of the following issue.
+  This summary will be displayed on the Redmine issue screen.
+  Therefore, information such as the subject, issue number, status, tracker, and priority is not necessary.
+  Only summarize the content, comments, and update history of the issue.
+
+  Also, please provide only the summary text in your answer. Do not include explanations such as "Here is the summary".
+
+  ----
+
+  Issue:
+
+  {issue}

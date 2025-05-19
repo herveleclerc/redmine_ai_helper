@@ -1,0 +1,8 @@
+<div class="ai-helper-issue-summary-content">
+  <div class="ai-helper-summary-header">
+    <small><%= l(:ai_helper_text_summary_generated_time, time: format_time(Time.now)) %></small>
+  </div>
+  <div class="ai-helper-summary-body">
+    <%= md_to_html(summary) %>
+  </div>
+</div>
