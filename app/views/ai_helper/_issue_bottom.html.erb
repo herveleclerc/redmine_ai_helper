@@ -29,7 +29,10 @@
 <fieldset id="options" class="collapsible collapsed">
     <legend onclick="toggleFieldset(this);" class="icon icon-collapsed">
     <%= sprite_icon("angle-right", rtl: true) %>
-    <strong><%= l(:ai_helper_issue_summary) %></strong>
+    <strong>
+        <%= sprite_icon("ai-helper-robot", plugin: :redmine_ai_helper)%>
+        <%= l(:ai_helper_issue_summary) %>
+    </strong>
     </legend>
     <div class="ai-helper-issue-summary" style="display: none;">
       <%

@@ -47,7 +47,7 @@ module RedmineAiHelper
         prompt = "Please summarize the issue #{issue.id}."
         langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: prompt)
         agent = RedmineAiHelper::Agents::IssueAgent.new(project: issue.project, langfuse: langfuse)
-        langfuse.create_span(name: "issue_summary", input: prompt)
+        langfuse.create_span(name: "user_request", input: prompt)
         answer = agent.issue_summary(issue: issue)
         langfuse.finish_current_span(output: answer)
         langfuse.flush
