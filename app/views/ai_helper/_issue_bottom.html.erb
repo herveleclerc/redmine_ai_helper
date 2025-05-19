@@ -35,7 +35,7 @@
     <%= sprite_icon("angle-right", rtl: true) %>
     <strong>
         <%= sprite_icon("ai-helper-robot", plugin: :redmine_ai_helper)%>
-        <%= l(:ai_helper_issue_summary) %>
+        <%= l(:ai_helper_summary) %>
     </strong>
     </legend>
     <div class="ai-helper-issue-summary" style="display: none;">
@@ -48,7 +48,7 @@
             getSummary();
         </script>
         <% else %>
-        <%= link_to l(:ai_helper_issue_summary), '#', class: 'ai-helper-summary-button', id: 'ai-helper-summary-button' %>
+        <%= link_to l(:ai_helper_summary), '#', class: 'ai-helper-summary-button', id: 'ai-helper-summary-button' %>
         <% end %>
 
       </div>
