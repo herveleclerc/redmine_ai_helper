@@ -1,0 +1,73 @@
+require File.expand_path("../../../test_helper", __FILE__)
+require "redmine_ai_helper/agents/issue_agent"
+
+class RedmineAiHelper::Agents::IssueAgentTest < ActiveSupport::TestCase
+  fixtures :projects, :users, :issues, :issue_statuses, :trackers, :enumerations
+
+  context "IssueAgent" do
+    setup do
+      @project = Project.find(1)
+      @user = User.find(1)
+      @issue = Issue.find(1)
+      @langfuse = mock("Langfuse")
+      @agent = RedmineAiHelper::Agents::IssueAgent.new(project: @project, langfuse: @langfuse)
+    end
+
+    should "generate backstory including issue properties" do
+      backstory = @agent.backstory
+      assert_match /issue properties are available/, backstory
+      assert_match /Project ID: #{@project.id}/, backstory
+    end
+
+    should "include vector tools when vector db is enabled" do
+      AiHelperSetting.any_instance.stubs(:vector_search_enabled).returns(true)
+      tools = @agent.available_tool_providers
+      assert_includes tools, RedmineAiHelper::Tools::VectorTools
+      assert_includes tools, RedmineAiHelper::Tools::IssueTools
+      assert_includes tools, RedmineAiHelper::Tools::ProjectTools
+    end
+
+    should "not include vector tools when vector db is disabled" do
+      AiHelperSetting.any_instance.stubs(:vector_search_enabled).returns(false)
+      tools = @agent.available_tool_providers
+      assert_not_includes tools, RedmineAiHelper::Tools::VectorTools
+      assert_includes tools, RedmineAiHelper::Tools::IssueTools
+      assert_includes tools, RedmineAiHelper::Tools::ProjectTools
+    end
+
+    should "generate issue summary for visible issue" do
+      @issue.stubs(:visible?).returns(true)
+
+      # モックプロンプトを設定
+      mock_prompt = mock("Prompt")
+      mock_prompt.stubs(:format).returns("Summarize this issue")
+      @agent.stubs(:load_prompt).with("issue_agent/summary").returns(mock_prompt)
+
+      # chatメソッドをモック
+      @agent.stubs(:chat).returns("This is a summary of the issue.")
+
+      result = @agent.issue_summary(issue: @issue)
+      assert_equal "This is a summary of the issue.", result
+    end
+
+    should "deny access for non-visible issue" do
+      @issue.stubs(:visible?).returns(false)
+      result = @agent.issue_summary(issue: @issue)
+      assert_equal "Permission denied", result
+    end
+
+    should "generate issue properties string" do
+      RedmineAiHelper::Tools::IssueTools.any_instance.stubs(:capable_issue_properties).returns({
+        "priority" => ["High", "Normal", "Low"],
+        "status" => ["New", "In Progress", "Resolved"],
+      })
+
+      issue_properties = @agent.send(:issue_properties)
+
+      assert_match /The following issue properties are available/, issue_properties
+      assert_match /Project ID: #{@project.id}/, issue_properties
+      assert_match /"priority"/, issue_properties
+      assert_match /"status"/, issue_properties
+    end
+  end
+end
