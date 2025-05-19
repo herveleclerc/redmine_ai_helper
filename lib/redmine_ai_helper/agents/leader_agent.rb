@@ -55,7 +55,7 @@ module RedmineAiHelper
 
         newmessages = messages + chat_room.messages
         newmessages << { role: "user", content: "All agents have completed their tasks. Please create the final response for the user." }
-        langfuse.create_span(name: "final response", input: newmessages.last[:content])
+        langfuse.create_span(name: "final_response", input: newmessages.last[:content])
         ai_helper_logger.debug "newmessages: #{newmessages}"
         answer = chat(newmessages, option, callback)
         langfuse.finish_current_span(output: answer)
@@ -68,7 +68,7 @@ module RedmineAiHelper
 
         newmessages = messages.dup
         newmessages << { role: "user", content: prompt.format }
-        langfuse.create_span(name: "goal generation", input: prompt.format)
+        langfuse.create_span(name: "goal_generation", input: prompt.format)
         answer = chat(newmessages)
         langfuse.finish_current_span(output: answer)
         answer
@@ -151,7 +151,7 @@ module RedmineAiHelper
 
         newmessages = messages.dup
         newmessages << { role: "user", content: prompt_text }
-        langfuse.create_span(name: "steps generation", input: prompt_text)
+        langfuse.create_span(name: "steps_generation", input: prompt_text)
         json = chat(newmessages)
         fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
           llm: client,

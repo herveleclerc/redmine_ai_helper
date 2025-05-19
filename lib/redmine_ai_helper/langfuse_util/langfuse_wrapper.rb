@@ -86,7 +86,7 @@ module RedmineAiHelper
         @trace = trace
         return unless @trace
         @span = Langfuse.span(
-          name: "process-query",
+          name: name,
           trace_id: trace.id,
           input: { query: input },
           parent_observation_id: parent_span_id,
