@@ -4,6 +4,10 @@ ja:
   label_chat_placeholder: "メッセージを入力してください..."
   label_ai_helper_input_newline: "Shift + Enter で改行します。"
   label_ai_helper_start_new_chat: "新しいチャットを開始"
+  ai_helper_summary: "AIヘルパーで要約"
+  ai_helper_text_summary_generated_time: "%{time} に生成"
+  ai_helper_loading: "読み込み中..."
+  ai_helper_error_occurred: "エラーが発生しました"
   ai_helper:
     model_profiles:
       create_profile_title: "新しいモデルプロファイル"

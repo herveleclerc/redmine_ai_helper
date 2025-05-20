@@ -4,32 +4,41 @@ require "redmine_ai_helper/llm"
 class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
   fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
 
-  def setup
-    AiHelperConversation.delete_all
-    @params = {
-      access_token: "test_access_token",
-      uri_base: "http://example.com",
-      organization_id: "test_org_id",
-    }
-    @openai_mock = DummyOpenAIClientForLlmTest.new
-    Langchain::LLM::OpenAI.stubs(:new).returns(@openai_mock)
-    @llm = RedmineAiHelper::Llm.new(@params)
-    @conversation = AiHelperConversation.new(title: "test task")
-    message = AiHelperMessage.new(content: "test task", role: "user")
-    @conversation.messages << message
-  end
+  context "RedmineAiHelper::Llm" do
+    setup do
+      AiHelperConversation.delete_all
+      @params = {
+        access_token: "test_access_token",
+        uri_base: "http://example.com",
+        organization_id: "test_org_id",
+      }
+      @openai_mock = DummyOpenAIClientForLlmTest.new
+      Langchain::LLM::OpenAI.stubs(:new).returns(@openai_mock)
+      @llm = RedmineAiHelper::Llm.new(@params)
+      @conversation = AiHelperConversation.new(title: "test task")
+      message = AiHelperMessage.new(content: "test task", role: "user")
+      @conversation.messages << message
+    end
 
-  # def test_initialize
-  #   assert_equal "test_access_token", @llm.instance_variable_get(:@client).access_token
-  #   assert_equal "http://example.com", @llm.instance_variable_get(:@client).uri_base
-  #   assert_equal "test_org_id", @llm.instance_variable_get(:@client).organization_id
-  # end
+    should "respond with assistant role on chat success" do
+      message = AiHelperMessage.new(content: "hello", role: "user")
+      @conversation.messages << message
+      response = @llm.chat(@conversation, nil, { controller_name: "issues", action_name: "show", content_id: 1 })
+      assert_equal "assistant", response.role
+    end
 
-  def test_chat_success
-    message = AiHelperMessage.new(content: "hello", role: "user")
-    @conversation.messages << message
-    response = @llm.chat(@conversation, nil, { controller_name: "issues", action_name: "show", content_id: 1 })
-    assert_equal "assistant", response.role
+    context "issue summary" do
+      setup do
+        @issue = Issue.find(1)
+        @llm = RedmineAiHelper::Llm.new(@params)
+      end
+
+      should "deny access for non-visible issue" do
+        @issue.stubs(:visible?).returns(false)
+        summary = @llm.issue_summary(issue: @issue)
+        assert_equal "Permission denied", summary
+      end
+    end
   end
 
   private
@@ -39,6 +48,8 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
   end
 
   class DummyOpenAIClientForLlmTest < Langchain::LLM::OpenAI
+    attr_accessor :langfuse
+
     def initialize(params = {})
       super(api_key: "aaaa")
     end
@@ -47,13 +58,6 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
       { "choices": [{ "message": { "content": message } }] }
     end
 
-    # Dummy implementation of the chat_answer method
-
-    def chat_answer(message)
-      { "choices": [{ "message": { "content": message } }] }
-    end
-
-    # Dummy implementation of the chat method
     def chat(params = {})
       messages = params[:messages]
       message = messages.last[:content]
@@ -81,12 +85,9 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
             { "agent": "leader", "step": "my_projectという名前のプロジェクトのIDを教えてください" },
           ],
         }.to_json
-      else
-        #puts "DummyOpenAIClient#chat params = #{message} called!!!!!!!!!!!!!!!!"
       end
 
       if block_given?
-        { "index" => 0, "delta" => { "content" => "ら" }, "logprobs" => nil, "finish_reason" => nil }
         chunk = {
           "index": 0,
           "delta": { "content": answer },
