@@ -5,6 +5,9 @@ module RedmineAiHelper
   module Agents
     # IssueAgent is a specialized agent for handling Redmine issue-related queries.
     class IssueAgent < RedmineAiHelper::BaseAgent
+      include RedmineAiHelper::Util::IssueJson
+      include Rails.application.routes.url_helpers
+
       def backstory
         search_answer_instruction = I18n.t("ai_helper.prompts.issue_agent.search_answer_instruction")
         search_answer_instruction = "" if vector_db_enabled?
@@ -24,6 +27,17 @@ module RedmineAiHelper
         end
 
         base_tools
+      end
+
+      def issue_summary(issue:)
+        return "Permission denied" unless issue.visible?
+
+        prompt = load_prompt("issue_agent/summary")
+        issue_json = generate_issue_data(issue)
+        prompt_text = prompt.format(issue: JSON.pretty_generate(issue_json))
+        message = { role: "user", content: prompt_text }
+        messages = [message]
+        chat(messages)
       end
 
       private

@@ -4,6 +4,10 @@ en:
   label_chat_placeholder: "Type your message here..."
   label_ai_helper_input_newline: "Press Shift + Enter for a new line."
   label_ai_helper_start_new_chat: "Start a new chat"
+  ai_helper_summary: "Summarize with AI Helper"
+  ai_helper_text_summary_generated_time: "Generated at %{time}"
+  ai_helper_loading: "Loading..."
+  ai_helper_error_occurred: "An error occurred"
   ai_helper:
     model_profiles:
       create_profile_title: "New model profile"

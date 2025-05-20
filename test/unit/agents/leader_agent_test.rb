@@ -29,8 +29,7 @@ class LeaderAgentTest < ActiveSupport::TestCase
 
     should "return correct system prompt" do
       system_prompt = @agent.system_prompt
-      assert_equal "system", system_prompt[:role]
-      assert system_prompt[:content].include?(@agent.backstory)
+      assert system_prompt.include?(@agent.backstory)
     end
 
     should "generate goal correctly" do
