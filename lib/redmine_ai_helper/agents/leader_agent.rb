@@ -23,10 +23,7 @@ module RedmineAiHelper
       end
 
       def system_prompt
-        {
-          role: "system",
-          content: "#{@system_prompt.prompt}\n\n#{backstory}",
-        }
+        "#{@system_prompt.prompt}\n\n#{backstory}"
       end
 
       # Perform a user request by generating a goal and steps for the agents to follow.
