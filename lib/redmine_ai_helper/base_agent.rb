@@ -85,6 +85,7 @@ module RedmineAiHelper
         role: role,
         backstory: backstory,
         time: time,
+        lang: I18n.t(:general_lang_name),
       )
 
       return prompt_text
