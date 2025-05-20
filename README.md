@@ -7,28 +7,28 @@
 
 
 - [Redmine AI Helper Plugin](#redmine-ai-helper-plugin)
-- [Features](#features)
-- [Installation](#installation)
-- [Basic Configuration](#basic-configuration)
+- [✨ Features](#-features)
+- [📦 Installation](#-installation)
+- [⚙️ Basic Configuration](#️-basic-configuration)
   - [Plugin Settings](#plugin-settings)
   - [Role and Permission Settings](#role-and-permission-settings)
   - [Project-specific Settings](#project-specific-settings)
-- [Advanced Configuration](#advanced-configuration)
+- [⚙️ Advanced Configuration](#️-advanced-configuration)
   - [MCP Server Settings](#mcp-server-settings)
   - [Vector Search Settings](#vector-search-settings)
     - [AI Helper Settings Page](#ai-helper-settings-page)
     - [Creating the Index](#creating-the-index)
     - [Recreating the Index](#recreating-the-index)
-- [Build your own Agent](#build-your-own-agent)
-- [Langfuse integration](#langfuse-integration)
-- [Important Notice](#important-notice)
-- [Contributing](#contributing)
-- [Support](#support)
-- [Credits](#credits)
+- [🛠️ Build your own Agent](#️-build-your-own-agent)
+- [🪄 Langfuse integration](#-langfuse-integration)
+- [⚠️ Important Notice](#️-important-notice)
+- [🤝 Contributing](#-contributing)
+- [🐞 Support](#-support)
+- [🌟 Credits](#-credits)
 
 The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing project management efficiency through AI-powered support.
 
-# Features
+# ✨ Features
 
 - Adds an AI chat sidebar to the right side of your Redmine interface
 - Enables various AI-assisted queries including:
@@ -42,7 +42,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 
 ![Image](https://github.com/user-attachments/assets/39f61008-45a3-4807-9c1c-57fba4e06835)
 
-# Installation
+# 📦 Installation
 
 1. Extract the plugin to your Redmine plugins folder:
    ```bash
@@ -63,7 +63,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 4. Restart Redmine:
 
 
-# Basic Configuration
+# ⚙️ Basic Configuration
 
 ## Plugin Settings
 
@@ -89,7 +89,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 3. Enable "AI Helper" by checking the box
 4. Click "Save" to apply the changes
 
-# Advanced Configuration
+# ⚙️ Advanced Configuration
 
 ## MCP Server Settings
 
@@ -158,7 +158,7 @@ If you change the embedding model, delete the index and recreate it using the fo
 bundle exec rake redmine:plugins:ai_helper:vector:destroy RAILS_ENV=production
 ```
 
-# Build your own Agent
+# 🛠️ Build your own Agent
 
 The AI Helper plugin adopts a multi-agent model. You can create your own agent and integrate it into the AI Helper plugin.
 
@@ -175,7 +175,7 @@ Place these files in any location within Redmine and load them.
 
 As an example, there is a plugin called `redmine_fortune` under the `example` directory. Place this plugin in the `plugins` folder of Redmine. This will add a fortune-telling feature to the AI Helper plugin. When you ask, "Tell me my fortune for today," it will return a fortune-telling result.
 
-# Langfuse integration
+# 🪄 Langfuse integration
 By integrating with Langfuse, you can track the usage of the AI Helper Plugin. This allows you to monitor the cost of LLM queries and improve prompts effectively.
 
 
@@ -190,20 +190,20 @@ langfuse:
   endpoint: https://us.cloud.langfuse.com # Change this to match your environment
 ```
 
-# Important Notice
+# ⚠️ Important Notice
 
-⚠️ Please note that AI responses may not always be 100% accurate. Users should verify and validate AI-provided information at their own discretion.
+Please note that AI responses may not always be 100% accurate. Users should verify and validate AI-provided information at their own discretion.
 
 
-# Contributing
+# 🤝 Contributing
 
 I welcome bug reports and feature improvement suggestions through GitHub Issues. Pull requests are also appreciated.
 
-# Support
+# 🐞 Support
 
 If you encounter any issues or have questions, please open an issue on GitHub.
 
 
-# Credits
+# 🌟 Credits
 
 Developed and maintained by [Haru Iida](https://github.com/haru).
