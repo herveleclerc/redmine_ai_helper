@@ -15,6 +15,7 @@ module RedmineAiHelper
         llm_options = {}
         llm_options[:organization_id] = model_profile.organization_id if model_profile.organization_id
         llm_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
+        llm_options[:organization_id] = model_profile.organization_id if model_profile.organization_id
         default_options = {
           model: model_profile.llm_model,
           temperature: model_profile.temperature,
