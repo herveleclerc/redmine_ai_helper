@@ -17,7 +17,7 @@
           </span>
         </span>
         <div class="aihelper-dropdown-menu">
-          <div id="aihelper-chat-clear" style="display: none;">
+          <div id="aihelper-chat-clear">
             <ul>
               <li>
                 <%= link_to sprite_icon("add", t(:label_ai_helper_start_new_chat)), "javascript:void(0);", onclick: "ai_helper.clear_chat();" %>
@@ -63,16 +63,21 @@
        end %>
     <script>
       const is_sidebar_exist = function() {
-        return $('#sidebar-wrapper').length !== 0;
+        return document.getElementById('sidebar-wrapper') !== null;
       }
 
-      $(document).ready(function() {
+      document.addEventListener('DOMContentLoaded', function() {
         if (!is_sidebar_exist()) {
           return;
         }
 
         // div#aihelper-sidebar を div#sidebar-wrapper の最初に追加
-        $('#aihelper-sidebar').prependTo('#sidebar-wrapper');
+        const sidebarElement = document.getElementById('aihelper-sidebar');
+        const sidebarWrapper = document.getElementById('sidebar-wrapper');
+        if (sidebarElement && sidebarWrapper) {
+          sidebarWrapper.insertBefore(sidebarElement, sidebarWrapper.firstChild);
+        }
+
         ai_helper.init_fold_flag();
 
         ai_helper_urls = {
@@ -84,9 +89,20 @@
         };
         ai_helper.reload_chat();
 
-        var chatForm = $('#aihelper-chat-form-area');
-        var form_url = '<%= ai_helper_chat_form_path(@project) %>';
-        chatForm.load(form_url);
+        const chatForm = document.getElementById('aihelper-chat-form-area');
+        const form_url = '<%= ai_helper_chat_form_path(@project) %>';
+
+        if (chatForm) {
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', form_url, true);
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              ai_helper.innerHTMLwithScripts(chatForm, xhr.responseText);
+            }
+          };
+          xhr.send();
+        }
+
         ai_helper.page_info['content_id'] = '<%= content_id %>';
         ai_helper.page_info['controller_name'] = '<%= controller_name %>';
         ai_helper.page_info['action_name'] = '<%= action_name %>';
@@ -96,8 +112,6 @@
         console.log(ai_helper.page_info);
 
         ai_helper.set_hamberger_menu();
-
-
       });
     </script>
   <% end %>

@@ -8,25 +8,40 @@
     if (update == true) {
       url += "?update=true";
     }
-    $('#ai-helper-summary-area').html('<div class="loader"><%= j l(:ai_helper_loading) %></div>');
 
-    $.ajax({
-      url: url,
-      type: 'GET',
-      dataType: 'html',
-      success: function(data) {
-        $('#ai-helper-summary-area').html(data);
-      },
-      error: function(xhr, status, error) {
-        $('#ai-helper-summary-area').html('<div class="error"><%= j l(:ai_helper_error_occurred) %>: ' + error + '</div>');
+    const summaryArea = document.getElementById('ai-helper-summary-area');
+    if (summaryArea) {
+      summaryArea.innerHTML = '<div class="loader"><%= j l(:ai_helper_loading) %></div>';
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        if (summaryArea) {
+          summaryArea.innerHTML = xhr.responseText;
+        }
+      } else {
+        if (summaryArea) {
+          summaryArea.innerHTML = '<div class="error"><%= j l(:ai_helper_error_occurred) %>: ' + xhr.statusText + '</div>';
+        }
       }
-    });
+    };
+    xhr.onerror = function() {
+      if (summaryArea) {
+        summaryArea.innerHTML = '<div class="error"><%= j l(:ai_helper_error_occurred) %></div>';
+      }
+    };
+    xhr.send();
   };
 
-  $(document).ready(function() {
-    $('.ai-helper-summary-button').click(function(e) {
-      e.preventDefault();
-      getSummary();
+  document.addEventListener('DOMContentLoaded', function() {
+    const summaryButtons = document.querySelectorAll('.ai-helper-summary-button');
+    summaryButtons.forEach(function(button) {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        getSummary();
+      });
     });
   });
 <% end %>
@@ -45,7 +60,9 @@
       <div id="ai-helper-summary-area">
         <% if summary %>
         <script>
-            getSummary();
+            document.addEventListener('DOMContentLoaded', function() {
+              getSummary();
+            });
         </script>
         <% else %>
         <%= link_to l(:ai_helper_summary), '#', class: 'ai-helper-summary-button', id: 'ai-helper-summary-button' %>
