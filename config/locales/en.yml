@@ -10,6 +10,12 @@ en:
   ai_helper_error_occurred: "An error occurred"
   permission_view_ai_helper: "View AI Helper"
   ai_helper:
+    generate_issue_reply:
+      title: "Create comment with AI Helper"
+      instructions: "Please enter the key points or instructions for the reply."
+      generated_reply: "Generated notes"
+      apply: "Apply"
+      copy_to_clipboard: "Copy to clipboard"
     model_profiles:
       create_profile_title: "New model profile"
       edit_profile_title: "Edit model profile"

@@ -40,6 +40,17 @@ module RedmineAiHelper
         chat(messages)
       end
 
+      def generate_issue_reply(issue:, instructions:)
+        return "Permission denied" unless issue.visible?
+
+        prompt = load_prompt("issue_agent/generate_reply")
+        issue_json = generate_issue_data(issue)
+        prompt_text = prompt.format(issue: JSON.pretty_generate(issue_json), instructions: instructions, format: Setting.text_formatting)
+        message = { role: "user", content: prompt_text }
+        messages = [message]
+        chat(messages)
+      end
+
       private
 
       # Check if vector database is enabled

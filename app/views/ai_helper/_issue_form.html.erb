@@ -1,0 +1,58 @@
+<% if @project and @project.module_enabled?(:ai_helper) and User.current.allowed_to?({ controller: :ai_helper, action: :chat_form }, @project) and AiHelperSetting.find_or_create.model_profile %>
+
+<fieldset id="ai-helper-reply-fields" class="collapsible collapsed">
+    <legend onclick="toggleFieldset(this);" class="icon icon-collapsed">
+    <%= sprite_icon("angle-right", rtl: true) %>
+    <strong>
+        <%= sprite_icon("ai-helper-robot", plugin: :redmine_ai_helper)%>
+        <%= l('ai_helper.generate_issue_reply.title') %>
+    </strong>
+    </legend>
+    <div class="ai-helper-generate_reply" style="display: none;">
+
+        <%= l('ai_helper.generate_issue_reply.instructions') %>:<br>
+        <p>
+        <%= text_area_tag "ai-helper-reply-instructions", "", rows: 6, style: "width: 100%;" %>
+        </p>
+
+        <%= button_tag l(:button_create), id: "ai-helper-generate-reply-btn", onclick: "ai_helper_generate_reply(#{@issue.id}); return false;" %>
+
+        <div id="ai-helper-generate_reply-area" style="display: none;">
+            <div class="loader"><%=  l(:ai_helper_loading) %></div>
+        </div>
+
+    </div>
+</fieldset>
+
+<script>
+    function ai_helper_generate_reply(issue_id) {
+        const instructions = document.getElementById("ai-helper-reply-instructions").value;
+        const url = "<%= ai_helper_generate_issue_reply_path(id: @issue.id)%>";
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) {
+            xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+        }
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const replyArea = document.getElementById('ai-helper-generate_reply-area');
+                replyArea.innerHTML = xhr.responseText;
+            } else {
+                alert('Error: ' + xhr.statusText);
+            }
+        };
+        replyArea = document.getElementById('ai-helper-generate_reply-area');
+        replyArea.style.display = '';
+        const loader = document.createElement('div');
+        loader.className = 'loader';
+        loader.innerHTML = '<%= j l(:ai_helper_loading) %>';
+        replyArea.innerHTML = '';
+        replyArea.appendChild(loader);
+        xhr.send(JSON.stringify({ instructions: instructions }));
+    }
+</script>
+
+
+<% end %>

@@ -468,6 +468,16 @@ class AiHelper {
 
 
   }
+
+  apply_generated_issue_reply = function () {
+    const replyEl = document.getElementById("ai-helper-generated-reply-content");
+    if (!replyEl) return;
+    const replyContent = replyEl.textContent.trim();
+    const replyInputArea = document.getElementById("issue_notes");
+    if (!replyInputArea) return;
+    // Set the reply content to the input area
+    replyInputArea.value = replyContent;
+  }
 };
 
 var ai_helper = new AiHelper();
