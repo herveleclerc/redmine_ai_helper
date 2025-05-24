@@ -199,6 +199,8 @@ Please note that AI responses may not always be 100% accurate. Users should veri
 
 I welcome bug reports and feature improvement suggestions through GitHub Issues. Pull requests are also appreciated.
 
+⚠️ When creating a pull request, always branch off from the `develop` branch.
+
 # 🐞 Support
 
 If you encounter any issues or have questions, please open an issue on GitHub.
