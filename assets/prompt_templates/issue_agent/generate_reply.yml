@@ -1,0 +1,23 @@
+---
+_type: prompt
+input_variables:
+  - issue
+  - instructions
+template: |-
+  Please draft a reply to the following issue.
+  This draft will be displayed in the Redmine issue edit screen.
+
+  - Please refer to the issue details, past comments, and update history.
+  - Write the reply as if it will be posted directly to the issue. Do not include phrases like "I have drafted the following reply."
+
+  ----
+
+  Instructions for drafting the reply:
+
+  {instructions}
+
+  ----
+
+  Issue:
+
+  {issue}

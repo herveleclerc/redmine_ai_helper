@@ -7,8 +7,8 @@ class AiHelperController < ApplicationController
   include ActionController::Live
   include RedmineAiHelper::Logger
   include AiHelperHelper
-  before_action :find_issue, only: [:issue_summary, :update_issue_summary]
-  before_action :find_project, except: [:issue_summary]
+  before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_reply]
+  before_action :find_project, except: [:issue_summary, :generate_issue_reply]
   before_action :find_user, :authorize, :create_session, :find_conversation
 
   # Display the chat form in the sidebar
@@ -151,6 +151,26 @@ class AiHelperController < ApplicationController
     session[:ai_helper] = {}
     find_conversation
     render partial: "ai_helper/chat"
+  end
+
+  # Receives a POST message with application/json content to generate an issue reply
+  def generate_issue_reply
+    unless request.content_type == "application/json"
+      render json: { error: "Unsupported Media Type" }, status: :unsupported_media_type and return
+    end
+
+    begin
+      data = JSON.parse(request.body.read)
+    rescue JSON::ParserError
+      render json: { error: "Invalid JSON" }, status: :bad_request and return
+    end
+
+    instructions = data["instructions"]
+    llm = RedmineAiHelper::Llm.new
+
+    reply = llm.generate_issue_reply(issue: @issue, instructions: instructions)
+
+    render partial: "ai_helper/issue_reply", locals: { issue: @issue, reply: reply }
   end
 
   private

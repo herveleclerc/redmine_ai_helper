@@ -1,0 +1,20 @@
+<fieldset class="tabular" id="ai-helper-generated-reply">
+    <legend><%= l('ai_helper.generate_issue_reply.generated_reply') %></legend>
+    <pre id=ai-helper-generated-reply-content>
+<%= reply %>
+    </pre>
+    <%= button_tag l('ai_helper.generate_issue_reply.apply'), onclick: "ai_helper.apply_generated_issue_reply(); return false;"%>
+
+    <%= link_to_function(
+      sprite_icon("copy-link", l('ai_helper.generate_issue_reply.copy_to_clipboard')), "copyTextToClipboard(this);",
+      class: "icon icon-copy-link",
+      data: { "clipboard-text" => reply } )
+    %>
+
+</fieldset>
+
+<script>
+    function myfunc(message) {
+        alert(message);
+    }
+</script>
