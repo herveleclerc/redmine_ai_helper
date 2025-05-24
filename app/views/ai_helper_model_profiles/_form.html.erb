@@ -26,26 +26,36 @@
 </div>
 
 <script>
-  $(document).ready(function() {
+  document.addEventListener('DOMContentLoaded', function() {
     // LLM type select box change event
-    $('#ai_helper_model_profile_llm_type').change(function() {
-      var selectedValue = $(this).val();
+    const llmTypeSelect = document.getElementById('ai_helper_model_profile_llm_type');
+
+    function handleLlmTypeChange() {
+      const selectedValue = llmTypeSelect.value;
+      const baseUriElement = document.getElementById('ai-helper-model-base-uri');
+      const accessKeyRequiredElement = document.querySelector('#ai-helper-mode-access-key .required');
+      const organizationIdElement = document.getElementById('ai-helper-model-organization-id');
+
       if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>') {
-        $('#ai-helper-model-base-uri').show();
-        $('#ai-helper-mode-access-key .required').hide();
+        if (baseUriElement) baseUriElement.style.display = 'block';
+        if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'none';
       } else {
-        $('#ai-helper-model-base-uri').hide();
-        $('#ai-helper-mode-access-key .required').show();
+        if (baseUriElement) baseUriElement.style.display = 'none';
+        if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'block';
       }
 
       if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI %>') {
-        $('#ai-helper-model-organization-id').show();
+        if (organizationIdElement) organizationIdElement.style.display = 'block';
       } else {
-        $('#ai-helper-model-organization-id').hide();
+        if (organizationIdElement) organizationIdElement.style.display = 'none';
       }
-    });
+    }
 
-    // Trigger change event on page load
-    $('#ai_helper_model_profile_llm_type').trigger('change');
+    if (llmTypeSelect) {
+      llmTypeSelect.addEventListener('change', handleLlmTypeChange);
+
+      // Trigger change event on page load
+      handleLlmTypeChange();
+    }
   });
 </script>
