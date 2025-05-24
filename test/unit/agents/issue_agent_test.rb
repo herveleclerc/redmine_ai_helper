@@ -69,5 +69,43 @@ class RedmineAiHelper::Agents::IssueAgentTest < ActiveSupport::TestCase
       assert_match /"priority"/, issue_properties
       assert_match /"status"/, issue_properties
     end
+
+    context "generate_issue_reply" do
+      should "generate reply for visible issue" do
+        @issue.stubs(:visible?).returns(true)
+
+        # モックプロンプトを設定
+        mock_prompt = mock("Prompt")
+        mock_prompt.stubs(:format).returns("Generate a reply for this issue")
+        @agent.stubs(:load_prompt).with("issue_agent/generate_reply").returns(mock_prompt)
+
+        # chatメソッドをモック
+        @agent.stubs(:chat).returns("This is a generated reply.")
+
+        result = @agent.generate_issue_reply(issue: @issue, instructions: "Please provide a detailed response.")
+        assert_equal "This is a generated reply.", result
+      end
+
+      should "deny access for non-visible issue" do
+        @issue.stubs(:visible?).returns(false)
+        result = @agent.generate_issue_reply(issue: @issue, instructions: "Please provide a detailed response.")
+        assert_equal "Permission denied", result
+      end
+      should "format instructions correctly in the prompt" do
+        @issue.stubs(:visible?).returns(true)
+        mock_prompt = mock("Prompt")
+        mock_prompt.expects(:format).with(
+          issue: instance_of(String),
+          instructions: "Please provide a detailed response.",
+          format: Setting.text_formatting,
+        ).returns("Generate a reply for this issue with instructions.")
+        @agent.stubs(:load_prompt).with("issue_agent/generate_reply").returns(mock_prompt)
+
+        @agent.stubs(:chat).returns("This is a generated reply.")
+
+        result = @agent.generate_issue_reply(issue: @issue, instructions: "Please provide a detailed response.")
+        assert_equal "This is a generated reply.", result
+      end
+    end
   end
 end
