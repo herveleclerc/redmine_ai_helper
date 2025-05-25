@@ -8,9 +8,15 @@ namespace :redmine do
         task :regist => :environment do
           if enabled?
             issue_vector_db.generate_schema
+            wiki_vector_db.generate_schema
             puts "Registering vector data for Redmine AI Helper..."
             issues = Issue.order(:id).all
+            puts "Issues:"
             issue_vector_db.add_datas(datas: issues)
+            wikis = WikiPage.order(:id).all
+            puts "Wiki Pages:"
+            wiki_vector_db.add_datas(datas: wikis)
+            puts "Vector data registration completed."
           else
             puts "Vector search is not enabled. Skipping registration."
           end
@@ -21,6 +27,7 @@ namespace :redmine do
           if enabled?
             puts "Generating vector index for Redmine AI Helper..."
             issue_vector_db.generate_schema
+            wiki_vector_db.generate_schema
           else
             puts "Vector search is not enabled. Skipping generation."
           end
@@ -31,6 +38,7 @@ namespace :redmine do
           if enabled?
             puts "Destroying vector data for Redmine AI Helper..."
             issue_vector_db.destroy_schema
+            wiki_vector_db.destroy_schema
           else
             puts "Vector search is not enabled. Skipping destruction."
           end
@@ -38,9 +46,16 @@ namespace :redmine do
 
         def issue_vector_db
           return nil unless enabled?
-          return @vector_db if @vector_db
-          llm = RedmineAiHelper::LlmProvider.get_llm_provider.generate_client
-          @vector_db = RedmineAiHelper::Vector::IssueVectorDb.new(llm: llm)
+          @issue_vector_db ||= RedmineAiHelper::Vector::IssueVectorDb.new(llm: llm)
+        end
+
+        def wiki_vector_db
+          return nil unless enabled?
+          @wiki_vector_db ||= RedmineAiHelper::Vector::WikiVectorDb.new(llm: llm)
+        end
+
+        def llm
+          @llm ||= RedmineAiHelper::LlmProvider.get_llm_provider.generate_client
         end
 
         def enabled?

@@ -22,6 +22,7 @@ class RedmineAiHelper::Util::McpToolsLoaderTest < ActiveSupport::TestCase
       test_config_file = File.expand_path("non_existent_file.json", __FILE__)
       Rails.root.stubs(:join).returns(test_config_file) do
         tools = RedmineAiHelper::Util::McpToolsLoader.load
+        assert tools.is_a?(Array), "tools should be an Array"
         assert_equal 0, tools.length
       end
     end

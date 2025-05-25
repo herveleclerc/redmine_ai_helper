@@ -74,15 +74,17 @@ module RedmineAiHelper
             begin
               add_data(vector_data: vector_data, data: data, retry_flag: true)
             rescue => e
-              puts ""
-              puts "Error: #{index_name} ##{data.id}"
-              puts e.message
+              unless ENV["RAILS_ENV"] == "test"
+                puts ""
+                puts "Error: #{index_name} ##{data.id}"
+                puts e.message
+              end
             end
           end
           print "."
         end
         clean_vector_data
-        puts ""
+        puts "" unless ENV["RAILS_ENV"] == "test"
       end
 
       # Registers a single data into the vector database.
@@ -113,10 +115,9 @@ module RedmineAiHelper
           if data_exists?(vector_data.object_id)
             next
           end
-          puts "Deleting vector data: #{index_name} ##{vector_data.object_id}"
           client.remove_texts(ids: [vector_data.uuid])
           vector_data.destroy!
-          print "."
+          print "." unless ENV["RAILS_ENV"] == "test"
         end
       end
 
