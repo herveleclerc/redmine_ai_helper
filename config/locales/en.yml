@@ -11,7 +11,7 @@ en:
   permission_view_ai_helper: "View AI Helper"
   ai_helper:
     generate_issue_reply:
-      title: "Create comment with AI Helper"
+      title: "Create a comment draft with AI Helper"
       instructions: "Please enter the key points or instructions for the reply."
       generated_reply: "Generated notes"
       apply: "Apply"

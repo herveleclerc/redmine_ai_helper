@@ -11,7 +11,7 @@ ja:
   permission_view_ai_helper: "AIヘルパーの表示"
   ai_helper:
     generate_issue_reply:
-      title: "AIヘルパーでコメントを作成"
+      title: "AIヘルパーでコメント案を作成"
       instructions: "回答内容の要点や指示を記入してください。"
       generated_reply: "生成されたコメント"
       apply: "適用"

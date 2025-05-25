@@ -23,6 +23,9 @@
 - [🪄 Langfuse integration](#-langfuse-integration)
 - [⚠️ Important Notice](#️-important-notice)
 - [🤝 Contributing](#-contributing)
+  - [How to Run Tests](#how-to-run-tests)
+    - [Preparation](#preparation)
+    - [Running the Tests](#running-the-tests)
 - [🐞 Support](#-support)
 - [🌟 Credits](#-credits)
 
@@ -206,6 +209,30 @@ Please note that AI responses may not always be 100% accurate. Users should veri
 I welcome bug reports and feature improvement suggestions through GitHub Issues. Pull requests are also appreciated.
 
 ⚠️ When creating a pull request, always branch off from the `develop` branch.
+
+Please make sure that all tests pass before pushing.
+
+## How to Run Tests
+
+### Preparation
+
+Create a test database.
+
+```bash
+bundle exec rake redmine:plugins:migrate RAILS_ENV=test
+```
+
+Create a test Git repository.
+
+```bash
+bundle exec rake redmine:plugins:ai_helper:setup_scm
+```
+
+### Running the Tests
+
+```bash
+bundle exec rake redmine:plugins:test NAME=redmine_ai_helper
+```
 
 # 🐞 Support
 
