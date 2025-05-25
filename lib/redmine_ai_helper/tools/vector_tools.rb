@@ -13,7 +13,7 @@ module RedmineAiHelper
         property :query_words, type: "array", description: "The words to use for vector search.", required: true do
           item type: "string", description: "The word to use for vector search."
         end
-        property :k, type: "integer", description: "The number of issues to retrieve. Default is 10. Max is 50", required: false
+        property :k, type: "integer", description: "The number of records to retrieve. Default is 10. Max is 50", required: false
         property :filter, type: "object", description: "The filter to apply to the question.", required: true do
           property :must, type: "array", description: "The must filter. All conditions must be met. AND condition.", required: false do
             item :filter_item, type: "object", description: "The filter item.", required: true do
@@ -37,14 +37,16 @@ module RedmineAiHelper
             end
           end
         end
+        property :target, type: "string", description: "The target to filter. 'issue' means issue, 'wiki' means wiki page.", required: true, enum: ["issue", "wiki"]
       end
 
       # Ask to vector databse with a query words and filter.
       # @param query_words [Array<String>] The words to use for vector search.
       # @param k [Integer] The number of issues to retrieve. Default is 10. Max is 50
       # @param filter [Hash] The filter to apply to the question.
+      # @param target [String] The target to filter. 'issue' means issue, 'wiki' means wiki page.
       # @return [Array<Hash>] An array of hashes containing issue information.
-      def ask_with_filter(query_words:, k: 10, filter: {})
+      def ask_with_filter(query_words:, k: 10, filter: {}, target:)
         raise("The vector search functionality is not enabled.") unless vector_db_enabled?
         raise("limit must be between 1 and 50.") unless k.between?(1, 50)
 
@@ -54,7 +56,8 @@ module RedmineAiHelper
           filter_json[:should] = create_filter(filter[:should]) if filter[:should]
           filter_json[:must_not] = create_filter(filter[:must_not]) if filter[:must_not]
 
-          response = issue_vector_db.ask_with_filter(query: query_words.join(" "), k: k, filter: filter_json)
+          db = vector_db(target: target)
+          response = db.ask_with_filter(query: query_words.join(" "), k: k, filter: filter_json)
           ai_helper_logger.debug("Response: #{response}")
           response
         rescue => e
@@ -99,8 +102,17 @@ module RedmineAiHelper
       end
 
       # Get the vector database client.
-      def issue_vector_db
-        @vector_db ||= RedmineAiHelper::Vector::IssueVectorDb.new
+      def vector_db(target:)
+        return @vector_db if @vector_db
+        case target
+        when "issue"
+          @vector_db = RedmineAiHelper::Vector::IssueVectorDb.new
+        when "wiki"
+          @vector_db = RedmineAiHelper::Vector::WikiVectorDb.new
+        else
+          raise("Invalid target: #{target}. Must be 'issue' or 'wiki'.")
+        end
+        @vector_db
       end
     end
   end

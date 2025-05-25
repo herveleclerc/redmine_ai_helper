@@ -12,7 +12,11 @@ module RedmineAiHelper
       end
 
       def available_tool_providers
-        [RedmineAiHelper::Tools::WikiTools]
+        base_tools = [RedmineAiHelper::Tools::WikiTools]
+        if AiHelperSetting.vector_search_enabled?
+          base_tools.unshift(RedmineAiHelper::Tools::VectorTools)
+        end
+        base_tools
       end
     end
   end

@@ -10,7 +10,7 @@ module RedmineAiHelper
 
       def backstory
         search_answer_instruction = I18n.t("ai_helper.prompts.issue_agent.search_answer_instruction")
-        search_answer_instruction = "" if vector_db_enabled?
+        search_answer_instruction = "" if AiHelperSetting.vector_search_enabled?
         prompt = load_prompt("issue_agent/backstory")
         prompt.format(issue_properties: issue_properties, search_answer_instruction: search_answer_instruction)
       end
@@ -22,7 +22,7 @@ module RedmineAiHelper
           RedmineAiHelper::Tools::UserTools,
           RedmineAiHelper::Tools::IssueSearchTools,
         ]
-        if vector_db_enabled?
+        if AiHelperSetting.vector_search_enabled?
           base_tools.unshift(RedmineAiHelper::Tools::VectorTools)
         end
 
@@ -52,12 +52,6 @@ module RedmineAiHelper
       end
 
       private
-
-      # Check if vector database is enabled
-      def vector_db_enabled?
-        setting = AiHelperSetting.find_or_create
-        setting.vector_search_enabled
-      end
 
       # Generate a available issue properties string
       def issue_properties
