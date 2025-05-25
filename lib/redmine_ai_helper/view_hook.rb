@@ -5,5 +5,6 @@ module RedmineAiHelper
     render_on :view_layouts_base_html_head, :partial => "ai_helper/html_header"
     render_on :view_layouts_base_body_top, :partial => "ai_helper/sidebar"
     render_on :view_issues_show_details_bottom, :partial => "ai_helper/issue_bottom"
+    render_on :view_issues_edit_notes_bottom, :partial => "ai_helper/issue_form"
   end
 end

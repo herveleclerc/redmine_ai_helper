@@ -39,6 +39,26 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         assert_equal "Permission denied", summary
       end
     end
+
+    context "generate_issue_reply" do
+      setup do
+        @issue = Issue.find(1)
+        @llm = RedmineAiHelper::Llm.new(@params)
+      end
+
+      should "deny access for non-visible issue" do
+        @issue.stubs(:visible?).returns(false)
+        reply = @llm.generate_issue_reply(issue: @issue, instructions: "test instructions")
+        assert_equal "Permission denied", reply
+      end
+
+      should "generate reply for visible issue" do
+        @issue.stubs(:visible?).returns(true)
+        RedmineAiHelper::Agents::IssueAgent.any_instance.stubs(:generate_issue_reply).returns("Generated reply")
+        reply = @llm.generate_issue_reply(issue: @issue, instructions: "test instructions")
+        assert_equal "Generated reply", reply
+      end
+    end
   end
 
   private

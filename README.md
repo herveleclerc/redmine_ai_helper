@@ -4,31 +4,34 @@
 [![build](https://github.com/haru/redmine_ai_helper/actions/workflows/build.yml/badge.svg)](https://github.com/haru/redmine_ai_helper/actions/workflows/build.yml)
 [![Maintainability](https://qlty.sh/badges/a0cabed6-3c2d-4eb2-a7b0-2cd58e6fdf72/maintainability.svg)](https://qlty.sh/gh/haru/projects/redmine_ai_helper)
 [![codecov](https://codecov.io/gh/haru/redmine_ai_helper/graph/badge.svg?token=1HOSGRHVM9)](https://codecov.io/gh/haru/redmine_ai_helper)
-
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/haru/redmine_ai_helper)
 
 - [Redmine AI Helper Plugin](#redmine-ai-helper-plugin)
-- [Features](#features)
-- [Installation](#installation)
-- [Basic Configuration](#basic-configuration)
+- [✨ Features](#-features)
+- [📦 Installation](#-installation)
+- [⚙️ Basic Configuration](#️-basic-configuration)
   - [Plugin Settings](#plugin-settings)
   - [Role and Permission Settings](#role-and-permission-settings)
   - [Project-specific Settings](#project-specific-settings)
-- [Advanced Configuration](#advanced-configuration)
+- [⚙️ Advanced Configuration](#️-advanced-configuration)
   - [MCP Server Settings](#mcp-server-settings)
   - [Vector Search Settings](#vector-search-settings)
-    - [AI Helper Settings Page](#ai-helper-settings-page)
+    - [Qdrant Setup](#qdrant-setup)
     - [Creating the Index](#creating-the-index)
     - [Recreating the Index](#recreating-the-index)
-- [Build your own Agent](#build-your-own-agent)
-- [Langfuse integration](#langfuse-integration)
-- [Important Notice](#important-notice)
-- [Contributing](#contributing)
-- [Support](#support)
-- [Credits](#credits)
+- [🛠️ Build your own Agent](#️-build-your-own-agent)
+- [🪄 Langfuse integration](#-langfuse-integration)
+- [⚠️ Important Notice](#️-important-notice)
+- [🤝 Contributing](#-contributing)
+  - [How to Run Tests](#how-to-run-tests)
+    - [Preparation](#preparation)
+    - [Running the Tests](#running-the-tests)
+- [🐞 Support](#-support)
+- [🌟 Credits](#-credits)
 
 The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing project management efficiency through AI-powered support.
 
-# Features
+# ✨ Features
 
 - Adds an AI chat sidebar to the right side of your Redmine interface
 - Enables various AI-assisted queries including:
@@ -42,7 +45,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 
 ![Image](https://github.com/user-attachments/assets/39f61008-45a3-4807-9c1c-57fba4e06835)
 
-# Installation
+# 📦 Installation
 
 1. Extract the plugin to your Redmine plugins folder:
    ```bash
@@ -63,7 +66,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 4. Restart Redmine:
 
 
-# Basic Configuration
+# ⚙️ Basic Configuration
 
 ## Plugin Settings
 
@@ -89,7 +92,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 3. Enable "AI Helper" by checking the box
 4. Click "Save" to apply the changes
 
-# Advanced Configuration
+# ⚙️ Advanced Configuration
 
 ## MCP Server Settings
 
@@ -122,15 +125,21 @@ The AI Helper Plugin can use the MCP Server to perform tasks, such as sending is
 ## Vector Search Settings
 
 Configure settings to perform vector searches for issues using Qdrant.
+With this configuration, the AI Helper Plugin can use Qdrant to perform vector searches on Redmine issues and wiki data.
 
-### AI Helper Settings Page
+### Qdrant Setup
 
-1. Navigate to the AI Helper settings page.
-2. Enable "Enable vector search."
-3. Configure Qdrant settings:
-   - **URI**: Specify the URL of the Qdrant instance.
-   - **API Key**: Provide the API key for Qdrant. Leave this field blank if using a locally hosted Qdrant instance.
-   - **Embedding Model**: Specify the embedding model to use, e.g., `text-embedding-3-large`.
+Here is an example configuration using Docker Compose.
+
+```yaml:docker-compose.yml
+services:
+   qdrant:
+      image: qdrant/qdrant
+      ports:
+         - 6333:6333
+      volumes:
+         - ./storage:/qdrant/storage
+```
 
 ### Creating the Index
 
@@ -158,7 +167,7 @@ If you change the embedding model, delete the index and recreate it using the fo
 bundle exec rake redmine:plugins:ai_helper:vector:destroy RAILS_ENV=production
 ```
 
-# Build your own Agent
+# 🛠️ Build your own Agent
 
 The AI Helper plugin adopts a multi-agent model. You can create your own agent and integrate it into the AI Helper plugin.
 
@@ -175,7 +184,7 @@ Place these files in any location within Redmine and load them.
 
 As an example, there is a plugin called `redmine_fortune` under the `example` directory. Place this plugin in the `plugins` folder of Redmine. This will add a fortune-telling feature to the AI Helper plugin. When you ask, "Tell me my fortune for today," it will return a fortune-telling result.
 
-# Langfuse integration
+# 🪄 Langfuse integration
 By integrating with Langfuse, you can track the usage of the AI Helper Plugin. This allows you to monitor the cost of LLM queries and improve prompts effectively.
 
 
@@ -190,20 +199,46 @@ langfuse:
   endpoint: https://us.cloud.langfuse.com # Change this to match your environment
 ```
 
-# Important Notice
+# ⚠️ Important Notice
 
-⚠️ Please note that AI responses may not always be 100% accurate. Users should verify and validate AI-provided information at their own discretion.
+Please note that AI responses may not always be 100% accurate. Users should verify and validate AI-provided information at their own discretion.
 
 
-# Contributing
+# 🤝 Contributing
 
 I welcome bug reports and feature improvement suggestions through GitHub Issues. Pull requests are also appreciated.
 
-# Support
+⚠️ When creating a pull request, always branch off from the `develop` branch.
+
+Please make sure that all tests pass before pushing.
+
+## How to Run Tests
+
+### Preparation
+
+Create a test database.
+
+```bash
+bundle exec rake redmine:plugins:migrate RAILS_ENV=test
+```
+
+Create a test Git repository.
+
+```bash
+bundle exec rake redmine:plugins:ai_helper:setup_scm
+```
+
+### Running the Tests
+
+```bash
+bundle exec rake redmine:plugins:test NAME=redmine_ai_helper
+```
+
+# 🐞 Support
 
 If you encounter any issues or have questions, please open an issue on GitHub.
 
 
-# Credits
+# 🌟 Credits
 
 Developed and maintained by [Haru Iida](https://github.com/haru).

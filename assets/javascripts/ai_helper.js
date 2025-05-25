@@ -6,65 +6,74 @@ class AiHelper {
   local_storage_key = "aihelper-fold-flag";
 
   set_form_handlers = function () {
-    // フォームのデフォルトのsubmit動作を防ぐ
-    var form = $("#ai_helper_chat_form");
-    form.on("submit", function (e) {
+    // Prevent the default submit behavior of the form
+    const form = document.getElementById("ai_helper_chat_form");
+    form.addEventListener("submit", function (e) {
       e.preventDefault();
     });
 
-    // #aihelper-chat-submitボタンのクリックイベント
-    $("#aihelper-chat-submit").on("click", function (e) {
+    // Click event for #aihelper-chat-submit button
+    const submitButton = document.getElementById("aihelper-chat-submit");
+    submitButton.addEventListener("click", function (e) {
       e.preventDefault();
       submitAction();
       return false;
     });
 
-    // submitAction関数 - Ajax送信の例
+    // submitAction
     function submitAction() {
-      $("#ai_helper_controller_name").val(ai_helper.page_info["controller_name"]);
-      $("#ai_helper_action_name").val(ai_helper.page_info["action_name"]);
-      $("#ai_helper_content_id").val(ai_helper.page_info["content_id"]);
-      // フォームデータを取得
-      var text = $("#ai_helper_chat_input").val();
-      // textが空か空白文字のみの場合はreturn
+      document.getElementById("ai_helper_controller_name").value = ai_helper.page_info["controller_name"];
+      document.getElementById("ai_helper_action_name").value = ai_helper.page_info["action_name"];
+      document.getElementById("ai_helper_content_id").value = ai_helper.page_info["content_id"];
+
+      // Get form data
+      const textInput = document.getElementById("ai_helper_chat_input");
+      const text = textInput.value;
+
+      // Return if text is empty or contains only whitespace
       if (!text.trim()) {
         return;
       }
-      var formData = new FormData($("#ai_helper_chat_form")[0]);
-      // Ajax送信
-      $.ajax({
-        url: $("#ai_helper_chat_form").attr("action"),
-        type: "POST",
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function (response) {
-          $("#aihelper-chat-conversation").html(response);
-          $("#ai-helper-loader-area").show();
-          $("#ai_helper_chat_form")[0].reset();
 
-          $("#aihelper-chat-conversation").scrollTop(
-            $("#aihelper-chat-conversation")[0].scrollHeight
-          );
+      const formData = new FormData(form);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", form.getAttribute("action"), true);
+
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const chatConversation = document.getElementById("aihelper-chat-conversation");
+          ai_helper.innerHTMLwithScripts(chatConversation, xhr.responseText);
+
+          document.getElementById("ai-helper-loader-area").style.display = "block";
+          form.reset();
+
+          chatConversation.scrollTop = chatConversation.scrollHeight;
           ai_helper.call_llm();
-        },
-        error: function (xhr, status, error) {
-          console.error("Error:", error);
+        } else {
+          console.error("Error:", xhr.statusText);
         }
-      });
+      };
+
+      xhr.onerror = function () {
+        console.error("Error:", xhr.statusText);
+      };
+
+      xhr.send(formData);
     }
 
-    // textareaのキーイベント処理
-    $("#ai_helper_chat_input").on("keydown", function (e) {
+    // Key event handling for textarea
+    const chatInput = document.getElementById("ai_helper_chat_input");
+    chatInput.addEventListener("keydown", function (e) {
       if (e.key === "Enter") {
         if (e.shiftKey) {
-          // Shift + Enter の場合は改行を許可
+            // Allow line break when Shift + Enter is pressed
           return true;
         } else if (e.isComposing || e.keyCode === 229) {
-          // 漢字変換を確定するためのEnterの場合は無視
+            // Ignore Enter key when confirming IME (e.g., for kanji conversion)
           return true;
         } else {
-          // Enter単独の場合は送信処理
+            // If only Enter is pressed, trigger submit
           e.preventDefault();
           submitAction();
           return false;
@@ -79,27 +88,26 @@ class AiHelper {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    const csrfToken = $('meta[name="csrf-token"]').attr('content');
-    xhr.setRequestHeader('X-CSRF-Token', csrfToken);
 
-    // responseTypeを'text'に設定
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+      xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+    }
+
     xhr.responseType = 'text';
 
     const parser = new AiHelperMarkdownParser();
-
 
     let fullResponse = '';
     let buffer = '';
     let lastProcessedIndex = 0;
 
     xhr.onprogress = function (event) {
-
       const text = xhr.responseText.substring(lastProcessedIndex);
       lastProcessedIndex = xhr.responseText.length;
-      // console.log('onprogress:', text);
       buffer += text;
 
-      // Server-Sent Eventsからデータを抽出
+      // Extract data from Server-Sent Events
       const matches = buffer.match(/^data: (.+?)\n\n/gm);
       if (matches) {
         matches.forEach(match => {
@@ -107,187 +115,369 @@ class AiHelper {
             const dataStr = match.replace(/^data: /, '').trim();
             const data = JSON.parse(dataStr);
 
-            // チャンクからコンテンツを取得
+            // Get content from chunk
             const content = data.choices[0]?.delta?.content;
             if (content) {
               fullResponse += content;
-              $('#aihelper_last_message').html(parser.parse(fullResponse));
-              $("#aihelper-chat-conversation").scrollTop(
-                $("#aihelper-chat-conversation")[0].scrollHeight
-              );
-              $("#ai-helper-loader-area").hide();
-            }
-            if (data.choices[0]?.finish_reason === 'stop') {
-              // $('#aihelper_last_message').text('AIが返信しました');
+              const lastMessage = document.getElementById('aihelper_last_message');
+              if (lastMessage) {
+                ai_helper.innerHTMLwithScripts(lastMessage, parser.parse(fullResponse));
+              }
 
+              const chatConversation = document.getElementById("aihelper-chat-conversation");
+              if (chatConversation) {
+                chatConversation.scrollTop = chatConversation.scrollHeight;
+              }
+
+              const loaderArea = document.getElementById("ai-helper-loader-area");
+              if (loaderArea) {
+                loaderArea.style.display = "none";
+              }
+            }
+
+            if (data.choices[0]?.finish_reason === 'stop') {
               ai_helper.reload_chat();
             }
           } catch (e) {
-            console.error('パースエラー:', e);
+            console.error('Parse error:', e);
           }
 
-          // バッファから処理済みデータを削除
+            // Remove processed data from buffer
           buffer = buffer.replace(match, '');
         });
-        // buffer = '';
       }
     };
 
     xhr.onerror = function () {
-      $("#ai-helper-loader-area").hide();
-      $('#aihelper_last_message').text('エラーが発生しました');
+      const loaderArea = document.getElementById("ai-helper-loader-area");
+      if (loaderArea) {
+        loaderArea.style.display = "none";
+      }
+
+      const lastMessage = document.getElementById('aihelper_last_message');
+      if (lastMessage) {
+        lastMessage.textContent = 'An error has occurred';
+      }
     };
 
     xhr.onload = function () {
       if (xhr.status !== 200) {
-        $('#aihelper_last_message').text(`エラー: ${xhr.status} ${xhr.statusText}`);
+        const lastMessage = document.getElementById('aihelper_last_message');
+        if (lastMessage) {
+            lastMessage.textContent = `Error: ${xhr.status} ${xhr.statusText}`;
+        }
       }
     };
 
-    // リクエストボディの準備
-    const requestBody = data;
-
-    // リクエスト送信
-    xhr.send(requestBody);
-
+    xhr.send(data);
   };
 
-  reload_chat = function () {
-    var chatArea = $("#aihelper-chat-conversation");
-    $.ajax({
-      url: ai_helper_urls.reload,
-      type: "GET",
-      success: function (data) {
-        chatArea.html(data);
-        chatArea.scrollTop(chatArea[0].scrollHeight);
-      },
-      error: function (xhr, status, error) {
-        console.error("Failed to reload chat conversation:", error);
+  setClearButtonVisible(flag) {
+    const clearButton = document.getElementById("aihelper-chat-clear");
+    if (clearButton) {
+      if (flag) {
+        clearButton.style.display = "block";
+      } else {
+        clearButton.style.display = "none";
       }
-    });
+    }
+  }
+
+  reload_chat = function () {
+    const chatArea = document.getElementById("aihelper-chat-conversation");
+    if (!chatArea) return;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", ai_helper_urls.reload, true);
+
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        ai_helper.innerHTMLwithScripts(chatArea, xhr.responseText);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      } else {
+        console.error("Failed to reload chat conversation:", xhr.statusText);
+      }
+    };
+
+    xhr.onerror = function () {
+      console.error("Failed to reload chat conversation:", xhr.statusText);
+    };
+
+    xhr.send();
   };
 
   load_history() {
-    $.ajax({
-      url: ai_helper_urls.history,
-      type: "GET",
-      success: function (data) {
-        $("#aihelper-history").html(data);
-      },
-      error: function (xhr, status, error) {
-        console.error("Failed to show chat history:", error);
+    const historyContainer = document.getElementById("aihelper-history");
+    if (!historyContainer) return;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", ai_helper_urls.history, true);
+
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        ai_helper.innerHTMLwithScripts(historyContainer, xhr.responseText);
+      } else {
+        console.error("Failed to show chat history:", xhr.statusText);
       }
-    });
+    };
+
+    xhr.onerror = function () {
+      console.error("Failed to show chat history:", xhr.statusText);
+    };
+
+    xhr.send();
   };
 
   clear_chat = function () {
-    $.ajax({
-      url: ai_helper_urls.clear,
-      type: "GET",
-      success: function (data) {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", ai_helper_urls.clear, true);
+
+    xhr.onload = function () {
+      if (xhr.status === 200) {
         ai_helper.close_dropdown_menu();
         ai_helper.reload_chat();
-      },
-      error: function (xhr, status, error) {
-        console.error("Failed to clear chat conversation:", error);
+      } else {
+        console.error("Failed to clear chat conversation:", xhr.statusText);
       }
-    });
+    };
+
+    xhr.onerror = function () {
+      console.error("Failed to clear chat conversation:", xhr.statusText);
+    };
+
+    xhr.send();
   };
 
-  set_hamberger_menu () {
-    // ハンバーガーメニューのクリックイベント
-    $(".aihelper-hamburger").click(function (event) {
-      ai_helper.load_history();
-      event.stopPropagation();
-      $(this).toggleClass("active");
-      $(".aihelper-dropdown-menu").slideToggle(300);
+  set_hamberger_menu() {
+    // Click event for hamburger menu
+    const hamburgerButtons = document.querySelectorAll(".aihelper-hamburger");
+    hamburgerButtons.forEach(button => {
+      button.addEventListener("click", function (event) {
+        ai_helper.load_history();
+        event.stopPropagation();
+        this.classList.toggle("active");
+
+        const dropdownMenu = document.querySelector(".aihelper-dropdown-menu");
+        if (dropdownMenu) {
+          if (dropdownMenu.style.display === "none" || !dropdownMenu.style.display) {
+            dropdownMenu.style.display = "block";
+            // Animation effect
+            const height = dropdownMenu.scrollHeight;
+            dropdownMenu.style.height = "0px";
+            dropdownMenu.style.overflow = "hidden";
+            dropdownMenu.style.transition = "height 300ms";
+            setTimeout(() => {
+              dropdownMenu.style.height = height + "px";
+            }, 10);
+            setTimeout(() => {
+              dropdownMenu.style.height = "";
+              dropdownMenu.style.overflow = "";
+              dropdownMenu.style.transition = "";
+            }, 310);
+          } else {
+            // Animation effect
+            const height = dropdownMenu.scrollHeight;
+            dropdownMenu.style.height = height + "px";
+            dropdownMenu.style.overflow = "hidden";
+            dropdownMenu.style.transition = "height 300ms";
+            setTimeout(() => {
+              dropdownMenu.style.height = "0px";
+            }, 10);
+            setTimeout(() => {
+              dropdownMenu.style.display = "none";
+              dropdownMenu.style.height = "";
+              dropdownMenu.style.overflow = "";
+              dropdownMenu.style.transition = "";
+            }, 310);
+          }
+        }
+      });
     });
 
-    // ドロップダウンメニュー内のクリックイベントの伝播を停止
-    $(".aihelper-dropdown-menu").click(function (event) {
-      event.stopPropagation();
+    // Stop propagation of click events inside the dropdown menu
+    const dropdownMenus = document.querySelectorAll(".aihelper-dropdown-menu");
+    dropdownMenus.forEach(menu => {
+      menu.addEventListener("click", function (event) {
+        event.stopPropagation();
+      });
     });
 
-    // ドキュメント全体のクリックイベント
-    $(document).click(function () {
+    // Close the dropdown menu when clicking anywhere on the document
+    document.addEventListener("click", function () {
       ai_helper.close_dropdown_menu();
     });
   };
 
   close_dropdown_menu = function () {
-    $(".aihelper-hamburger").removeClass("active");
-    $(".aihelper-dropdown-menu").slideUp(300);
+    const hamburgerButtons = document.querySelectorAll(".aihelper-hamburger");
+    hamburgerButtons.forEach(button => {
+      button.classList.remove("active");
+    });
+
+    const dropdownMenus = document.querySelectorAll(".aihelper-dropdown-menu");
+    dropdownMenus.forEach(menu => {
+      // Alternative for animation effect
+      const height = menu.scrollHeight;
+      menu.style.height = height + "px";
+      menu.style.overflow = "hidden";
+      menu.style.transition = "height 300ms";
+      setTimeout(() => {
+        menu.style.height = "0px";
+      }, 10);
+      setTimeout(() => {
+        menu.style.display = "none";
+        menu.style.height = "";
+        menu.style.overflow = "";
+        menu.style.transition = "";
+      }, 310);
+    });
   };
 
   jump_to_history = function (event, url) {
     event.preventDefault();
-    var chatArea = $("#aihelper-chat-conversation");
-    $.ajax({
-      url: url,
-      type: "GET",
-      success: function (data) {
+    const chatArea = document.getElementById("aihelper-chat-conversation");
+    if (!chatArea) return;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+
+    xhr.onload = function () {
+      if (xhr.status === 200) {
         ai_helper.close_dropdown_menu();
         ai_helper.fold_chat(false);
-        chatArea.html(data);
-        chatArea.scrollTop(0);
-      },
-      error: function (xhr, status, error) {
-        console.error("Failed to jump to history:", error);
+        ai_helper.innerHTMLwithScripts(chatArea, xhr.responseText);
+        chatArea.scrollTop = 0;
+      } else {
+        console.error("Failed to jump to history:", xhr.statusText);
       }
-    });
+    };
+
+    xhr.onerror = function () {
+      console.error("Failed to jump to history:", xhr.statusText);
+    };
+
+    xhr.send();
   };
 
   delete_history = function (event, url) {
-    event.preventDefault(); // デフォルトの遷移を防ぐ
-    var chatArea = $("#aihelper-chat-conversation");
-    $.ajax({
-      url: url,
-      type: "DELETE",
-      success: function (data) {
+    event.preventDefault();
+    const xhr = new XMLHttpRequest();
+    xhr.open("DELETE", url, true);
+
+    // Add CSRF token to header if needed
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+      xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+    }
+
+    xhr.onload = function () {
+      if (xhr.status === 200) {
         ai_helper.load_history();
-        if (data["reload"]) {
-          ai_helper.reload_chat();
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (data["reload"]) {
+            ai_helper.reload_chat();
+          }
+        } catch (e) {
+          console.error("Failed to parse response:", e);
         }
-      },
-      error: function (xhr, status, error) {
-        console.error("Failed to jump to history:", error);
+      } else {
+        console.error("Failed to delete history:", xhr.statusText);
       }
-    });
+    };
+
+    xhr.onerror = function () {
+      console.error("Failed to delete history:", xhr.statusText);
+    };
+
+    xhr.send();
   };
 
   fold_chat = function (flag, disable_animation = false) {
-    var chatArea = $("#aihelper-foldable-area");
-    var arrow_down = $("#aihelper-arrow-down");
-    var arrow_left = $("#aihelper-arrow-left");
+    const chatArea = document.getElementById("aihelper-foldable-area");
+    const arrow_down = document.getElementById("aihelper-arrow-down");
+    const arrow_left = document.getElementById("aihelper-arrow-left");
+
+    if (!chatArea || !arrow_down || !arrow_left) return;
+
     if (flag) {
       if (disable_animation) {
-        chatArea.hide();
+        chatArea.style.display = "none";
       } else {
-        chatArea.slideUp();
+        // Alternative for slideUp animation
+        const height = chatArea.scrollHeight;
+        chatArea.style.height = height + "px";
+        chatArea.style.overflow = "hidden";
+        chatArea.style.transition = "height 300ms";
+        setTimeout(() => {
+          chatArea.style.height = "0px";
+        }, 10);
+        setTimeout(() => {
+          chatArea.style.display = "none";
+          chatArea.style.height = "";
+          chatArea.style.overflow = "";
+          chatArea.style.transition = "";
+        }, 310);
       }
-      arrow_down.hide();
-      arrow_left.show();
+      arrow_down.style.display = "none";
+      arrow_left.style.display = "block";
     } else {
       if (disable_animation) {
-        chatArea.show();
+        chatArea.style.display = "block";
       } else {
-        chatArea.slideDown();
+        // Alternative for slideDown animation
+        chatArea.style.display = "block";
+        const height = chatArea.scrollHeight;
+        chatArea.style.height = "0px";
+        chatArea.style.overflow = "hidden";
+        chatArea.style.transition = "height 300ms";
+        setTimeout(() => {
+          chatArea.style.height = height + "px";
+        }, 10);
+        setTimeout(() => {
+          chatArea.style.height = "";
+          chatArea.style.overflow = "";
+          chatArea.style.transition = "";
+        }, 310);
       }
-      arrow_down.show();
-      arrow_left.hide();
+      arrow_down.style.display = "block";
+      arrow_left.style.display = "none";
     }
-    // フラグの値をローカルストレージに保存
+    // Save the flag value to local storage
     localStorage.setItem(this.local_storage_key, flag);
   };
 
   init_fold_flag = function () {
-    var flag = localStorage.getItem(this.local_storage_key);
+    const flag = localStorage.getItem(this.local_storage_key);
     if (flag === "true") {
       this.fold_chat(true, true);
     } else {
       this.fold_chat(false, true);
     }
   };
+
+  innerHTMLwithScripts = function (element, html) {
+    element.innerHTML = html;
+
+    const scripts = element.querySelectorAll('script');
+    scripts.forEach(script => {
+      const newScript = document.createElement('script');
+      newScript.textContent = script.textContent;
+      document.body.appendChild(newScript);
+    });
+
+
+  }
+
+  apply_generated_issue_reply = function () {
+    const replyEl = document.getElementById("ai-helper-generated-reply-content");
+    if (!replyEl) return;
+    const replyContent = replyEl.textContent.trim();
+    const replyInputArea = document.getElementById("issue_notes");
+    if (!replyInputArea) return;
+    // Set the reply content to the input area
+    replyInputArea.value = replyContent;
+  }
 };
 
 var ai_helper = new AiHelper();

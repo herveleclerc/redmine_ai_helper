@@ -18,13 +18,15 @@
 <div class="aihelper-message">
   <div id="aihelper_last_message"></div>
 </div>
+
 <% unless @conversation.messages.empty? %>
   <script>
-    $('#aihelper-chat-clear').show();
+    ai_helper.setClearButtonVisible(true);
   </script>
 <% else %>
   <script>
-    $('#aihelper-chat-clear').hide();
+    ai_helper.setClearButtonVisible(false);
+
   </script>
 <% end %>
 <div id="ai-helper-loader-area" style="display: none">

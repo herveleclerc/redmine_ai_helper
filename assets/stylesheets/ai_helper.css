@@ -244,3 +244,9 @@ li.aihelper-history-item a {
   border-radius: 5px;
   padding: 4px;
 }
+
+#ai-helper-generated-reply-content {
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

@@ -10,7 +10,7 @@ module RedmineAiHelper
 
       def backstory
         search_answer_instruction = I18n.t("ai_helper.prompts.issue_agent.search_answer_instruction")
-        search_answer_instruction = "" if vector_db_enabled?
+        search_answer_instruction = "" if AiHelperSetting.vector_search_enabled?
         prompt = load_prompt("issue_agent/backstory")
         prompt.format(issue_properties: issue_properties, search_answer_instruction: search_answer_instruction)
       end
@@ -22,7 +22,7 @@ module RedmineAiHelper
           RedmineAiHelper::Tools::UserTools,
           RedmineAiHelper::Tools::IssueSearchTools,
         ]
-        if vector_db_enabled?
+        if AiHelperSetting.vector_search_enabled?
           base_tools.unshift(RedmineAiHelper::Tools::VectorTools)
         end
 
@@ -40,13 +40,18 @@ module RedmineAiHelper
         chat(messages)
       end
 
-      private
+      def generate_issue_reply(issue:, instructions:)
+        return "Permission denied" unless issue.visible?
 
-      # Check if vector database is enabled
-      def vector_db_enabled?
-        setting = AiHelperSetting.find_or_create
-        setting.vector_search_enabled
+        prompt = load_prompt("issue_agent/generate_reply")
+        issue_json = generate_issue_data(issue)
+        prompt_text = prompt.format(issue: JSON.pretty_generate(issue_json), instructions: instructions, format: Setting.text_formatting)
+        message = { role: "user", content: prompt_text }
+        messages = [message]
+        chat(messages)
       end
+
+      private
 
       # Generate a available issue properties string
       def issue_properties

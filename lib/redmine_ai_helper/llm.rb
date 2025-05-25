@@ -58,5 +58,22 @@ module RedmineAiHelper
       ai_helper_logger.info "answer: #{answer}"
       answer
     end
+
+    def generate_issue_reply(issue:, instructions:)
+      begin
+        prompt = "Please generate a reply to the issue #{issue.id} with the instructions.\n\n#{instructions}"
+        langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: prompt)
+        agent = RedmineAiHelper::Agents::IssueAgent.new(project: issue.project, langfuse: langfuse)
+        langfuse.create_span(name: "user_request", input: prompt)
+        answer = agent.generate_issue_reply(issue: issue, instructions: instructions)
+        langfuse.finish_current_span(output: answer)
+        langfuse.flush
+      rescue => e
+        ai_helper_logger.error "error: #{e.full_message}"
+        answer = e.message
+      end
+      ai_helper_logger.info "answer: #{answer}"
+      answer
+    end
   end
 end

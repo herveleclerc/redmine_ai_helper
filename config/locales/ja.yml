@@ -8,7 +8,14 @@ ja:
   ai_helper_text_summary_generated_time: "%{time} に生成"
   ai_helper_loading: "読み込み中..."
   ai_helper_error_occurred: "エラーが発生しました"
+  permission_view_ai_helper: "AIヘルパーの表示"
   ai_helper:
+    generate_issue_reply:
+      title: "AIヘルパーでコメント案を作成"
+      instructions: "回答内容の要点や指示を記入してください。"
+      generated_reply: "生成されたコメント"
+      apply: "適用"
+      copy_to_clipboard: "クリップボードにコピー"
     model_profiles:
       create_profile_title: "新しいモデルプロファイル"
       edit_profile_title: "モデルプロファイルの編集"
@@ -53,6 +60,8 @@ ja:
         llm_type: "タイプ"
         llm_model: "モデル名"
         access_key: "アクセスキー"
+        temperature: "Temperature"
+        organization_id: "Organization ID"
         base_uri: "ベースURI"
       ai_helper_setting:
         model_profile_id: "モデル定義"

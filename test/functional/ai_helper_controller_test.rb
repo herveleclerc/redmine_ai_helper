@@ -115,5 +115,30 @@ class AiHelperControllerTest < ActionController::TestCase
         assert_equal "Permission denied", summary
       end
     end
+
+    context "#generate_issue_reply" do
+      setup do
+        @issue = Issue.find(1)
+        @llm = RedmineAiHelper::Llm.new
+      end
+
+      should "deny access for non-visible issue" do
+        @issue.stubs(:visible?).returns(false)
+        json = { id: @issue.id, instructions: "test instructions" }
+        @request.headers["Content-Type"] = "application/json"
+        post :generate_issue_reply, params: json
+
+        assert_response :success
+      end
+
+      should "generate reply for visible issue" do
+        @issue.stubs(:visible?).returns(true)
+        json = { id: @issue.id, instructions: "test instructions" }
+        @request.headers["Content-Type"] = "application/json"
+        post :generate_issue_reply, params: json
+
+        assert_response :success
+      end
+    end
   end
 end

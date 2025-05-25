@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Ruby gems
+  - package-ecosystem: "bundler"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "ruby"
+    allow:
+      # Only for Security updates
+      - dependency-type: "direct"
+        update-type: "security"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "github_actions"

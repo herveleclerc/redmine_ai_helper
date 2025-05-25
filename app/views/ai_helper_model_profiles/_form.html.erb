@@ -15,7 +15,9 @@
   <p id="ai-helper-model-llm-model">
     <%= f.text_field :temperature, size: 60, required: true %>
   </p>
-
+  <p id="ai-helper-model-organization-id">
+    <%= f.text_field :organization_id, size: 60 %>
+  </p>
   <p id="ai-helper-model-base-uri">
     <%= f.text_field :base_uri, size: 60, required: true %>
   </p>
@@ -24,20 +26,36 @@
 </div>
 
 <script>
-  $(document).ready(function() {
+  document.addEventListener('DOMContentLoaded', function() {
     // LLM type select box change event
-    $('#ai_helper_model_profile_llm_type').change(function() {
-      var selectedValue = $(this).val();
-      if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>') {
-        $('#ai-helper-model-base-uri').show();
-        $('#ai-helper-mode-access-key .required').hide();
-      } else {
-        $('#ai-helper-model-base-uri').hide();
-        $('#ai-helper-mode-access-key .required').show();
-      }
-    });
+    const llmTypeSelect = document.getElementById('ai_helper_model_profile_llm_type');
 
-    // Trigger change event on page load
-    $('#ai_helper_model_profile_llm_type').trigger('change');
+    function handleLlmTypeChange() {
+      const selectedValue = llmTypeSelect.value;
+      const baseUriElement = document.getElementById('ai-helper-model-base-uri');
+      const accessKeyRequiredElement = document.querySelector('#ai-helper-mode-access-key .required');
+      const organizationIdElement = document.getElementById('ai-helper-model-organization-id');
+
+      if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>') {
+        if (baseUriElement) baseUriElement.style.display = 'block';
+        if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'none';
+      } else {
+        if (baseUriElement) baseUriElement.style.display = 'none';
+        if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'block';
+      }
+
+      if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI %>') {
+        if (organizationIdElement) organizationIdElement.style.display = 'block';
+      } else {
+        if (organizationIdElement) organizationIdElement.style.display = 'none';
+      }
+    }
+
+    if (llmTypeSelect) {
+      llmTypeSelect.addEventListener('change', handleLlmTypeChange);
+
+      // Trigger change event on page load
+      handleLlmTypeChange();
+    }
   });
 </script>

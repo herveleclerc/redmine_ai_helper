@@ -17,6 +17,6 @@ changelog:
       labels:
         - Semver-Patch
         - bug
-    - title: Other Changes
+    - title: Other Changes 📝
       labels:
         - "*"
