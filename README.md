@@ -16,7 +16,7 @@
 - [⚙️ Advanced Configuration](#️-advanced-configuration)
   - [MCP Server Settings](#mcp-server-settings)
   - [Vector Search Settings](#vector-search-settings)
-    - [AI Helper Settings Page](#ai-helper-settings-page)
+    - [Qdrant Setup](#qdrant-setup)
     - [Creating the Index](#creating-the-index)
     - [Recreating the Index](#recreating-the-index)
 - [🛠️ Build your own Agent](#️-build-your-own-agent)
@@ -122,15 +122,21 @@ The AI Helper Plugin can use the MCP Server to perform tasks, such as sending is
 ## Vector Search Settings
 
 Configure settings to perform vector searches for issues using Qdrant.
+With this configuration, the AI Helper Plugin can use Qdrant to perform vector searches on Redmine issues and wiki data.
 
-### AI Helper Settings Page
+### Qdrant Setup
 
-1. Navigate to the AI Helper settings page.
-2. Enable "Enable vector search."
-3. Configure Qdrant settings:
-   - **URI**: Specify the URL of the Qdrant instance.
-   - **API Key**: Provide the API key for Qdrant. Leave this field blank if using a locally hosted Qdrant instance.
-   - **Embedding Model**: Specify the embedding model to use, e.g., `text-embedding-3-large`.
+Here is an example configuration using Docker Compose.
+
+```yaml:docker-compose.yml
+services:
+   qdrant:
+      image: qdrant/qdrant
+      ports:
+         - 6333:6333
+      volumes:
+         - ./storage:/qdrant/storage
+```
 
 ### Creating the Index
 
