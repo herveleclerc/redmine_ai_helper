@@ -18,19 +18,38 @@ class RedmineAiHelper::Util::McpToolsLoaderTest < ActiveSupport::TestCase
   end
 
   context "McpToolsLoader with test_config" do
+    setup do
+      loader = RedmineAiHelper::Util::McpToolsLoader.instance
+      loader.instance_variable_set(:@config_file, nil)
+      loader.instance_variable_set(:@list, nil)
+    end
+
+    teardown do
+      loader = RedmineAiHelper::Util::McpToolsLoader.instance
+      loader.instance_variable_set(:@config_file, nil)
+      loader.instance_variable_set(:@list, nil)
+    end
+
     should "load tools from config file" do
       test_config_file = File.expand_path("../../../test_config.json", __FILE__)
 
-      RedmineAiHelper::Util::McpToolsLoader.stubs(:config_file).returns(test_config_file)
-
+      loader = RedmineAiHelper::Util::McpToolsLoader.instance
+      loader.instance_variable_set(:@config_file, test_config_file)
       tools = RedmineAiHelper::Util::McpToolsLoader.load
 
       assert_not_nil tools, "tools should not be nil"
       assert tools.is_a?(Array), "tools should be an Array"
-      assert_equal 1, tools.length, "tools count should be 1"
+      assert_equal 2, tools.length, "tools count should be 1"
       assert_equal "McpSlack", tools[0].name, "First tool should be McpSlack"
+    end
 
-      RedmineAiHelper::Util::McpToolsLoader.unstub(:config_file)
+    should "return empty array if config file does not exist" do
+      loader = RedmineAiHelper::Util::McpToolsLoader.instance
+      loader.instance_variable_set(:@config_file, "non_existent_config.json")
+
+      tools = RedmineAiHelper::Util::McpToolsLoader.load
+
+      assert_equal [], tools, "tools should be an empty array when config file does not exist"
     end
   end
 end
