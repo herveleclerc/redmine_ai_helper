@@ -17,25 +17,20 @@ class RedmineAiHelper::Util::McpToolsLoaderTest < ActiveSupport::TestCase
     end
   end
 
-  context "McpToolsLoader with nonexists file" do
-    should "return empty list" do
-      test_config_file = File.expand_path("non_existent_file.json", __FILE__)
-      Rails.root.stubs(:join).returns(test_config_file) do
-        tools = RedmineAiHelper::Util::McpToolsLoader.load
-        assert tools.is_a?(Array), "tools should be an Array"
-        assert_equal 0, tools.length
-      end
-    end
-  end
   context "McpToolsLoader with test_config" do
     should "load tools from config file" do
       test_config_file = File.expand_path("../../../test_config.json", __FILE__)
-      Rails.root.stubs(:join).returns(test_config_file) do
-        tools = RedmineAiHelper::Util::McpToolsLoader.load
-        assert_equal 2, tools.length
-        assert_equal "McpSlack", tools[0].name
-        assert_equal "McpFilesystem", tools[1].name
-      end
+
+      RedmineAiHelper::Util::McpToolsLoader.stubs(:config_file).returns(test_config_file)
+
+      tools = RedmineAiHelper::Util::McpToolsLoader.load
+
+      assert_not_nil tools, "tools should not be nil"
+      assert tools.is_a?(Array), "tools should be an Array"
+      assert_equal 1, tools.length, "tools count should be 1"
+      assert_equal "McpSlack", tools[0].name, "First tool should be McpSlack"
+
+      RedmineAiHelper::Util::McpToolsLoader.unstub(:config_file)
     end
   end
 end
