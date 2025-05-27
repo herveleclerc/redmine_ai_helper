@@ -9,10 +9,10 @@ updates:
     labels:
       - "dependencies"
       - "ruby"
-    allow:
-      # Only for Security updates
-      - dependency-type: "direct"
-        update-type: "security"
+    vulnerability-alerts: true
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
