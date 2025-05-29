@@ -8,20 +8,25 @@ module RedmineAiHelper
       # Generate a client for OpenAI-compatible LLMs.
       # @return [OpenAiCompatible] The OpenAI-compatible client.
       def generate_client
-        model_profile = AiHelperSetting.find_or_create.model_profile
+        setting = AiHelperSetting.find_or_create
+        model_profile = setting.model_profile
         raise "Model Profile not found" unless model_profile
         raise "Base URI not found" unless model_profile.base_uri
         llm_options = {
           uri_base: model_profile.base_uri,
         }
         llm_options[:organization_id] = model_profile.organization_id if model_profile.organization_id
+        llm_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
+        default_options = {
+          chat_model: model_profile.llm_model,
+          temperature: model_profile.temperature,
+        }
+        default_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
+        default_options[:dimensions] = setting.dimension if setting.dimension
         client = OpenAiCompatible.new(
           api_key: model_profile.access_key,
           llm_options: llm_options,
-          default_options: {
-            chat_model: model_profile.llm_model,
-            temperature: model_profile.temperature,
-          },
+          default_options: default_options,
         )
         raise "OpenAI LLM Create Erro" unless client
         client
