@@ -49,80 +49,115 @@ class RedmineAiHelper::LlmClient::OpenAiCompatibleProviderTest < ActiveSupport::
   context "OpenAiCompatible" do
     setup do
       @openai_mock = OpenAiCompatibleTest::DummyOpenAIClient.new
-      Langchain::LLM::OpenAI.stubs(:new).returns(@openai_mock)
-      @client = RedmineAiHelper::LlmClient::OpenAiCompatibleProvider::OpenAiCompatible.new({})
+      ::OpenAI::Client.stubs(:new).returns(@openai_mock)
+      # Langchain::LLM::OpenAI.stubs(:new).returns(@openai_mock)
+      @client = RedmineAiHelper::LlmClient::OpenAiCompatibleProvider::OpenAiCompatible.new(
+        api_key: "test_key",
+      )
     end
 
     should "return a valid response for chat" do
       params = {
         messages: [{ role: "user", content: "Hello" }],
       }
-      response = @client.chat(params)
+      response = @client.chat(params).chat_completion
       assert_not_nil response
-      assert response.is_a?(Hash)
-      assert response.key?("choices")
+      assert_equal response, "This is a dummy response for testing."
+    end
+  end
+
+  context "OpenAiCompatible" do
+    setup do
+      @openai_mock = OpenAiCompatibleTest::DummyOpenAIClient.new
+      ::OpenAI::Client.stubs(:new).returns(@openai_mock)
+      @openai = RedmineAiHelper::LlmClient::OpenAiCompatibleProvider::OpenAiCompatible.new(
+        api_key: "test_key",
+        llm_options: { uri_base: "https://api.example.com" },
+      )
+    end
+
+    context "select_tools" do
+      should "return a response with tool calls" do
+        messages = [
+          { role: "user", content: "ユーザーが達成したい目的を明確にし、プロジェクトの目標を設定するために" },
+        ]
+        tools = []
+        response = @openai.select_tools(messages: messages, tools: tools)
+        assert response.tool_calls
+      end
+    end
+
+    context "select_tool_result" do
+      should "return a response with tool call results" do
+        messages = [
+          { role: "user", content: "What is the weather in Tokyo on 2023-10-01?" },
+          { role: "assistant", content: "Please use the weather tool." },
+          {
+            role: "assistant",
+            tool_calls: [
+              {
+                id: "call_rCE6Kk94VZZyUIrIlrZSH0Cr",
+                type: "function",
+                function: {
+                  name: "weather_tool__weather",
+                  arguments: "{\"location\": \"Tokyo\", \"date\": \"2023-10-01\"}",
+                },
+              },
+            ],
+          },
+          {
+            role: "tool",
+            name: "weather_tool__weather",
+            content: {
+              location: "Tokyo",
+              date: "2023-10-01",
+            },
+          },
+        ]
+        response = @openai.send_tool_result(messages: messages)
+        assert response.tool_calls
+      end
     end
   end
 end
 
 module OpenAiCompatibleTest
-  class DummyOpenAIClient < Langchain::LLM::OpenAI
-    def initialize(params = {})
-      super(api_key: "aaaa")
-    end
+  class DummyOpenAIClient
+    def chat(params = {}, &block)
+      messages = params[:parameters][:messages] || []
+      # puts "Messages: #{messages.inspect}"
+      message = messages.first[:content]
+      # puts "Message content: #{message}"
 
-    def chat(params = {})
-      messages = params[:messages]
-      message = messages.last[:content]
-
-      answer = "test answer"
-
-      if message.include?("ユーザーが達成したい目的を明確にし")
-        answer = "test goal"
-      elsif message.include?("から与えられたタスクを解決するために")
-        answer = {
-          "steps": [
-            {
-              "name": "step1",
-              "step": "チケットを更新するために、必要な情報を整理する。",
-              "tool": {
-                "provider": "issue_tool_provider",
-                "tool_name": "capable_issue_properties",
-              },
+      json_content = {
+        tool_calls: [
+          {
+            id: "call_rCE6Kk94VZZyUIrIlrZSH0Cr",
+            type: "function",
+            function: {
+              name: "weather_tool__weather",
+              arguments: "{\"location\": \"Tokyo\", \"date\": \"2023-10-01\"}",
             },
-            {
-              "name": "step2",
-              "step": "前のステップで取得したステータスを使用してチケットを更新する",
-              "tool": {
-                "provider": "issue_tool_provider",
-                "tool_name": "update_issue",
-              },
-            },
-          ],
+          },
+        ],
+      }
+      content = JSON.pretty_generate(json_content)
 
-        }.to_json
-      elsif message.include?("というゴールを解決するために")
-        answer = {
-          "steps": [
-            { "agent": "project_agent", "step": "my_projectという名前のプロジェクトのIDを教えてください" },
-            { "agent": "project_agent", "step": "my_projectの情報を取得してください" },
-          ],
-        }.to_json
-      else
-        answer = "test answer"
+      if message == "Hello"
+        content = "This is a dummy response for testing."
       end
 
-      if block_given?
-        { "index" => 0, "delta" => { "content" => "ら" }, "logprobs" => nil, "finish_reason" => nil }
-        chunk = {
-          "index": 0,
-          "delta": { "content": answer },
-          "finish_reason": nil,
-        }.deep_stringify_keys
-        yield(chunk)
-      end
-
-      response = { "choices": [{ "message": { "content": answer } }] }.deep_stringify_keys
+      response = {
+        "choices" => [
+          {
+            "message" => {
+              "role" => "assistant",
+              "content" => content,
+            },
+          },
+        ],
+      }
+      block.call(response) if block_given?
       response
     end
   end
