@@ -1,3 +1,4 @@
+source "https://rubygems.org"
 gem "ruby-openai", "~> 8.0.0"
 gem "langchainrb", "~> 0.19.5"
 gem "anthropic", "~> 0.4.0"
