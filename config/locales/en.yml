@@ -49,8 +49,10 @@ en:
           show: "This is the page for the version '%{version_name}'. The version ID is %{version_id}."
           other: "This is the page for the version."
         other_page: "This is the %{action_name} page for %{controller_name}."
-        issue_agent:
-          search_answer_instruction: "For tasks such as finding multiple issues that match certain conditions, like 'Find issues that meet these conditions' or 'Show me issues with these criteria,' please return the URL for the issue search."
+      issue_agent:
+        search_answer_instruction: "For tasks such as finding multiple issues that match certain conditions, like 'Find issues that meet these conditions' or 'Show me issues with these criteria,' please return the URL for the issue search."
+      leader_agent:
+        generate_final_response: "All agents have completed their tasks. Please create the final response for the user."
   activerecord:
     models:
       ai_helper_model_profile: "Model Profile"

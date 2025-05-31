@@ -51,6 +51,8 @@ ja:
         other_page: "%{controller_name}の%{action_name}ページです"
       issue_agent:
         search_answer_instruction: "なお、「条件に合ったチケットを探して」「こういう条件のチケット見せて」の様な複数のチケット探すタスクの場合には、チケット検索のURLを返してください。"
+      leader_agent:
+          generate_final_response: "全てのエージェントがタスクを完了しました。ユーザーへの最終的な回答を作成してください。"
   activerecord:
     models:
       ai_helper_model_profile: "モデルプロファイル"
