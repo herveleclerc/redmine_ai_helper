@@ -1,7 +1,39 @@
 <% if @project and @project.module_enabled?(:ai_helper) and User.current.allowed_to?({ controller: :ai_helper, action: :chat_form }, @project) and AiHelperSetting.find_or_create.model_profile %>
+<script>
+    // Function to toggle the open/closed state of a fieldset
+    // flag: true to expand, false to collapse
+    function aiHelperSetReplyExpanded(flag) {
+        const fieldset = document.getElementById('ai-helper-reply-fields');
+        const legend = fieldset.querySelector('legend');
+        isOpen = !fieldset.classList.contains('collapsed');
+        if (isOpen !== flag) {
+            toggleFieldset(legend);
+        }
+    };
 
+    // Function to save the open/closed state of the fieldset
+    function aiHelperSaveReplyState() {
+        const fieldset = document.getElementById('ai-helper-reply-fields');
+        const isOpen = !fieldset.classList.contains('collapsed');
+        const state = { replyExpanded: isOpen };
+        localStorage.setItem('aiHelperReplyState', JSON.stringify(state));
+    }
+
+    // Load the saved state from localStorage when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const state = localStorage.getItem('aiHelperReplyState');
+        if (state) {
+            const parsedState = JSON.parse(state);
+            if (parsedState.replyExpanded) {
+                aiHelperSetReplyExpanded(true);
+            } else {
+                aiHelperSetReplyExpanded(false);
+            }
+        }
+    });
+</script>
 <fieldset id="ai-helper-reply-fields" class="collapsible collapsed">
-    <legend onclick="toggleFieldset(this);" class="icon icon-collapsed">
+    <legend onclick="toggleFieldset(this);aiHelperSaveReplyState();" class="icon icon-collapsed">
     <%= sprite_icon("angle-right") %>
     <strong>
         <%= sprite_icon("ai-helper-robot", plugin: :redmine_ai_helper)%>
@@ -51,7 +83,7 @@
         replyArea.innerHTML = '';
         replyArea.appendChild(loader);
         xhr.send(JSON.stringify({ instructions: instructions }));
-    }
+    };
 </script>
 
 
