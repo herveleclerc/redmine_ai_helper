@@ -5,6 +5,8 @@ module RedmineAiHelper
   module Vector
     # This class is responsible for managing the vector database for issues in Redmine.
     class WikiVectorDb < VectorDb
+      include Rails.application.routes.url_helpers
+
       def index_name
         "RedmineWiki"
       end
@@ -28,6 +30,7 @@ module RedmineAiHelper
           updated_on: wiki.updated_on,
           parent_id: wiki.parent_id,
           parent_title: wiki.parent_title,
+          page_url: "#{project_wiki_page_path(wiki.project, wiki.title)}",
         }
         content = "#{wiki.title} #{wiki.content.text}"
 

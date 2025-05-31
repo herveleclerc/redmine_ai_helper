@@ -43,7 +43,7 @@ class RedmineAiHelper::Vector::QdrantTest < ActiveSupport::TestCase
       ).returns(mock_response)
 
       results = @qdrant.ask_with_filter(query: "test", k: 2, filter: { foo: "bar" })
-      assert_equal [{ "id" => 1, "title" => "Issue 1" }.to_s, { "id" => 2, "title" => "Issue 2" }.to_s], results
+      assert_equal [{ "id" => 1, "title" => "Issue 1" }, { "id" => 2, "title" => "Issue 2" }], results
     end
 
     should "return empty array if result is nil" do

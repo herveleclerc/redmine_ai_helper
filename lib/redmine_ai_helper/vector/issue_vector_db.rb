@@ -5,6 +5,8 @@ module RedmineAiHelper
   module Vector
     # This class is responsible for managing the vector database for issues in Redmine.
     class IssueVectorDb < VectorDb
+      include Rails.application.routes.url_helpers
+
       def index_name
         "RedmineIssue"
       end
@@ -42,6 +44,7 @@ module RedmineAiHelper
           version_id: issue.fixed_version&.id,
           version_name: issue.fixed_version&.name,
           category_name: issue.category&.name,
+          issue_url: issue_url(issue, only_path: true),
         }
         content = "#{issue.subject} #{issue.description}"
         content += " " + issue.journals.map { |journal| journal.notes.to_s }.join(" ")

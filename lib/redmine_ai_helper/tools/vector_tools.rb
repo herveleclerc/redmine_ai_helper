@@ -1,18 +1,20 @@
 # frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
+require "redmine_ai_helper/util/wiki_json"
+require "redmine_ai_helper/util/issue_json"
 
 module RedmineAiHelper
   module Tools
     # VectorTools is a specialized tool for handling vector database queries Qdrant.
     class VectorTools < RedmineAiHelper::BaseTools
+      include RedmineAiHelper::Util::WikiJson
+      include RedmineAiHelper::Util::IssueJson
 
       #   raise("The vector search functionality is not enabled.") unless vector_db_enabled?
       #   raise("limit must be between 1 and 50.") unless limit.between?(1, 50)
 
-      define_function :ask_with_filter, description: "Ask to vector databse with a query words and filter." do
-        property :query_words, type: "array", description: "The words to use for vector search.", required: true do
-          item type: "string", description: "The word to use for vector search."
-        end
+      define_function :ask_with_filter, description: "Ask to vector databse with a query text and filter." do
+        property :query, type: "string", description: "The query text to use for vector search.", required: true
         property :k, type: "integer", description: "The number of records to retrieve. Default is 10. Max is 50", required: false
         property :filter, type: "object", description: "The filter to apply to the question.", required: true do
           property :must, type: "array", description: "The must filter. All conditions must be met. AND condition.", required: false do
@@ -40,13 +42,13 @@ module RedmineAiHelper
         property :target, type: "string", description: "The target to filter. 'issue' means issue, 'wiki' means wiki page.", required: true, enum: ["issue", "wiki"]
       end
 
-      # Ask to vector databse with a query words and filter.
-      # @param query_words [Array<String>] The words to use for vector search.
+      # Ask to vector databse with a query text and filter.
+      # @param query [String] The query text to use for vector search.
       # @param k [Integer] The number of issues to retrieve. Default is 10. Max is 50
       # @param filter [Hash] The filter to apply to the question.
       # @param target [String] The target to filter. 'issue' means issue, 'wiki' means wiki page.
-      # @return [Array<Hash>] An array of hashes containing issue information.
-      def ask_with_filter(query_words:, k: 10, filter: {}, target:)
+      # @return [Array<Hash>] An array of hashes containing issue or wiki information.
+      def ask_with_filter(query:, k: 10, filter: {}, target:)
         raise("The vector search functionality is not enabled.") unless vector_db_enabled?
         raise("limit must be between 1 and 50.") unless k.between?(1, 50)
 
@@ -57,8 +59,31 @@ module RedmineAiHelper
           filter_json[:must_not] = create_filter(filter[:must_not]) if filter[:must_not]
 
           db = vector_db(target: target)
-          response = db.ask_with_filter(query: query_words.join(" "), k: k, filter: filter_json)
+          response = db.ask_with_filter(query: query, k: k, filter: filter_json)
           ai_helper_logger.debug("Response: #{response}")
+          if target == "wiki" && response.is_a?(Array)
+            wikis = []
+            response.each { |item|
+              id = item["wiki_id"]
+              wiki = WikiPage.find_by(id: id)
+              next unless wiki
+              next unless wiki.visible?
+              wikis << generate_wiki_data(wiki)
+            }
+            ai_helper_logger.debug("Filtered wikis: #{wikis}")
+            return wikis
+          elsif target == "issue" && response.is_a?(Array)
+            issues = []
+            response.each { |item|
+              id = item["issue_id"]
+              issue = Issue.find_by(id: id)
+              next unless issue
+              next unless issue.visible?
+              issues << generate_issue_data(issue)
+            }
+            ai_helper_logger.debug("Filtered issues: #{issues}")
+            return issues
+          end
           response
         rescue => e
           ai_helper_logger.error("Error: #{e.message}")
