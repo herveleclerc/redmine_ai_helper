@@ -30,6 +30,9 @@
         <p>
             <%= f.text_field :embedding_model, size: 60 %>
         </p>
+        <p id="ai_helper_dimension" style="display: none;">
+            <%= f.text_field :dimension, size: 60 %>
+        </p>
     </div>
     <hr>
     <p><%= f.text_area :additional_instructions, rows: 12 %></p>
@@ -44,6 +47,7 @@
             type: 'GET',
             success: function(data) {
                 $('#ai_helper_model_profile_description').html(data);
+                modelTypeChanged();
             },
             error: function() {
                 $('#ai_helper_model_profile_description').html('error');
@@ -55,6 +59,7 @@
         var selectedId = $('#ai_helper_setting_model_profile_id').val();
         if (selectedId) {
             loadModelProfile(selectedId);
+
         } else {
             $('#ai_helper_model_profile_description').html('');
         }
@@ -68,6 +73,16 @@
             $('#ai-helper-vector-search').hide();
         }
     }
+
+    function modelTypeChanged() {
+        var modelType = $('#ai_helper_model_type').text();
+        if (modelType === '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>') {
+            $('#ai_helper_dimension').show();
+        } else {
+            $('#ai_helper_dimension').hide();
+        }
+    }
+
 
     $(document).ready(function() {
         $('#ai_helper_setting_model_profile_id').change(function() {

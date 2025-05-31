@@ -70,3 +70,4 @@ en:
         vector_search_uri: "URI"
         vector_search_api_key: "API key"
         embedding_model: "Embedding model"
+        dimension: "Dimension"

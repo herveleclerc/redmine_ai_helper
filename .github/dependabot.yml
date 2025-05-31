@@ -1,25 +1,9 @@
 version: 2
 updates:
-  # Ruby gems
   - package-ecosystem: "bundler"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "ruby"
-    vulnerability-alerts: true
+      interval: "daily"
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
-
-  # GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "github_actions"
+      - dependency-name: "rails"
+        update-types: ["version-update:semver-major"]

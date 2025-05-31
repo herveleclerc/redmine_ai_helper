@@ -25,8 +25,11 @@ module RedmineAiHelper
           with_vector: true,
           filter: filter,
         )
-        response.dig("result").map do |result|
-          result.dig("payload").to_s
+        results = response.dig("result")
+        return [] unless results.is_a?(Array)
+
+        results.map do |result|
+          result.dig("payload")
         end
       end
     end
