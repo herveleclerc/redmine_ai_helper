@@ -13,7 +13,7 @@ module RedmineAiHelper
       #   raise("The vector search functionality is not enabled.") unless vector_db_enabled?
       #   raise("limit must be between 1 and 50.") unless limit.between?(1, 50)
 
-      define_function :ask_with_filter, description: "Ask to vector databse with a query text and filter." do
+      define_function :ask_with_filter, description: "Ask to vector database with a query text and filter." do
         property :query, type: "string", description: "The query text to use for vector search.", required: true
         property :k, type: "integer", description: "The number of records to retrieve. Default is 10. Max is 50", required: false
         property :filter, type: "object", description: "The filter to apply to the question.", required: true do
@@ -42,7 +42,7 @@ module RedmineAiHelper
         property :target, type: "string", description: "The target to filter. 'issue' means issue, 'wiki' means wiki page.", required: true, enum: ["issue", "wiki"]
       end
 
-      # Ask to vector databse with a query text and filter.
+      # Ask to vector database with a query text and filter.
       # @param query [String] The query text to use for vector search.
       # @param k [Integer] The number of issues to retrieve. Default is 10. Max is 50
       # @param filter [Hash] The filter to apply to the question.

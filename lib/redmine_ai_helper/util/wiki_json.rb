@@ -23,14 +23,14 @@ module RedmineAiHelper
             }
           end,
           parent: page.parent ? { title: page.parent.title } : nil,
-          attachements: page.attachments.map do |attachment|
+          attachments: page.attachments.map do |attachment|
             {
               filename: attachment.filename,
               filesize: attachment.filesize,
               content_type: attachment.content_type,
               description: attachment.description,
               created_on: attachment.created_on,
-              attachement_url: attachment_path(attachment),
+              attachment_url: attachment_path(attachment),
             }
           end,
         }
