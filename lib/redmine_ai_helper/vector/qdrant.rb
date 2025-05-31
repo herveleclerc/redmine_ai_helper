@@ -29,7 +29,7 @@ module RedmineAiHelper
         return [] unless results.is_a?(Array)
 
         results.map do |result|
-          result.dig("payload").to_s
+          result.dig("payload")
         end
       end
     end

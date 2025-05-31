@@ -6,7 +6,7 @@ module RedmineAiHelper
       # @param issue [Issue] The issue to be represented in JSON.
       # @return [Hash] A hash representing the issue in JSON format.
       def generate_issue_data(issue)
-        {
+        json = {
           id: issue.id,
           subject: issue.subject,
           project: {
@@ -107,6 +107,9 @@ module RedmineAiHelper
           end,
 
         }
+        json[:issue_url] = issue_url(issue, only_path: true) if issue.id
+
+        json
       end
     end
   end

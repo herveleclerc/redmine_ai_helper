@@ -1,6 +1,8 @@
 require File.expand_path("../../../test_helper", __FILE__)
 
 class RedmineAiHelper::Tools::VectorToolsTest < ActiveSupport::TestCase
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :wikis, :wiki_pages
+
   context "VectorTools" do
     setup do
       @vector_tools = RedmineAiHelper::Tools::VectorTools.new
@@ -17,31 +19,39 @@ class RedmineAiHelper::Tools::VectorToolsTest < ActiveSupport::TestCase
     should "raise error if vector search is not enabled" do
       @setting.stubs(:vector_search_enabled).returns(false)
       assert_raises(RuntimeError, "The vector search functionality is not enabled.") do
-        @vector_tools.ask_with_filter(query_words: ["foo"], k: 10, filter: {}, target: "issue")
+        @vector_tools.ask_with_filter(query: "foo", k: 10, filter: {}, target: "issue")
       end
     end
 
     should "raise error if k is out of range" do
       assert_raises(RuntimeError, "limit must be between 1 and 50.") do
-        @vector_tools.ask_with_filter(query_words: ["foo"], k: 0, filter: {}, target: "issue")
+        @vector_tools.ask_with_filter(query: "foo", k: 0, filter: {}, target: "issue")
       end
       assert_raises(RuntimeError, "limit must be between 1 and 50.") do
-        @vector_tools.ask_with_filter(query_words: ["foo"], k: 51, filter: {}, target: "issue")
+        @vector_tools.ask_with_filter(query: "foo", k: 51, filter: {}, target: "issue")
       end
     end
 
-    should "call vector_db and return response" do
+    should "call vector_db and return response when target is issue" do
       @vector_tools.stubs(:vector_db).with(target: "issue").returns(@mock_db)
-      @mock_db.expects(:ask_with_filter).with(query: "foo bar", k: 10, filter: {}).returns([{ id: 1 }])
-      result = @vector_tools.ask_with_filter(query_words: ["foo", "bar"], k: 10, filter: {}, target: "issue")
-      assert_equal [{ id: 1 }], result
+      @mock_db.expects(:ask_with_filter).with(query: "foo bar", k: 10, filter: {}).returns([{ "issue_id" => 1 }])
+      result = @vector_tools.ask_with_filter(query: "foo bar", k: 10, filter: {}, target: "issue")
+      assert_equal 1, result.first[:id]
+    end
+
+    should "call vector_db and return response when target is wiki" do
+      @vector_tools.stubs(:vector_db).with(target: "wiki").returns(@mock_db)
+      @mock_db.expects(:ask_with_filter).with(query: "foo bar", k: 10, filter: {}).returns([{ "wiki_id" => 1 }])
+      result = @vector_tools.ask_with_filter(query: "foo bar", k: 10, filter: {}, target: "wiki")
+      wiki = WikiPage.find_by(id: 1)
+      assert_equal wiki.title, result.first[:title]
     end
 
     should "log and raise error if exception occurs" do
       @vector_tools.stubs(:vector_db).with(target: "issue").raises(StandardError.new("db error"))
       @mock_logger.expects(:error).at_least_once
       assert_raises(RuntimeError, "Error: db error") do
-        @vector_tools.ask_with_filter(query_words: ["foo"], k: 10, filter: {}, target: "issue")
+        @vector_tools.ask_with_filter(query: "foo", k: 10, filter: {}, target: "issue")
       end
     end
 
