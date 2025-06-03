@@ -16,7 +16,12 @@ Redmine::Plugin.register :redmine_ai_helper do
   version "1.1.0"
 
   project_module :ai_helper do
-    permission :view_ai_helper, { ai_helper: [:chat, :chat_form, :reload, :clear, :call_llm, :history, :issue_summary, :conversation, :generate_issue_reply] }
+    permission :view_ai_helper,
+               { ai_helper: [
+                 :chat, :chat_form, :reload, :clear, :call_llm,
+                 :history, :issue_summary, :conversation, :generate_issue_reply,
+                 :generate_sub_issues, :add_sub_issues,
+               ] }
   end
 
   menu :admin_menu, "icon ah_helper", {

@@ -1,0 +1,40 @@
+<% if @project and @project.module_enabled?(:ai_helper) and User.current.allowed_to?({ controller: :ai_helper, action: :chat_form }, @project) and AiHelperSetting.find_or_create.model_profile and User.current.allowed_to?(:add_issues, @project)%>
+
+<span id="ai-helper-subissuer-generator-menu">
+<%= link_to sprite_icon("ai-helper-robot", l('ai_helper.generate_sub_issues.title'), plugin: :redmine_ai_helper), '#', onclick: "showSubissuerGenerator(); return false;", class: "ai-helper-subissuer-generator-button" %> |
+</span>
+
+<div id="ai-helper-subissuer-generator-area" display="none">
+<%= render partial: 'ai_helper/subissue_gen/index', locals: {issue: @issue} %>
+</div>
+
+<script>
+    // Function to show the subissuer generator area
+    function showSubissuerGenerator() {
+        const generatorArea = document.getElementById('ai-helper-subissuer-generator-area');
+        if (generatorArea) {
+            generatorArea.style.display = generatorArea.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+    // Add span#ai-helper-subissuer-generator-menu as the first child of div#issue_tree > div.contextual
+    document.addEventListener('DOMContentLoaded', function() {
+        const contextualDiv = document.querySelector('#issue_tree > div.contextual');
+        if (contextualDiv) {
+            const menuSpan = document.getElementById('ai-helper-subissuer-generator-menu');
+            if (menuSpan) {
+                // Insert the menuSpan as the first child for i18n support
+                contextualDiv.insertBefore(menuSpan, contextualDiv.firstChild);
+            }
+        }
+
+        const issueTreeDiv = document.getElementById('issue_tree');
+        if (issueTreeDiv) {
+            const generatorArea = document.getElementById('ai-helper-subissuer-generator-area');
+            if (generatorArea) {
+                issueTreeDiv.appendChild(generatorArea);
+                generatorArea.style.display = 'none';
+            }
+        }
+    });
+</script>
+<% end %>

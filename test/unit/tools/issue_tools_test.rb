@@ -58,6 +58,7 @@ class IssueToolsTest < ActiveSupport::TestCase
 
     context "validate_new_issue" do
       should "validate issue" do
+        User.current = User.find(1)
         response = @provider.validate_new_issue(project_id: 1, tracker_id: 1, status_id: 1, subject: "test issue", description: "test description")
         assert response[:issue_id].nil?
       end

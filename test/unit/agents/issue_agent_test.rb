@@ -9,7 +9,7 @@ class RedmineAiHelper::Agents::IssueAgentTest < ActiveSupport::TestCase
       @project = Project.find(1)
       @user = User.find(1)
       @issue = Issue.find(1)
-      @langfuse = mock("Langfuse")
+      @langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: "Test input for Langfuse")
       @agent = RedmineAiHelper::Agents::IssueAgent.new(project: @project, langfuse: @langfuse)
     end
 
@@ -106,6 +106,33 @@ class RedmineAiHelper::Agents::IssueAgentTest < ActiveSupport::TestCase
         result = @agent.generate_issue_reply(issue: @issue, instructions: "Please provide a detailed response.")
         assert_equal "This is a generated reply.", result
       end
+    end
+
+    context "generate_sub_issues_draft" do
+      setup do
+        Langchain::OutputParsers::OutputFixingParser.stubs(:from_llm).returns(DummyFixParser.new)
+
+        # chatメソッドをモック
+        @agent.stubs(:chat).returns("This is a generated reply.")
+      end
+      should "generate sub issues for visible issue" do
+        issue = Issue.find(1)
+
+        subissues = @agent.generate_sub_issues_draft(issue: issue, instructions: "Create sub issues based on this issue.")
+
+        assert subissues
+      end
+    end
+  end
+
+  class DummyFixParser
+    def parse(text)
+      { "sub_issues" => [{ "subject" => "Dummy Sub Issue", "description" => "This is a dummy sub issue description." }] }
+    end
+
+    def get_format
+      # フォーマットは単純な文字列とする
+      "string"
     end
   end
 end

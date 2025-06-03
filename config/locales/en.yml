@@ -16,6 +16,10 @@ en:
       generated_reply: "Generated notes"
       apply: "Apply"
       copy_to_clipboard: "Copy to clipboard"
+    generate_sub_issues:
+      title: "Create subtasks with AI Helper"
+      instructions: "Please enter your instructions."
+      generate_draft: "Generate draft"
     model_profiles:
       create_profile_title: "New model profile"
       edit_profile_title: "Edit model profile"

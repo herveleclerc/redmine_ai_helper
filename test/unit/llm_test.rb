@@ -59,6 +59,28 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         assert_equal "Generated reply", reply
       end
     end
+
+    context "generate_sub_issues" do
+      setup do
+        @issue = Issue.find(1)
+        @llm = RedmineAiHelper::Llm.new(@params)
+        RedmineAiHelper::Agents::IssueAgent.stubs(:new).returns(DummyIssueAgent.new)
+      end
+
+      should "deny access for non-visible issue" do
+        @issue.stubs(:visible?).returns(false)
+        sub_issues = @llm.generate_sub_issues(issue: @issue, instructions: "test instructions")
+        assert_equal "Permission denied", sub_issues
+      end
+
+      should "generate sub issues for visible issue" do
+        @issue.stubs(:visible?).returns(true)
+        RedmineAiHelper::Agents::IssueAgent.any_instance.stubs(:generate_sub_issues).returns([Issue.new(subject: "Sub issue 1"), Issue.new(subject: "Sub issue 2")])
+        sub_issues = @llm.generate_sub_issues(issue: @issue, instructions: "test instructions")
+        assert_equal 2, sub_issues.length
+        assert_equal "Sub issue 1", sub_issues[0].subject
+      end
+    end
   end
 
   private
@@ -118,6 +140,16 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
 
       response = { "choices": [{ "message": { "content": answer } }] }.deep_stringify_keys
       response
+    end
+  end
+
+  class DummyIssueAgent
+    def generate_sub_issues_draft(args = {})
+      return "Permission denied" unless args[:issue].visible?
+      [
+        Issue.new(subject: "Sub issue 1", tracker_id: 1, project_id: 1),
+        Issue.new(subject: "Sub issue 2", tracker_id: 1, project_id: 1),
+      ]
     end
   end
 end

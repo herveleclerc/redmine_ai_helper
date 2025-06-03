@@ -16,6 +16,10 @@ ja:
       generated_reply: "生成されたコメント"
       apply: "適用"
       copy_to_clipboard: "クリップボードにコピー"
+    generate_sub_issues:
+      title: "AIヘルパーで子チケットを作成"
+      instructions: "指示を入力してください。"
+      generate_draft: "ドラフトを生成"
     model_profiles:
       create_profile_title: "新しいモデルプロファイル"
       edit_profile_title: "モデルプロファイルの編集"

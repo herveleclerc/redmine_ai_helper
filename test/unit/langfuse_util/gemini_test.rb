@@ -7,7 +7,8 @@ class RedmineAiHelper::LangfuseUtil::GeminiTest < ActiveSupport::TestCase
       Net::HTTP.stubs(:new).returns(DummyHttp.new)
       Net::HTTP::Post.stubs(:new).returns(DummyHttpPost.new)
       @gemini = RedmineAiHelper::LangfuseUtil::Gemini.new(api_key: "test")
-      langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: "test")
+      RedmineAiHelper::LangfuseUtil::LangfuseWrapper.stubs(:new).returns(DummyLangfuse.new)
+      langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: "Test input for Langfuse")
       langfuse.stubs(:enabled?).returns(true)
       @gemini.langfuse = langfuse
       @gemini.langfuse.create_span(name: "test_span", input: "test_input")
@@ -75,15 +76,38 @@ class RedmineAiHelper::LangfuseUtil::GeminiTest < ActiveSupport::TestCase
     end
 
     def span(name:, input:)
-      @current_span = DummyObservation.new
+      @current_span = DummySpan.new
     end
 
     def flush
       # No-op for testing
     end
 
+    def create_span(name:, input:)
+      @current_span = DummySpan.new
+      @current_span
+    end
+
     def current_span
-      nil
+      @current_span
+    end
+  end
+
+  class DummySpan
+    def create_generation(name:, messages:, model:, temperature:, max_tokens:)
+      DummyGeneration.new
+    end
+  end
+
+  class DummyGeneration
+    def finish(output:, usage: {})
+      # No-op for testing
+    end
+  end
+
+  class DummyObservation
+    def finish(output:)
+      # No-op for testing
     end
   end
 end
