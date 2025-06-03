@@ -25,4 +25,10 @@ class AiHelperSetting < ApplicationRecord
       setting.vector_search_enabled
     end
   end
+
+  def max_tokens
+    return nil unless model_profile&.max_tokens
+    return nil if model_profile.max_tokens <= 0
+    model_profile.max_tokens
+  end
 end
