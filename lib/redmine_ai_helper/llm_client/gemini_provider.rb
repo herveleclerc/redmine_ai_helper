@@ -6,14 +6,17 @@ module RedmineAiHelper
       # Generate a new Gemini client using the provided API key and model profile.
       # @return [Langchain::LLM::GoogleGemini] client
       def generate_client
-        model_profile = AiHelperSetting.find_or_create.model_profile
+        setting = AiHelperSetting.find_or_create
+        model_profile = setting.model_profile
         raise "Model Profile not found" unless model_profile
+        default_options = {
+          chat_model: model_profile.llm_model,
+          temperature: model_profile.temperature,
+        }
+        default_options[:max_tokens] = setting.max_tokens if setting.max_tokens
         client = RedmineAiHelper::LangfuseUtil::Gemini.new(
           api_key: model_profile.access_key,
-          default_options: {
-            chat_model: model_profile.llm_model,
-            temperature: model_profile.temperature,
-          },
+          default_options: default_options,
         )
         raise "Gemini LLM Create Error" unless client
         client

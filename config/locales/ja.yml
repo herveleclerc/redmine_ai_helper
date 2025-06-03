@@ -65,6 +65,7 @@ ja:
         temperature: "Temperature"
         organization_id: "Organization ID"
         base_uri: "ベースURI"
+        max_tokens: "MAXトークン数"
       ai_helper_setting:
         model_profile_id: "モデル定義"
         additional_instructions: "追加の指示"

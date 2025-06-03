@@ -23,6 +23,7 @@ module RedmineAiHelper
         }
         default_options[:embedding_model] = setting.embedding_model unless setting.embedding_model.blank?
         default_options[:dimensions] = setting.dimension if setting.dimension
+        default_options[:max_tokens] = setting.max_tokens if setting.max_tokens
         client = OpenAiCompatible.new(
           api_key: model_profile.access_key,
           llm_options: llm_options,

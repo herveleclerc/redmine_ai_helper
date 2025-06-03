@@ -21,6 +21,10 @@
   <%= label_tag AiHelperModelProfile.human_attribute_name(:temperature) %>
   <%= @model_profile.temperature %>
 </p>
+<p>
+  <%= label_tag AiHelperModelProfile.human_attribute_name(:max_tokens) %>
+  <%= @model_profile.max_tokens %>
+</p>
 <% if@model_profile.llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI %>
 <p>
   <%= label_tag AiHelperModelProfile.human_attribute_name(:organization_id) %>
