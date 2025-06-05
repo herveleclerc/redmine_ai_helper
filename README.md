@@ -10,6 +10,9 @@
 
 - [Redmine AI Helper Plugin](#redmine-ai-helper-plugin)
 - [✨ Features](#-features)
+  - [Chat Interface](#chat-interface)
+  - [Issue Summarization](#issue-summarization)
+  - [Create a comment draft with AI Helper](#create-a-comment-draft-with-ai-helper)
 - [📦 Installation](#-installation)
 - [⚙️ Basic Configuration](#️-basic-configuration)
   - [Plugin Settings](#plugin-settings)
@@ -45,7 +48,23 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 - MCP server integration
 - Vector search using Qdrant
 
-![Image](https://github.com/user-attachments/assets/39f61008-45a3-4807-9c1c-57fba4e06835)
+## Chat Interface
+
+The AI Helper Plugin provides a chat interface that allows you to interact with AI models directly within Redmine. You can ask questions, get explanations, and receive assistance with project-related tasks.
+
+![Image](https://github.com/user-attachments/assets/150259a0-4154-43e5-8e2b-bc75c1365cd8)
+
+## Issue Summarization
+
+Issue summarization allows you to generate concise summaries of issues pages.
+
+![Image](https://github.com/user-attachments/assets/2c62a792-b746-46ce-9268-3e29bdb4e53d)
+
+## Create a comment draft with AI Helper
+
+You can create a comment draft for an issue using the AI Helper Plugin. This feature allows you to generate a comment based on the issue's content, which you can then edit and post.
+
+![Image](https://github.com/user-attachments/assets/89f58bb4-bbc9-4407-9c55-309fac6893c2)
 
 # 📦 Installation
 
