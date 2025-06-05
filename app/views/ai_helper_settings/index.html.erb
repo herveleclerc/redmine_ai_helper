@@ -33,6 +33,9 @@
         <p id="ai_helper_dimension" style="display: none;">
             <%= f.text_field :dimension, size: 60 %>
         </p>
+        <p id="ai_helper_embedding_url" style="display: none;">
+            <%= f.text_field :embedding_url, size: 90 %>
+        </p>
     </div>
     <hr>
     <p><%= f.text_area :additional_instructions, rows: 12 %></p>
@@ -80,6 +83,11 @@
             $('#ai_helper_dimension').show();
         } else {
             $('#ai_helper_dimension').hide();
+        }
+        if (modelType === '<%= RedmineAiHelper::LlmProvider::LLM_AZURE_OPENAI %>') {
+            $('#ai_helper_embedding_url').show();
+        } else {
+            $('#ai_helper_embedding_url').hide();
         }
     }
 

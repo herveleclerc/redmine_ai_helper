@@ -22,7 +22,7 @@
     <%= f.text_field :organization_id, size: 60 %>
   </p>
   <p id="ai-helper-model-base-uri">
-    <%= f.text_field :base_uri, size: 60, required: true %>
+    <%= f.text_field :base_uri, size: 90, required: true %>
   </p>
 
 
@@ -33,17 +33,29 @@
     // LLM type select box change event
     const llmTypeSelect = document.getElementById('ai_helper_model_profile_llm_type');
 
+    function isBaseUriRequired(selectValue) {
+      if (selectValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>' ||
+          selectValue == '<%= RedmineAiHelper::LlmProvider::LLM_AZURE_OPENAI %>') {
+        return true;
+      }
+      return false; // Base URI is not required for other LLM types
+    }
+
     function handleLlmTypeChange() {
       const selectedValue = llmTypeSelect.value;
       const baseUriElement = document.getElementById('ai-helper-model-base-uri');
       const accessKeyRequiredElement = document.querySelector('#ai-helper-mode-access-key .required');
       const organizationIdElement = document.getElementById('ai-helper-model-organization-id');
 
-      if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>') {
+      if (isBaseUriRequired(selectedValue) == true) {
         if (baseUriElement) baseUriElement.style.display = 'block';
-        if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'none';
       } else {
         if (baseUriElement) baseUriElement.style.display = 'none';
+      }
+
+      if (selectedValue == '<%= RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE %>') {
+        if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'none';
+      } else {
         if (accessKeyRequiredElement) accessKeyRequiredElement.style.display = 'block';
       }
 

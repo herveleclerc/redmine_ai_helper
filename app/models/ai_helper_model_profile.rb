@@ -28,7 +28,8 @@ class AiHelperModelProfile < ApplicationRecord
   # returns true if base_uri is required.
   def base_uri_required?
     # Check if the llm_type is OpenAICompatible
-    llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE
+    llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE ||
+      llm_type == RedmineAiHelper::LlmProvider::LLM_AZURE_OPENAI
   end
 
   # returns true if access_key is required.

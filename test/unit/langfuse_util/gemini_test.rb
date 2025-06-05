@@ -7,7 +7,9 @@ class RedmineAiHelper::LangfuseUtil::GeminiTest < ActiveSupport::TestCase
       Net::HTTP.stubs(:new).returns(DummyHttp.new)
       Net::HTTP::Post.stubs(:new).returns(DummyHttpPost.new)
       @gemini = RedmineAiHelper::LangfuseUtil::Gemini.new(api_key: "test")
-      @gemini.langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: "test")
+      langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: "test")
+      langfuse.stubs(:enabled?).returns(true)
+      @gemini.langfuse = langfuse
       @gemini.langfuse.create_span(name: "test_span", input: "test_input")
     end
 

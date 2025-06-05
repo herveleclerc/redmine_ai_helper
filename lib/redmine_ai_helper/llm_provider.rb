@@ -9,6 +9,7 @@ module RedmineAiHelper
     LLM_OPENAI_COMPATIBLE = "OpenAICompatible".freeze
     LLM_GEMINI = "Gemini".freeze
     LLM_ANTHROPIC = "Anthropic".freeze
+    LLM_AZURE_OPENAI = "AzureOpenAi".freeze
     class << self
       # Returns an instance of the appropriate LLM client based on the system settings.
       # @return [Object] An instance of the appropriate LLM client.
@@ -22,6 +23,8 @@ module RedmineAiHelper
           return RedmineAiHelper::LlmClient::GeminiProvider.new
         when LLM_ANTHROPIC
           return RedmineAiHelper::LlmClient::AnthropicProvider.new
+        when LLM_AZURE_OPENAI
+          return RedmineAiHelper::LlmClient::AzureOpenAiProvider.new
         else
           raise NotImplementedError, "LLM provider not found"
         end
@@ -42,6 +45,7 @@ module RedmineAiHelper
           ["OpenAI Compatible(Experimental)", LLM_OPENAI_COMPATIBLE],
           ["Gemini(Experimental)", LLM_GEMINI],
           ["Anthropic(Experimental)", LLM_ANTHROPIC],
+          ["Azure OpenAI(Experimental)", LLM_AZURE_OPENAI],
         ]
       end
     end
