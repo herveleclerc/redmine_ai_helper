@@ -13,12 +13,13 @@ module RedmineAiHelper
         if @langfuse&.current_span
           parameters = chat_parameters.to_params(params)
           span = @langfuse.current_span
+          max_tokens = parameters[:max_tokens] || @defaults[:max_tokens]
           new_messages = []
           new_messages << { role: "system", content: params[:system] } if params[:system]
           params[:messages].each do |message|
             new_messages << { role: message[:role], content: message.dig(:parts, 0, :text) }
           end
-          generation = span.create_generation(name: "chat", messages: new_messages, model: parameters[:model], temperature: parameters[:temperature], max_tokens: parameters[:max_tokens])
+          generation = span.create_generation(name: "chat", messages: new_messages, model: parameters[:model], temperature: parameters[:temperature], max_tokens: max_tokens)
         end
         response = super(params)
         if generation

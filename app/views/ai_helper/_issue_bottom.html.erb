@@ -44,9 +44,38 @@
       });
     });
   });
+
+  // Function to toggle the open/closed state of the fieldset
+  // flag: true to expand, false to collapse
+  function aiHelperSetSummayExpanded(flag) {
+    const fieldset = document.getElementById('ai-helper-summary-fields');
+    const legend = fieldset.querySelector('legend');
+    isOpen = !fieldset.classList.contains('collapsed');
+    if (isOpen !== flag) {
+      toggleFieldset(legend);
+    }
+  };
+
+  // Function to save the open/closed state of the fieldset
+  function aiHelperSaveSummaryState() {
+    const fieldset = document.getElementById('ai-helper-summary-fields');
+    const isOpen = !fieldset.classList.contains('collapsed');
+    localStorage.setItem('aiHelperIssueSummaryState', isOpen ? 'expanded' : 'collapsed');
+  };
+
+  // On page load, retrieve the state from localStorage and set the open/closed state of the fieldset
+  document.addEventListener('DOMContentLoaded', function() {
+    const savedState = localStorage.getItem('aiHelperIssueSummaryState');
+    if (savedState === 'expanded') {
+      aiHelperSetSummayExpanded(true);
+    } else {
+      aiHelperSetSummayExpanded(false);
+    }
+  });
+
 <% end %>
 <fieldset id="ai-helper-summary-fields" class="collapsible collapsed">
-    <legend onclick="toggleFieldset(this);" class="icon icon-collapsed">
+    <legend onclick="toggleFieldset(this);aiHelperSaveSummaryState();" class="icon icon-collapsed">
     <%= sprite_icon("angle-right") %>
     <strong>
         <%= sprite_icon("ai-helper-robot", plugin: :redmine_ai_helper)%>

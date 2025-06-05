@@ -5,6 +5,7 @@ input_variables:
   - agent_list
   - format_instructions
   - json_examples
+  - lang
 template: |-
   Please create instructions for other agents to solve the user's goal. The goal is as follows:
 
@@ -21,6 +22,7 @@ template: |-
     - Limit the steps to a maximum of 3.
     - Write the instructions for the agents in JSON format.
     - If there is no suitable agent, give the instruction to the mcp_agent.
+    - Write the instructions for the agents in {lang}.
 
     **If the goal is to confirm something with the user, do not give instructions to other agents to create or update data. In that case, you may only request other agents to retrieve information.**
 

@@ -10,7 +10,7 @@ class AiHelperModelProfile < ApplicationRecord
   validates :base_uri, format: { with: URI::regexp(%w[http https]), message: l("ai_helper.model_profiles.messages.must_be_valid_url") }, if: :base_uri_required?
   validates :temperature, presence: true, numericality: { greater_than_or_equal_to: 0.0 }
 
-  safe_attributes "name", "llm_type", "access_key", "organization_id", "base_uri", "version", "llm_model", "temperature"
+  safe_attributes "name", "llm_type", "access_key", "organization_id", "base_uri", "version", "llm_model", "temperature", "max_tokens"
 
   # Replace all characters after the 4th with *
   def masked_access_key
@@ -28,7 +28,8 @@ class AiHelperModelProfile < ApplicationRecord
   # returns true if base_uri is required.
   def base_uri_required?
     # Check if the llm_type is OpenAICompatible
-    llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE
+    llm_type == RedmineAiHelper::LlmProvider::LLM_OPENAI_COMPATIBLE ||
+      llm_type == RedmineAiHelper::LlmProvider::LLM_AZURE_OPENAI
   end
 
   # returns true if access_key is required.

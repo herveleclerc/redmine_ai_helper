@@ -29,6 +29,7 @@ module RedmineAiHelper
 
       # @return [Boolean] Whether Langfuse is enabled or not.
       def enabled?
+        return false if ENV["RAILS_ENV"] == "test"
         @enabled
       end
 

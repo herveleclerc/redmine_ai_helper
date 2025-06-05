@@ -51,7 +51,7 @@ module RedmineAiHelper
         end
 
         newmessages = messages + chat_room.messages
-        newmessages << { role: "user", content: "All agents have completed their tasks. Please create the final response for the user." }
+        newmessages << { role: "user", content: I18n.t("ai_helper.prompts.leader_agent.generate_final_response") }
         langfuse.create_span(name: "final_response", input: newmessages.last[:content])
         ai_helper_logger.debug "newmessages: #{newmessages}"
         answer = chat(newmessages, option, callback)
@@ -142,6 +142,7 @@ module RedmineAiHelper
           agent_list: agent_list_string,
           format_instructions: parser.get_format_instructions,
           json_examples: json_examples,
+          lang: I18n.locale.to_s,
         )
 
         ai_helper_logger.debug "prompt_text: #{prompt_text}"

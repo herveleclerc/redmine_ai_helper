@@ -7,7 +7,7 @@ class AiHelperSetting < ApplicationRecord
   validates :vector_search_uri, :presence => true, if: :vector_search_enabled?
   validates :vector_search_uri, :format => { with: URI::regexp(%w[http https]), message: l("ai_helper.model_profiles.messages.must_be_valid_url") }, if: :vector_search_enabled?
 
-  safe_attributes "model_profile_id", "additional_instructions", "version", "vector_search_enabled", "vector_search_uri", "vector_search_api_key", "embedding_model", "dimension", "vector_search_index_name", "vector_search_index_type"
+  safe_attributes "model_profile_id", "additional_instructions", "version", "vector_search_enabled", "vector_search_uri", "vector_search_api_key", "embedding_model", "dimension", "vector_search_index_name", "vector_search_index_type", "embedding_url"
 
   class << self
     # This method is used to find or create an AiHelperSetting record.
@@ -24,5 +24,16 @@ class AiHelperSetting < ApplicationRecord
     def vector_search_enabled?
       setting.vector_search_enabled
     end
+  end
+
+  # returns true if embedding_url is required.
+  def embedding_url_enabled?
+    model_profile&.llm_type == RedmineAiHelper::LlmProvider::LLM_AZURE_OPENAI
+  end
+
+  def max_tokens
+    return nil unless model_profile&.max_tokens
+    return nil if model_profile.max_tokens <= 0
+    model_profile.max_tokens
   end
 end
