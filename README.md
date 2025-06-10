@@ -13,6 +13,7 @@
   - [Chat Interface](#chat-interface)
   - [Issue Summarization](#issue-summarization)
   - [Create a comment draft with AI Helper](#create-a-comment-draft-with-ai-helper)
+  - [Generate subtasks from issues](#generate-subtasks-from-issues)
 - [📦 Installation](#-installation)
 - [⚙️ Basic Configuration](#️-basic-configuration)
   - [Plugin Settings](#plugin-settings)
@@ -43,6 +44,7 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
   - Issue search
   - Issue and Wiki content summarization
   - Repository source code explanation
+  - Generate subtasks from issues
   - Other project and Redmine-related inquiries
 - Supports multiple AI models and services
 - MCP server integration
@@ -65,6 +67,12 @@ Issue summarization allows you to generate concise summaries of issues pages.
 You can create a comment draft for an issue using the AI Helper Plugin. This feature allows you to generate a comment based on the issue's content, which you can then edit and post.
 
 ![Image](https://github.com/user-attachments/assets/89f58bb4-bbc9-4407-9c55-309fac6893c2)
+
+## Generate subtasks from issues
+
+You can generate subtasks from issues using the AI Helper Plugin. This feature allows you to create detailed subtasks based on the content of an issue, helping you break down complex tasks into manageable parts.
+
+![Image](https://github.com/user-attachments/assets/c91a8d96-b608-43f2-9461-a0bdf8b35936)
 
 # 📦 Installation
 
