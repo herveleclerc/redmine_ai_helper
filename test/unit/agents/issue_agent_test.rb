@@ -112,8 +112,8 @@ class RedmineAiHelper::Agents::IssueAgentTest < ActiveSupport::TestCase
       setup do
         Langchain::OutputParsers::OutputFixingParser.stubs(:from_llm).returns(DummyFixParser.new)
 
-        # chatメソッドをモック
         @agent.stubs(:chat).returns("This is a generated reply.")
+        User.current = User.find(1)
       end
       should "generate sub issues for visible issue" do
         issue = Issue.find(1)
