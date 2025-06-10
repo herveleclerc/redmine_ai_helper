@@ -478,6 +478,78 @@ class AiHelper {
     // Set the reply content to the input area
     replyInputArea.value = replyContent;
   }
+
+  edit_sub_issue_subject = function(i) {
+    const subjectSpan = document.getElementById(`ai_helper_sub_issue_subject_${i}`);
+    const subjectEditSpan = document.getElementById(`ai_helper_sub_issue_subject_edit_${i}`);
+
+    subjectSpan.style.display = 'none';
+    subjectEditSpan.style.display = 'inline';
+  }
+
+  apply_sub_issue_subject = function(i) {
+    const subjectSpan = document.getElementById(`ai_helper_sub_issue_subject_${i}`);
+    const subjectEditSpan = document.getElementById(`ai_helper_sub_issue_subject_edit_${i}`);
+    const subjectInput = document.getElementById(`sub_issues_subject_field_${i}`);
+
+    const newSubject = subjectInput.value.trim();
+    // If newSubject is empty or contains only whitespace, do nothing and return
+    if (!newSubject) {
+      return;
+    }
+    const subjectChildSpan = subjectSpan.querySelector('span');
+    if (subjectChildSpan) {
+      subjectChildSpan.textContent = newSubject;
+    }
+    subjectSpan.style.display = 'inline';
+    subjectEditSpan.style.display = 'none';
+  }
+
+  cancel_sub_issue_subject = function(i) {
+    const subjectSpan = document.getElementById(`ai_helper_sub_issue_subject_${i}`);
+    const subjectEditSpan = document.getElementById(`ai_helper_sub_issue_subject_edit_${i}`);
+
+    const subjectInput = document.getElementById(`sub_issues_subject_field_${i}`);
+    subjectInput.value = subjectSpan.querySelector('span').textContent.trim();
+
+    subjectSpan.style.display = 'inline';
+    subjectEditSpan.style.display = 'none';
+  }
+
+  edit_sub_issue_description = function(i) {
+    const descriptionSpan = document.getElementById(`ai_helper_sub_issue_description_${i}`);
+    const descriptionEditSpan = document.getElementById(`ai_helper_sub_issue_description_edit_${i}`);
+
+    descriptionSpan.style.display = 'none';
+    descriptionEditSpan.style.display = 'inline';
+  }
+
+  apply_sub_issue_description = function(i) {
+    const descriptionSpan = document.getElementById(`ai_helper_sub_issue_description_${i}`);
+    const descriptionEditSpan = document.getElementById(`ai_helper_sub_issue_description_edit_${i}`);
+    const descriptionInput = document.getElementById(`sub_issues_description_field_${i}`);
+
+    const newDescription = descriptionInput.value.trim();
+    if (newDescription) {
+      const descriptionChildSpan = descriptionSpan.querySelector('span');
+      if (descriptionChildSpan) {
+        descriptionChildSpan.textContent = newDescription;
+      }
+    }
+    descriptionSpan.style.display = 'inline';
+    descriptionEditSpan.style.display = 'none';
+  }
+
+  cancel_sub_issue_description = function(i) {
+    const descriptionSpan = document.getElementById(`ai_helper_sub_issue_description_${i}`);
+    const descriptionEditSpan = document.getElementById(`ai_helper_sub_issue_description_edit_${i}`);
+
+    const descriptionInput = document.getElementById(`sub_issues_description_field_${i}`);
+    descriptionInput.value = descriptionSpan.querySelector('span').textContent.trim();
+
+    descriptionSpan.style.display = 'inline';
+    descriptionEditSpan.style.display = 'none';
+  }
 };
 
 var ai_helper = new AiHelper();

@@ -7,8 +7,9 @@ class AiHelperController < ApplicationController
   include ActionController::Live
   include RedmineAiHelper::Logger
   include AiHelperHelper
-  before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_reply]
-  before_action :find_project, except: [:issue_summary, :generate_issue_reply]
+
+  before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
+  before_action :find_project, except: [:issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
   before_action :find_user, :authorize, :create_session, :find_conversation
 
   # Display the chat form in the sidebar
@@ -171,6 +172,59 @@ class AiHelperController < ApplicationController
     reply = llm.generate_issue_reply(issue: @issue, instructions: instructions)
 
     render partial: "ai_helper/issue_reply", locals: { issue: @issue, reply: reply }
+  end
+
+  # Generate sub-issues drafts for the given issue
+  def generate_sub_issues
+    llm = RedmineAiHelper::Llm.new
+    unless request.content_type == "application/json"
+      render json: { error: "Unsupported Media Type" }, status: :unsupported_media_type and return
+    end
+
+    begin
+      data = JSON.parse(request.body.read)
+    rescue JSON::ParserError
+      render json: { error: "Invalid JSON" }, status: :bad_request and return
+    end
+
+    instructions = data["instructions"]
+    subissues = llm.generate_sub_issues(issue: @issue, instructions: instructions)
+
+    trackers = @issue.allowed_target_trackers
+    trackers = trackers.reject do |tracker|
+      @issue.tracker_id != tracker.id && tracker.disabled_core_fields.include?("parent_issue_id")
+    end
+    trackers_options_for_select = trackers.collect { |t| [t.name, t.id] }
+
+    versions = @issue.assignable_versions || []
+    versions_options_for_select = versions.collect { |v| [v.name, v.id] }
+
+    render partial: "ai_helper/subissue_gen/issues", locals: { issue: @issue, subissues: subissues, trackers_options_for_select: trackers_options_for_select, versions_options_for_select: versions_options_for_select }
+  end
+
+  # Add sub-issues to the current issue
+  def add_sub_issues
+    issues_param = params[:sub_issues]
+    issues_param.each do |issue_param_array|
+      issue_param = issue_param_array[1].permit(:subject, :description, :tracker_id, :check, :fixed_version_id)
+      # Skip if the issue_param does not have the :check key or if it is false
+      next unless issue_param[:check]
+      issue = Issue.new
+      issue.author = User.current
+      issue.project = @issue.project
+      issue.parent_id = @issue.id
+      issue.subject = issue_param[:subject]
+      issue.description = issue_param[:description]
+      issue.tracker_id = issue_param[:tracker_id]
+      issue.fixed_version_id = issue_param[:fixed_version_id] unless issue_param[:fixed_version_id].blank?
+      # Save the issue and handle errors
+      unless issue.save
+        # If saving fails, collect error messages and display them using i18n
+        flash[:error] = issue.errors.full_messages.join("\n")
+        redirect_to issue_path(@issue) and return
+      end
+    end
+    redirect_to issue_path(@issue), notice: l(:notice_sub_issues_added)
   end
 
   private

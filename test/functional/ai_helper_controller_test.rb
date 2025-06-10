@@ -1,7 +1,7 @@
 require_relative "../test_helper"
 
 class AiHelperControllerTest < ActionController::TestCase
-  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences, :issue_statuses
 
   context "AiHelperController" do
     setup do
@@ -138,6 +138,52 @@ class AiHelperControllerTest < ActionController::TestCase
         post :generate_issue_reply, params: json
 
         assert_response :success
+      end
+
+      should "return Unsupported Media Type for non-JSON request" do
+        post :generate_issue_reply, params: { id: @issue.id, instructions: "test instructions" }
+        assert_response :unsupported_media_type
+      end
+    end
+
+    context "#generate_sub_issues" do
+      setup do
+        @issue = Issue.find_by(project_id: @project.id)
+        @llm = RedmineAiHelper::Llm.new
+        issue = Issue.new(subject: "Test Issue", project: @project, author: @user)
+        @llm.stubs(:generate_sub_issues).returns([issue])
+        RedmineAiHelper::Llm.stubs(:new).returns(@llm)
+      end
+
+      should "generate sub-issues drafts" do
+        json = { id: @issue.id, instructions: "test instructions" }
+        @request.headers["Content-Type"] = "application/json"
+        post :generate_sub_issues, params: json
+        assert_response :success
+        assert_template partial: "ai_helper/subissue_gen/_issues"
+      end
+    end
+
+    context "#add_sub_issues" do
+      setup do
+        @issue = Issue.new(subject: "Parent Issue", project: @project, author: @user, tracker_id: 1, status_id: 1)
+        @issue.save!
+        @sub_issue_params = {
+          "1" => { subject: "Sub Issue 1", description: "Description 1", tracker_id: 1, check: true, fixed_version_id: nil },
+          "2" => { subject: "Sub Issue 2", description: "Description 2", tracker_id: 1, fixed_version_id: nil },
+        }
+      end
+
+      should "add sub-issues to the current issue" do
+        post :add_sub_issues, params: { id: @issue.id, sub_issues: @sub_issue_params, tracker_id: 1 }
+        assert_response :redirect
+        assert_equal 1, Issue.where(parent_id: @issue.id).count
+      end
+
+      should "not add unchecked sub-issues" do
+        post :add_sub_issues, params: { id: @issue.id, sub_issues: @sub_issue_params }
+        assert_response :redirect
+        assert_equal 1, Issue.where(parent_id: @issue.id).count
       end
     end
   end
