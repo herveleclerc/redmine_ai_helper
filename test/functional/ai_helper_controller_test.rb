@@ -156,7 +156,9 @@ class AiHelperControllerTest < ActionController::TestCase
       end
 
       should "generate sub-issues drafts" do
-        get :generate_sub_issues, params: { id: @issue.id }
+        json = { id: @issue.id, instructions: "test instructions" }
+        @request.headers["Content-Type"] = "application/json"
+        post :generate_sub_issues, params: json
         assert_response :success
         assert_template partial: "ai_helper/subissue_gen/_issues"
       end
