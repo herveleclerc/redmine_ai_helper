@@ -8,6 +8,7 @@ module RedmineAiHelper
       include RedmineAiHelper::Util::IssueJson
       include Rails.application.routes.url_helpers
 
+      # Backstory for the IssueAgent
       def backstory
         search_answer_instruction = I18n.t("ai_helper.prompts.issue_agent.search_answer_instruction")
         search_answer_instruction = "" if AiHelperSetting.vector_search_enabled?
@@ -15,6 +16,7 @@ module RedmineAiHelper
         prompt.format(issue_properties: issue_properties, search_answer_instruction: search_answer_instruction)
       end
 
+      # Returns the list of available tool providers for the IssueAgent.
       def available_tool_providers
         base_tools = [
           RedmineAiHelper::Tools::IssueTools,
@@ -29,6 +31,10 @@ module RedmineAiHelper
         base_tools
       end
 
+      # Generate a summary of the issue.
+      # @param issue [Issue] The issue for which the summary is to be generated.
+      # @return [String] The generated summary of the issue.
+      # @raise [PermissionDenied] if the issue is not visible to the user.
       def issue_summary(issue:)
         return "Permission denied" unless issue.visible?
 
@@ -40,8 +46,14 @@ module RedmineAiHelper
         chat(messages)
       end
 
+      # Generate sub-issues based on the provided issue and instructions.
+      # @param issue [Issue] The issue to base the sub-issues on.
+      # @param instructions [String] Instructions for generating the sub-issues.
+      # @return [String] The generated sub-issues.
+      # @raise [PermissionDenied] if the issue is not visible to the user.
       def generate_issue_reply(issue:, instructions:)
         return "Permission denied" unless issue.visible?
+        return "Permission denied" unless issue.notes_addable?(User.current)
 
         prompt = load_prompt("issue_agent/generate_reply")
         issue_json = generate_issue_data(issue)
@@ -49,6 +61,91 @@ module RedmineAiHelper
         message = { role: "user", content: prompt_text }
         messages = [message]
         chat(messages)
+      end
+
+      # Generate a draft for sub-issues based on the provided issue and instructions.
+      # @param issue [Issue] The issue to base the sub-issues on.
+      # @param instructions [String] Instructions for generating the sub-issues draft.
+      # @return [Issue[]] An array of generated sub-issues. Not yet saved.
+      # @raise [PermissionDenied] if the issue is not visible to the user.
+      def generate_sub_issues_draft(issue:, instructions: nil)
+        return "Permission denied" unless issue.visible?
+        return "Permission denied" unless User.current.allowed_to?(:add_issues, issue.project)
+
+        prompt = load_prompt("issue_agent/sub_issues_draft")
+        json_schema = {
+          type: "object",
+          properties: {
+            sub_issues: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  subject: {
+                    type: "string",
+                    description: "The subject of the sub-issue",
+                  },
+                  description: {
+                    type: "string",
+                    description: "The description of the sub-issue",
+                  },
+                  project_id: {
+                    type: "integer",
+                    description: "The ID of the project to which the sub-issue belongs",
+                  },
+                  tracker_id: {
+                    type: "integer",
+                    description: "The ID of the tracker for the sub-issue",
+                  },
+                  priority_id: {
+                    type: "integer",
+                    description: "The ID of the priority for the sub-issue",
+                  },
+                  fixed_version_id: {
+                    type: "integer",
+                    description: "The ID of the fixed version for the sub-issue",
+                  },
+                  due_date: {
+                    type: "string",
+                    format: "date",
+                    description: "The due date for the sub-issue. YYYY-MM-DD format",
+                  },
+                },
+                required: ["subject", "description", "project_id", "tracker_id"],
+              },
+            },
+          },
+        }
+        parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
+        issue_json = generate_issue_data(issue)
+        prompt_text = prompt.format(
+          parent_issue: JSON.pretty_generate(issue_json),
+          instructions: instructions,
+          format_instructions: parser.get_format_instructions,
+        )
+        ai_helper_logger.debug "prompt_text: #{prompt_text}"
+
+        message = { role: "user", content: prompt_text }
+        messages = [message]
+        answer = chat(messages, output_parser: parser)
+        fix_parser = Langchain::OutputParsers::OutputFixingParser.from_llm(
+          llm: client,
+          parser: parser,
+        )
+        fixed_json = fix_parser.parse(answer)
+
+        # Convert the answer to an array of Issue objects
+        sub_issues = []
+        if fixed_json && fixed_json["sub_issues"]
+          fixed_json["sub_issues"].each do |sub_issue_data|
+            sub_issue = Issue.new(sub_issue_data)
+            sub_issue.author = User.current
+            sub_issues << sub_issue
+          end
+        end
+
+        ai_helper_logger.debug "Generated sub-issues: #{sub_issues.inspect}"
+        sub_issues
       end
 
       private

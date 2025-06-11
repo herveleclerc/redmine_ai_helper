@@ -39,7 +39,7 @@ module RedmineAiHelper
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
 
-    # IssueAgentを使用して、issueの要約を取得する
+    # Get the summary of the issue using IssueAgent
     # @param issue [Issue] The issue object
     # return [String] The summary of the issue
     def issue_summary(issue:)
@@ -59,6 +59,10 @@ module RedmineAiHelper
       answer
     end
 
+    # Generate a reply to the issue using IssueAgent
+    # @param issue [Issue] The issue object
+    # @param instructions [String] Instructions for generating the reply
+    # return [String] The generated reply
     def generate_issue_reply(issue:, instructions:)
       begin
         prompt = "Please generate a reply to the issue #{issue.id} with the instructions.\n\n#{instructions}"
@@ -74,6 +78,27 @@ module RedmineAiHelper
       end
       ai_helper_logger.info "answer: #{answer}"
       answer
+    end
+
+    # Generate sub issues using IssueAgent
+    # @param issue [Issue] The issue object
+    # @param instructions [String] Instructions for generating sub issues
+    # return [Array<Issue>] The generated sub issues
+    def generate_sub_issues(issue:, instructions: nil)
+      begin
+        prompt = "Please generate sub issues for the issue #{issue.id} with the instructions.\n\n#{instructions}"
+        langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: prompt)
+        agent = RedmineAiHelper::Agents::IssueAgent.new(project: issue.project, langfuse: langfuse)
+        langfuse.create_span(name: "user_request", input: prompt)
+        sub_issues = agent.generate_sub_issues_draft(issue: issue, instructions: instructions)
+        langfuse.finish_current_span(output: sub_issues.inspect)
+        langfuse.flush
+      rescue => e
+        ai_helper_logger.error "error: #{e.full_message}"
+        throw e
+      end
+      ai_helper_logger.info "sub issues: #{sub_issues.inspect}"
+      sub_issues
     end
   end
 end

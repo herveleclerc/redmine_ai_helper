@@ -1,0 +1,76 @@
+fa:
+  project_module_ai_helper: "دستیار هوش مصنوعی"
+  label_ai_helper: "دستیار هوش مصنوعی"
+  label_chat_placeholder: "پیام خود را اینجا بنویسید..."
+  label_ai_helper_input_newline: "برای خط جدید Shift + Enter را فشار دهید."
+  label_ai_helper_start_new_chat: "شروع گفت‌وگوی جدید"
+  ai_helper_summary: "خلاصه‌سازی با دستیار هوش مصنوعی"
+  ai_helper_text_summary_generated_time: "تولید شده در %{time}"
+  ai_helper_loading: "در حال بارگذاری..."
+  ai_helper_error_occurred: "خطایی رخ داده است"
+  permission_view_ai_helper: "مشاهده دستیار هوش مصنوعی"
+  ai_helper:
+    generate_issue_reply:
+      title: "ایجاد پیش‌نویس یادداشت با دستیار هوش مصنوعی"
+      instructions: "لطفاً نکات کلیدی یا دستورالعمل‌های پاسخ را وارد کنید."
+      generated_reply: "یادداشت‌های تولید شده"
+      apply: "اعمال"
+      copy_to_clipboard: "کپی در کلیپ‌بورد"
+    model_profiles:
+      create_profile_title: "ساخت پروفایل مدل جدید"
+      edit_profile_title: "ویرایش پروفایل مدل"
+      messages:
+        confirm_delete: "آیا از حذف این پروفایل مدل مطمئن هستید؟"
+        must_be_valid_url: "باید یک URL معتبر باشد"
+    prompts:
+      current_page_info:
+        project_page: "این صفحه اطلاعات پروژه «%{project_name}» است."
+        issue_detail_page: "این صفحه جزئیات برای درخواست شماره %{issue_id} است.\nاگر کاربر بدون اشاره به شماره یا نام، از واژه «درخواست» استفاده کند، منظور این درخواست است."
+        issue_list_page: "این صفحه فهرست درخواست‌ها است."
+        issue_with_action_page: "این صفحه %{action_name} برای درخواست است."
+        wiki_page: "این صفحه ویکی با عنوان «%{page_title}» است.\nاگر کاربر بدون عنوان خاصی از «صفحه» یا «صفحه ویکی» نام ببرد، منظور همین صفحه است."
+        repository_page: "این صفحه اطلاعات مخزن «%{repo_name}» است. شناسه مخزن: %{repo_id}."
+        repository_file_page: "این صفحه اطلاعات فایل در مخزن است. مسیر فایل: %{path}، نسخه: %{rev}، مخزن: «%{repo_name}»، شناسه مخزن: %{repo_id}."
+        repository_diff:
+          page: "این صفحه تفاوت (diff) برای مخزن «%{repo_name}» است. شناسه مخزن: %{repo_id}."
+          rev: "نسخه: %{rev}."
+          rev_to: "از نسخه %{rev} تا %{rev_to}."
+          path: "مسیر فایل: %{path}."
+        repository_revision_page: "این صفحه اطلاعات نسخه برای مخزن «%{repo_name}» است. نسخه: %{rev}، شناسه مخزن: %{repo_id}."
+        repository_other_page: "این صفحه اطلاعات مخزن است."
+        boards:
+          show: "این صفحه انجمن «%{board_name}» است. شناسه انجمن: %{board_id}."
+          index: "این صفحه فهرست انجمن‌ها است."
+          other: "این صفحه انجمن است."
+        messages:
+          show: "این صفحه پیام با عنوان «%{subject}» است. شناسه پیام: %{message_id}."
+          other: "این صفحه پیام است."
+        versions:
+          show: "این صفحه نسخه «%{version_name}» است. شناسه نسخه: %{version_id}."
+          other: "این صفحه نسخه است."
+        other_page: "این صفحه %{action_name} برای %{controller_name} است."
+      issue_agent:
+        search_answer_instruction: "برای کارهایی مانند یافتن درخواست‌هایی با شرایط خاص، مانند «یافتن درخواست‌هایی با این شرایط» یا «نشان بده درخواست‌هایی با این معیار»، لطفاً URL جستجوی درخواست را بازگردانید."
+      leader_agent:
+        generate_final_response: "همه مأمورین وظایف خود را انجام داده‌اند. لطفاً پاسخ نهایی را برای کاربر ایجاد کنید."
+  activerecord:
+    models:
+      ai_helper_model_profile: "پروفایل مدل"
+      ai_helper_setting: "تنظیمات دستیار هوش مصنوعی"
+    attributes:
+      ai_helper_model_profile:
+        llm_type: "نوع"
+        llm_model: "نام مدل"
+        access_key: "کلید دسترسی"
+        temperature: "دما (Temperature)"
+        organization_id: "شناسه سازمان"
+        base_uri: "آدرس پایه (Base URI)"
+        max_tokens: "حداکثر تعداد توکن‌ها"
+      ai_helper_setting:
+        model_profile_id: "پروفایل مدل"
+        additional_instructions: "دستورالعمل‌های اضافی"
+        vector_search_enabled: "فعالسازی جستجوی برداری"
+        vector_search_uri: "آدرس URI"
+        vector_search_api_key: "کلید API"
+        embedding_model: "مدل embedding"
+        dimension: "بعد (Dimension)"

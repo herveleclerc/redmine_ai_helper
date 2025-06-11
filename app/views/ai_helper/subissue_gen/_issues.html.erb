@@ -1,0 +1,54 @@
+
+<%= form_tag ai_helper_add_sub_issues_path(id: @issue), method: :post do%>
+<table class="ai-helper-sub-issues-table">
+    <thead>
+        <tr>
+            <th></th>
+            <th><%= l(:field_tracker) %></th>
+            <th><%= l(:field_title) %></th>
+            <th><%= l(:field_fixed_version) %></th>
+            <th><%= l(:field_description) %></th>
+        </tr>
+    </thead>
+    <tbody>
+        <% subissues.each_with_index do |sub_issue, i| %>
+        <tr>
+            <td><%= check_box_tag "sub_issues[#{i}]check", sub_issue.id, true, id: "sub_issue_#{i}" %></td>
+            <td>
+                <%= select_tag "sub_issues[#{i}]tracker_id", options_for_select(trackers_options_for_select, sub_issue.tracker_id), :title => @issue.tracker.description, id: "sub_issues_tracker_id_#{i}" %>
+
+            </td>
+            <td>
+                <span id="ai_helper_sub_issue_subject_<%= i %>">
+                    <span><%= sub_issue.subject %></span>
+                    <%= link_to sprite_icon('edit'), "#", onclick: "ai_helper.edit_sub_issue_subject(#{i}); return false" %>
+                </span>
+                <span id="ai_helper_sub_issue_subject_edit_<%= i %>" style="display:none;">
+                    <%= text_field_tag "sub_issues[#{i}]subject", sub_issue.subject, size: 40, id: "sub_issues_subject_field_#{i}", onkeydown: "return event.key !== 'Enter'", style: "width: 90%;" %>
+                    <%= link_to sprite_icon('save'), "#", onclick: "ai_helper.apply_sub_issue_subject(#{i}); return false" %>
+                    <%= link_to sprite_icon('cancel'), "#", onclick: "ai_helper.cancel_sub_issue_subject(#{i}); return false" %>
+                </span>
+            </td>
+            <td>
+                <%= select_tag "sub_issues[#{i}]fixed_version_id", options_for_select(versions_options_for_select, issue.fixed_version_id), include_blank: "",id: "sub_issues_fixed_version_id_#{i}" %>
+
+            </td>
+            <td>
+                <span id="ai_helper_sub_issue_description_<%= i %>">
+                    <span><%= sub_issue.description %></span>
+                    <%= link_to sprite_icon('edit'), "#", onclick: "ai_helper.edit_sub_issue_description(#{i}); return false" %>
+                </span>
+                <span id="ai_helper_sub_issue_description_edit_<%= i %>" style="display:none;">
+                    <%= text_area_tag "sub_issues[#{i}]description", sub_issue.description, cols: 60, rows: 4, id: "sub_issues_description_field_#{i}", onkeydown: "return event.key !== 'Enter'", style: "width: 90%;" %>
+                    <%= link_to sprite_icon('save'), "#", onclick: "ai_helper.apply_sub_issue_description(#{i}); return false" %>
+                    <%= link_to sprite_icon('cancel'), "#", onclick: "ai_helper.cancel_sub_issue_description(#{i}); return false" %>
+                </span>
+            </td>
+        </tr>
+        <% end %>
+    </tbody>
+
+</table>
+
+<%= submit_tag l(:button_add) %>
+<% end %>

@@ -5,6 +5,7 @@ class IssueUpdateToolsTest < ActiveSupport::TestCase
 
   def setup
     @provider = RedmineAiHelper::Tools::IssueUpdateTools.new
+    User.current = User.find(1)
   end
 
   context "IssueUpdateTools" do
