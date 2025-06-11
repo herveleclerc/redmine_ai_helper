@@ -24,7 +24,7 @@
                     <%= link_to sprite_icon('edit'), "#", onclick: "ai_helper.edit_sub_issue_subject(#{i}); return false" %>
                 </span>
                 <span id="ai_helper_sub_issue_subject_edit_<%= i %>" style="display:none;">
-                    <%= text_field_tag "sub_issues[#{i}]subject", sub_issue.subject, size: 40, id: "sub_issues_subject_field_#{i}", onkeydown: "return event.key !== 'Enter'" %>
+                    <%= text_field_tag "sub_issues[#{i}]subject", sub_issue.subject, size: 40, id: "sub_issues_subject_field_#{i}", onkeydown: "return event.key !== 'Enter'", style: "width: 90%;" %>
                     <%= link_to sprite_icon('save'), "#", onclick: "ai_helper.apply_sub_issue_subject(#{i}); return false" %>
                     <%= link_to sprite_icon('cancel'), "#", onclick: "ai_helper.cancel_sub_issue_subject(#{i}); return false" %>
                 </span>
@@ -39,7 +39,7 @@
                     <%= link_to sprite_icon('edit'), "#", onclick: "ai_helper.edit_sub_issue_description(#{i}); return false" %>
                 </span>
                 <span id="ai_helper_sub_issue_description_edit_<%= i %>" style="display:none;">
-                    <%= text_area_tag "sub_issues[#{i}]description", sub_issue.description, cols: 60, rows: 4, id: "sub_issues_description_field_#{i}", onkeydown: "return event.key !== 'Enter'" %>
+                    <%= text_area_tag "sub_issues[#{i}]description", sub_issue.description, cols: 60, rows: 4, id: "sub_issues_description_field_#{i}", onkeydown: "return event.key !== 'Enter'", style: "width: 90%;" %>
                     <%= link_to sprite_icon('save'), "#", onclick: "ai_helper.apply_sub_issue_description(#{i}); return false" %>
                     <%= link_to sprite_icon('cancel'), "#", onclick: "ai_helper.cancel_sub_issue_description(#{i}); return false" %>
                 </span>
