@@ -56,8 +56,14 @@ module RedmineAiHelper
         return "Permission denied" unless issue.notes_addable?(User.current)
 
         prompt = load_prompt("issue_agent/generate_reply")
+        project_setting = AiHelperProjectSetting.settings(issue.project)
         issue_json = generate_issue_data(issue)
-        prompt_text = prompt.format(issue: JSON.pretty_generate(issue_json), instructions: instructions, format: Setting.text_formatting)
+        prompt_text = prompt.format(
+          issue: JSON.pretty_generate(issue_json),
+          instructions: instructions,
+          issue_draft_instructions: project_setting.issue_draft_instructions,
+          format: Setting.text_formatting,
+        )
         message = { role: "user", content: prompt_text }
         messages = [message]
         chat(messages)
@@ -118,9 +124,12 @@ module RedmineAiHelper
         }
         parser = Langchain::OutputParsers::StructuredOutputParser.from_json_schema(json_schema)
         issue_json = generate_issue_data(issue)
+        project_setting = AiHelperProjectSetting.settings(issue.project)
+
         prompt_text = prompt.format(
           parent_issue: JSON.pretty_generate(issue_json),
           instructions: instructions,
+          subtask_instructions: project_setting.subtask_instructions,
           format_instructions: parser.get_format_instructions,
         )
         ai_helper_logger.debug "prompt_text: #{prompt_text}"

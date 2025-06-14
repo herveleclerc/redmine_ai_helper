@@ -24,4 +24,7 @@ RedmineApp::Application.routes.draw do
   post "ai_helper_model_profiles", to: "ai_helper_model_profiles#create", as: "ai_helper_model_profiles_create"
   post "ai_helper_model_profiles/:id/edit", to: "ai_helper_model_profiles#update", as: "ai_helper_model_profiles_update"
   delete "ai_helper_model_profiles/:id", to: "ai_helper_model_profiles#destroy", as: "ai_helper_model_profiles_destroy"
+
+  # get "ai_helper_project_settings/:id", to: "ai_helper_project_settings#show", as: "ai_helper_project_settings"
+  patch "projects/:id/ai_helper_project_settings", to: "ai_helper_project_settings#update", as: "ai_helper_project_settings_update"
 end
