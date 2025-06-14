@@ -78,3 +78,6 @@ en:
         vector_search_api_key: "API key"
         embedding_model: "Embedding model"
         dimension: "Dimension"
+      ai_helper_project_setting:
+        issue_draft_instructions: "Instructions for issue comment generation"
+        subtask_instructions: "Instructions for subtask generation"
