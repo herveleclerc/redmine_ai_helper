@@ -3,6 +3,7 @@ _type: prompt
 input_variables:
   - parent_issue
   - instructions
+  - subtask_instructions
   - format_instructions
 template: |-
     Based on the information of the parent issue, please create a draft proposal for sub-issues.
@@ -15,6 +16,8 @@ template: |-
     If fixed_version_id, priority_id, or due_date are set in the parent issue, use the same values for the sub-issues. If they are not set in the parent issue, do not set them in the sub-issues.
 
     {instructions}
+
+    {subtask_instructions}
 
     ----
 

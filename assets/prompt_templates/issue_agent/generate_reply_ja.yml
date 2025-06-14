@@ -3,6 +3,7 @@ _type: prompt
 input_variables:
   - issue
   - instructions
+  - issue_draft_instructions
   - format
 template: |-
   以下のチケットに対する回答案を作成してください。
@@ -17,6 +18,8 @@ template: |-
   回答案の作成にあたっての指示：
 
   {instructions}
+
+  {issue_draft_instructions}
 
   ----
 

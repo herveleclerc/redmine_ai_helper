@@ -1,6 +1,7 @@
 require "langfuse"
 $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/lib"
 require "redmine_ai_helper/util/config_file"
+require "redmine_ai_helper/projects_helper_patch"
 require_dependency "redmine_ai_helper/view_hook"
 Dir[File.join(File.dirname(__FILE__), "lib/redmine_ai_helper/agents", "*_agent.rb")].each do |file|
   require file
@@ -22,6 +23,7 @@ Redmine::Plugin.register :redmine_ai_helper do
                  :history, :issue_summary, :conversation, :generate_issue_reply,
                  :generate_sub_issues, :add_sub_issues,
                ] }
+    permission :manage_ai_helper_settings, { ai_helper_project_settings: [:show, :update] }
   end
 
   menu :admin_menu, "icon ah_helper", {
