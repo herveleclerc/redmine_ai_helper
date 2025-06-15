@@ -15,4 +15,8 @@ class AiHelperConversation < ApplicationRecord
       }
     end
   end
+
+  def self.cleanup_old_conversations
+    where("created_at < ?", 6.months.ago).destroy_all
+  end
 end

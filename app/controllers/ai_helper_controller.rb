@@ -37,6 +37,7 @@ class AiHelperController < ApplicationController
     @message.content = params[:ai_helper_message][:content]
     @message.save!
     @conversation = AiHelperConversation.find(@conversation.id)
+    AiHelperConversation.cleanup_old_conversations
     render partial: "ai_helper/chat"
   end
 
@@ -148,6 +149,7 @@ class AiHelperController < ApplicationController
 
     @conversation.messages << llm.chat(@conversation, proc, option)
     @conversation.save!
+    AiHelperConversation.cleanup_old_conversations
 
     write_chunk({
       id: response_id,
