@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(true)",
+      "WebFetch(domain:www.redmine.org)"
+    ],
+    "deny": []
+  }
+}

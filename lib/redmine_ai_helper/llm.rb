@@ -100,5 +100,25 @@ module RedmineAiHelper
       ai_helper_logger.info "sub issues: #{sub_issues.inspect}"
       sub_issues
     end
+
+    # Get the summary of the wiki page using WikiAgent
+    # @param wiki_page [WikiPage] The wiki page object
+    # return [String] The summary of the wiki page
+    def wiki_summary(wiki_page:)
+      begin
+        prompt = "Please summarize the wiki page '#{wiki_page.title}'."
+        langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: prompt)
+        agent = RedmineAiHelper::Agents::WikiAgent.new(project: wiki_page.wiki.project, langfuse: langfuse)
+        langfuse.create_span(name: "user_request", input: prompt)
+        answer = agent.wiki_summary(wiki_page: wiki_page)
+        langfuse.finish_current_span(output: answer)
+        langfuse.flush
+      rescue => e
+        ai_helper_logger.error "error: #{e.full_message}"
+        answer = e.message
+      end
+      ai_helper_logger.info "answer: #{answer}"
+      answer
+    end
   end
 end

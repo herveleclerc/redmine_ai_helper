@@ -18,6 +18,22 @@ module RedmineAiHelper
         end
         base_tools
       end
+
+      # Generate a summary of the given wiki page
+      # @param wiki_page [WikiPage] The wiki page to summarize
+      # @return [String] The summary content
+      def wiki_summary(wiki_page:)
+        prompt = load_prompt("wiki_agent/summary")
+        prompt_text = prompt.format(
+          title: wiki_page.title,
+          content: wiki_page.content.text,
+          project_name: wiki_page.wiki.project.name
+        )
+        
+        message = { role: "user", content: prompt_text }
+        messages = [message]
+        chat(messages)
+      end
     end
   end
 end
