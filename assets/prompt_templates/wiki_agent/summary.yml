@@ -1,0 +1,22 @@
+---
+_type: prompt
+input_variables:
+  - title
+  - content
+template: |-
+  Please summarize the content of the following Wiki page.
+  This summary will be displayed within the Wiki page screen in Redmine.
+  Therefore, information such as the title of this Wiki or the project name is not necessary.
+
+  - Summarize only the content of the Wiki page.
+  - Write an overall summary in one line, then use bullet points to make it easy to understand.
+  - Include only the summary text in your answer. Do not include explanations such as "Here is the summary".
+  - Do not use expressions like "For more details, please see...".
+
+  ----
+
+  Wiki page title: {title}
+
+  Content:
+
+  {content}

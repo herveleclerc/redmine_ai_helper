@@ -18,4 +18,20 @@ class AiHelperSummaryCache < ApplicationRecord
     end
     cache
   end
+
+  def self.wiki_cache(wiki_page_id:)
+    AiHelperSummaryCache.find_by(object_class: "WikiPage", object_id: wiki_page_id)
+  end
+
+  def self.update_wiki_cache(wiki_page_id:, content:)
+    cache = wiki_cache(wiki_page_id: wiki_page_id)
+    if cache
+      cache.update(content: content)
+      cache.save!
+    else
+      cache = AiHelperSummaryCache.new(object_class: "WikiPage", object_id: wiki_page_id, content: content)
+      cache.save!
+    end
+    cache
+  end
 end

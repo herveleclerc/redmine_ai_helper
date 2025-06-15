@@ -47,7 +47,8 @@ module RedmineAiHelper
     # Returns the LLM client.
     def assistant
       return @assistant if @assistant
-      tools = available_tool_providers.map { |tool|
+      tool_providers = available_tool_providers || []
+      tools = tool_providers.map { |tool|
         tool.new
       }
       @assistant = RedmineAiHelper::AssistantProvider.get_assistant(
