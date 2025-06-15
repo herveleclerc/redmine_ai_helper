@@ -7,5 +7,6 @@ module RedmineAiHelper
     render_on :view_issues_show_details_bottom, :partial => "ai_helper/issue_bottom"
     render_on :view_issues_edit_notes_bottom, :partial => "ai_helper/issue_form"
     render_on :view_issues_show_description_bottom, :partial => "ai_helper/subissue_gen/issue_description_bottom"
+    render_on :view_layouts_base_sidebar, :partial => "ai_helper/wiki_summary"
   end
 end
