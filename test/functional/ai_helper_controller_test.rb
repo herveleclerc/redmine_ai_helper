@@ -48,6 +48,12 @@ class AiHelperControllerTest < ActionController::TestCase
         assert_not_nil assigns(:message)
         assert_equal "Hello AI", assigns(:message).content
       end
+
+      should "call cleanup_old_conversations when saving message" do
+        AiHelperConversation.expects(:cleanup_old_conversations).once
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Hello AI" } }
+        assert_response :success
+      end
     end
 
     context "#conversation (delete)" do
@@ -85,6 +91,20 @@ class AiHelperControllerTest < ActionController::TestCase
         assert_response :success
         post :call_llm, params: { id: @project.id, controller_name: "issues", action_name: "show", content_id: 1, additional_info: { key: "value" } }
         assert_response :success
+      end
+
+      should "call cleanup_old_conversations when saving conversation" do
+        # Mock LLM to avoid actual API calls
+        llm_mock = mock("RedmineAiHelper::Llm")
+        message_mock = mock("AiHelperMessage")
+        llm_mock.stubs(:chat).returns(message_mock)
+        RedmineAiHelper::Llm.stubs(:new).returns(llm_mock)
+        
+        # Expect cleanup to be called
+        AiHelperConversation.expects(:cleanup_old_conversations).once
+        
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Hello AI" } }
+        post :call_llm, params: { id: @project.id, controller_name: "issues", action_name: "show", content_id: 1, additional_info: { key: "value" } }
       end
     end
 
