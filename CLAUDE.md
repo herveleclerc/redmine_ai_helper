@@ -12,7 +12,7 @@ This is the Redmine AI Helper Plugin, a Ruby on Rails plugin that adds AI-powere
 The plugin implements a multi-agent architecture where different agents handle specific domains:
 - **BaseAgent** (`lib/redmine_ai_helper/base_agent.rb`) - Base class for all agents
 - **IssueAgent** - Handles issue-related queries and operations
-- **RepositoryAgent** - Manages repository and source code analysis  
+- **RepositoryAgent** - Manages repository and source code analysis
 - **WikiAgent** - Processes wiki content and queries
 - **LeaderAgent** - Coordinates multi-step tasks across agents
 - **BoardAgent**, **ProjectAgent**, **SystemAgent**, **UserAgent**, **VersionAgent** - Handle their respective domains
@@ -89,3 +89,19 @@ To create custom agents:
 - `app/views/ai_helper/` - Chat UI templates
 - `assets/javascripts/ai_helper.js` - Frontend JavaScript
 - `config/routes.rb` - Plugin routes
+
+## Development Guidelines
+
+### Code Style(Ruby)
+- Follow Ruby on Rails conventions
+- Write comments in English
+
+### Code Style(Javascript)
+- Use `let` and `const` instead of `var`
+- Don't use jQuery, use vanilla JavaScript
+- Write comments in English
+
+### test
+- Always add tests for any new features you implement
+- Write tests using shoulda
+- Use mocks only when absolutely necessary, such as when connecting to external servers
