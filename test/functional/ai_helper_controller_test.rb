@@ -1,7 +1,7 @@
 require_relative "../test_helper"
 
 class AiHelperControllerTest < ActionController::TestCase
-  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences, :issue_statuses
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences, :issue_statuses, :wikis, :wiki_pages, :wiki_contents
 
   context "AiHelperController" do
     setup do
@@ -48,6 +48,12 @@ class AiHelperControllerTest < ActionController::TestCase
         assert_not_nil assigns(:message)
         assert_equal "Hello AI", assigns(:message).content
       end
+
+      should "call cleanup_old_conversations when saving message" do
+        AiHelperConversation.expects(:cleanup_old_conversations).once
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Hello AI" } }
+        assert_response :success
+      end
     end
 
     context "#conversation (delete)" do
@@ -85,6 +91,20 @@ class AiHelperControllerTest < ActionController::TestCase
         assert_response :success
         post :call_llm, params: { id: @project.id, controller_name: "issues", action_name: "show", content_id: 1, additional_info: { key: "value" } }
         assert_response :success
+      end
+
+      should "call cleanup_old_conversations when saving conversation" do
+        # Mock LLM to avoid actual API calls
+        llm_mock = mock("RedmineAiHelper::Llm")
+        message_mock = mock("AiHelperMessage")
+        llm_mock.stubs(:chat).returns(message_mock)
+        RedmineAiHelper::Llm.stubs(:new).returns(llm_mock)
+        
+        # Expect cleanup to be called
+        AiHelperConversation.expects(:cleanup_old_conversations).once
+        
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Hello AI" } }
+        post :call_llm, params: { id: @project.id, controller_name: "issues", action_name: "show", content_id: 1, additional_info: { key: "value" } }
       end
     end
 
@@ -184,6 +204,51 @@ class AiHelperControllerTest < ActionController::TestCase
         post :add_sub_issues, params: { id: @issue.id, sub_issues: @sub_issue_params }
         assert_response :redirect
         assert_equal 1, Issue.where(parent_id: @issue.id).count
+      end
+    end
+
+    context "#wiki_summary" do
+      setup do
+        @wiki = Wiki.find(1)
+        @wiki_page = @wiki.pages.first
+        @llm = RedmineAiHelper::Llm.new
+      end
+
+      should "render wiki summary content partial" do
+        RedmineAiHelper::Llm.any_instance.stubs(:wiki_summary).returns("Test wiki summary")
+        
+        get :wiki_summary, params: { id: @wiki_page.id }
+        assert_response :success
+        assert_template partial: "_wiki_summary_content"
+      end
+
+      should "create summary when none exists" do
+        AiHelperSummaryCache.stubs(:wiki_cache).returns(nil)
+        RedmineAiHelper::Llm.any_instance.stubs(:wiki_summary).returns("Generated summary")
+        AiHelperSummaryCache.stubs(:update_wiki_cache).returns(
+          AiHelperSummaryCache.new(object_class: "WikiPage", object_id: @wiki_page.id, content: "Generated summary")
+        )
+        
+        get :wiki_summary, params: { id: @wiki_page.id }
+        assert_response :success
+      end
+
+      should "update existing summary when update param is true" do
+        existing_summary = AiHelperSummaryCache.new(object_class: "WikiPage", object_id: @wiki_page.id, content: "Old summary")
+        AiHelperSummaryCache.stubs(:wiki_cache).returns(existing_summary)
+        existing_summary.stubs(:destroy!)
+        RedmineAiHelper::Llm.any_instance.stubs(:wiki_summary).returns("New summary")
+        AiHelperSummaryCache.stubs(:update_wiki_cache).returns(
+          AiHelperSummaryCache.new(object_class: "WikiPage", object_id: @wiki_page.id, content: "New summary")
+        )
+        
+        get :wiki_summary, params: { id: @wiki_page.id, update: "true" }
+        assert_response :success
+      end
+
+      should "handle 404 for non-existent wiki page" do
+        get :wiki_summary, params: { id: 999999 }
+        assert_response :not_found
       end
     end
   end

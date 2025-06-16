@@ -1,0 +1,17 @@
+
+<%
+    ai_helper_settings = AiHelperProjectSetting.settings(@project)
+%>
+<%= labelled_form_for :setting, ai_helper_settings,
+    url: ai_helper_project_settings_update_path(@project), setting_id: ai_helper_settings.id do |f| %>
+    <div class="box tabular">
+        <%= f.hidden_field :lock_version %>
+        <p>
+            <%= f.text_area :issue_draft_instructions, rows: 10 %>
+        </p>
+        <p>
+            <%= f.text_area :subtask_instructions, rows: 10 %>
+        </p>
+    </div>
+    <%= submit_tag l(:button_update) %>
+<% end %>

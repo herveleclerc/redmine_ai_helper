@@ -93,10 +93,14 @@ class RedmineAiHelper::Agents::IssueAgentTest < ActiveSupport::TestCase
       end
       should "format instructions correctly in the prompt" do
         @issue.stubs(:visible?).returns(true)
+        setting = AiHelperProjectSetting.settings(@issue.project)
+        setting.issue_draft_instructions = "Draft instructions for the issue."
+        setting.save!
         mock_prompt = mock("Prompt")
         mock_prompt.expects(:format).with(
           issue: instance_of(String),
           instructions: "Please provide a detailed response.",
+          issue_draft_instructions: "Draft instructions for the issue.",
           format: Setting.text_formatting,
         ).returns("Generate a reply for this issue with instructions.")
         @agent.stubs(:load_prompt).with("issue_agent/generate_reply").returns(mock_prompt)

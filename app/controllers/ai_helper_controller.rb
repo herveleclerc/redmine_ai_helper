@@ -9,7 +9,8 @@ class AiHelperController < ApplicationController
   include AiHelperHelper
 
   before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
-  before_action :find_project, except: [:issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
+  before_action :find_wiki_page, only: [:wiki_summary]
+  before_action :find_project, except: [:issue_summary, :wiki_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
   before_action :find_user, :authorize, :create_session, :find_conversation
 
   # Display the chat form in the sidebar
@@ -36,6 +37,7 @@ class AiHelperController < ApplicationController
     @message.content = params[:ai_helper_message][:content]
     @message.save!
     @conversation = AiHelperConversation.find(@conversation.id)
+    AiHelperConversation.cleanup_old_conversations
     render partial: "ai_helper/chat"
   end
 
@@ -74,6 +76,22 @@ class AiHelperController < ApplicationController
     end
 
     render partial: "ai_helper/issue_summary", locals: { summary: summary }
+  end
+
+  # Display the wiki summary
+  def wiki_summary
+    summary = AiHelperSummaryCache.wiki_cache(wiki_page_id: @wiki_page.id)
+    if params[:update] == "true" && summary
+      summary.destroy!
+      summary = nil
+    end
+    llm = RedmineAiHelper::Llm.new
+    unless summary
+      content = llm.wiki_summary(wiki_page: @wiki_page)
+      summary = AiHelperSummaryCache.update_wiki_cache(wiki_page_id: @wiki_page.id, content: content)
+    end
+
+    render partial: "ai_helper/wiki_summary_content", locals: { summary: summary }
   end
 
   # Call the LLM and stream the response
@@ -131,6 +149,7 @@ class AiHelperController < ApplicationController
 
     @conversation.messages << llm.chat(@conversation, proc, option)
     @conversation.save!
+    AiHelperConversation.cleanup_old_conversations
 
     write_chunk({
       id: response_id,
@@ -263,5 +282,13 @@ class AiHelperController < ApplicationController
   # Write a chunk of data to the response stream
   def write_chunk(data)
     response.stream.write("data: #{data.to_json}\n\n")
+  end
+
+  # Find wiki page for wiki summary
+  def find_wiki_page
+    @wiki_page = WikiPage.find(params[:id])
+    @project = @wiki_page.wiki.project
+  rescue ActiveRecord::RecordNotFound
+    render_404
   end
 end

@@ -2,7 +2,7 @@ require File.expand_path("../../test_helper", __FILE__)
 require "redmine_ai_helper/llm"
 
 class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
-  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :custom_values, :groups_users, :members, :member_roles, :roles, :user_preferences, :wikis, :wiki_pages, :wiki_contents
 
   context "RedmineAiHelper::Llm" do
     setup do
@@ -140,6 +140,84 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
 
       response = { "choices": [{ "message": { "content": answer } }] }.deep_stringify_keys
       response
+    end
+  end
+
+  context "wiki summary" do
+    setup do
+      @wiki = wikis(:wikis_001)
+      @wiki_page = wiki_pages(:wiki_pages_001)
+      @llm = RedmineAiHelper::Llm.new(@params)
+      
+      # Create a mock wiki content
+      @wiki_content = WikiContent.new(
+        page: @wiki_page,
+        text: "This is test wiki content for summarization testing.",
+        author: User.find(1),
+        version: 1
+      )
+      @wiki_page.stubs(:content).returns(@wiki_content)
+    end
+
+    should "generate wiki summary successfully" do
+      # Mock the WikiAgent and its wiki_summary method
+      mock_agent = mock('wiki_agent')
+      mock_agent.stubs(:wiki_summary).returns("Test wiki summary content")
+      RedmineAiHelper::Agents::WikiAgent.stubs(:new).returns(mock_agent)
+      
+      summary = @llm.wiki_summary(wiki_page: @wiki_page)
+      assert_not_nil summary
+      assert_equal "Test wiki summary content", summary
+    end
+
+    should "handle errors during wiki summary generation" do
+      # Mock WikiAgent to raise an error
+      RedmineAiHelper::Agents::WikiAgent.stubs(:new).raises(StandardError.new("Test error"))
+      
+      summary = @llm.wiki_summary(wiki_page: @wiki_page)
+      assert_equal "Test error", summary
+    end
+
+    should "create langfuse trace for wiki summary" do
+      # Mock langfuse wrapper
+      mock_langfuse = mock('langfuse_wrapper')
+      mock_langfuse.stubs(:create_span)
+      mock_langfuse.stubs(:finish_current_span)
+      mock_langfuse.stubs(:flush)
+      RedmineAiHelper::LangfuseUtil::LangfuseWrapper.stubs(:new).returns(mock_langfuse)
+      
+      # Mock WikiAgent
+      mock_agent = mock('wiki_agent')
+      mock_agent.stubs(:wiki_summary).returns("Summary with langfuse")
+      RedmineAiHelper::Agents::WikiAgent.stubs(:new).returns(mock_agent)
+      
+      summary = @llm.wiki_summary(wiki_page: @wiki_page)
+      assert_equal "Summary with langfuse", summary
+    end
+
+    should "pass correct parameters to WikiAgent" do
+      # Verify WikiAgent is created with correct project
+      RedmineAiHelper::Agents::WikiAgent.expects(:new).with(
+        project: @wiki_page.wiki.project,
+        langfuse: anything
+      ).returns(mock('agent').tap do |agent|
+        agent.stubs(:wiki_summary).with(wiki_page: @wiki_page).returns("Summary")
+      end)
+      
+      @llm.wiki_summary(wiki_page: @wiki_page)
+    end
+
+    should "log summary result" do
+      mock_agent = mock('wiki_agent')
+      mock_agent.stubs(:wiki_summary).returns("Logged summary")
+      RedmineAiHelper::Agents::WikiAgent.stubs(:new).returns(mock_agent)
+      
+      # Expect logging
+      @llm.expects(:ai_helper_logger).returns(mock('logger').tap do |logger|
+        logger.expects(:info).with("answer: Logged summary")
+      end)
+      
+      @llm.wiki_summary(wiki_page: @wiki_page)
     end
   end
 
