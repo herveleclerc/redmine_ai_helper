@@ -103,5 +103,7 @@ To create custom agents:
 
 ### test
 - Always add tests for any new features you implement
-- Write tests using shoulda
+- Write tests using "shoulda", Not using "rspec"
 - Use mocks only when absolutely necessary, such as when connecting to external servers
+- Aim for a test coverage of 95% or higher
+  - The coverage information files will be generated under the `coverage` directory, so please check there.

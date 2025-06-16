@@ -39,6 +39,22 @@ class RedmineAiHelper::LangfuseUtil::OpenAiTest < ActiveSupport::TestCase
       answer = @client.chat(messages: messages, model: "gemini-1.0", temperature: 0.5)
       assert answer
     end
+
+    should "work without langfuse" do
+      @client.langfuse = nil
+      messages = [{ role: "user", content: "Test input" }]
+
+      answer = @client.chat(messages: messages, model: "gpt-4", temperature: 0.5)
+      assert answer
+    end
+
+    should "work without current_span" do
+      @client.langfuse.stubs(:current_span).returns(nil)
+      messages = [{ role: "user", content: "Test input" }]
+
+      answer = @client.chat(messages: messages, model: "gpt-4", temperature: 0.5)
+      assert answer
+    end
   end
 
   class DummyResponse

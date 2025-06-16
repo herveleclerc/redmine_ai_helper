@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "invalid_server": {
+      "invalid": "config"
+    },
+    "valid_server": {
+      "command": "node",
+      "args": [
+        "server.js"
+      ]
+    }
+  }
+}
