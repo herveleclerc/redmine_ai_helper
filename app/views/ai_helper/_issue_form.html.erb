@@ -67,21 +67,113 @@
         if (csrfToken) {
             xhr.setRequestHeader('X-CSRF-Token', csrfToken);
         }
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                const replyArea = document.getElementById('ai-helper-generate_reply-area');
-                replyArea.innerHTML = xhr.responseText;
-            } else {
-                alert('Error: ' + xhr.statusText);
-            }
-        };
-        replyArea = document.getElementById('ai-helper-generate_reply-area');
+
+        // Set response type for streaming
+        xhr.responseType = 'text';
+
+        const replyArea = document.getElementById('ai-helper-generate_reply-area');
         replyArea.style.display = '';
+        
+        // Initialize streaming response area
+        const streamingContent = document.createElement('div');
+        streamingContent.id = 'ai-helper-streaming-reply';
+        streamingContent.style.border = '1px solid #ccc';
+        streamingContent.style.padding = '10px';
+        streamingContent.style.marginTop = '10px';
+        streamingContent.style.backgroundColor = '#f9f9f9';
+        streamingContent.style.minHeight = '100px';
+        streamingContent.style.whiteSpace = 'pre-wrap';
+        streamingContent.style.fontFamily = 'monospace';
+        
         const loader = document.createElement('div');
         loader.className = 'loader';
         loader.innerHTML = '<%= j l(:ai_helper_loading) %>';
+        
         replyArea.innerHTML = '';
         replyArea.appendChild(loader);
+        replyArea.appendChild(streamingContent);
+
+        let fullResponse = '';
+        let buffer = '';
+        let lastProcessedIndex = 0;
+
+        xhr.onprogress = function (event) {
+            const text = xhr.responseText.substring(lastProcessedIndex);
+            lastProcessedIndex = xhr.responseText.length;
+            buffer += text;
+
+            // Extract data from Server-Sent Events
+            const matches = buffer.match(/^data: (.+?)\n\n/gm);
+            if (matches) {
+                matches.forEach(match => {
+                    try {
+                        const dataStr = match.replace(/^data: /, '').trim();
+                        const data = JSON.parse(dataStr);
+
+                        // Get content from chunk
+                        const content = data.choices[0]?.delta?.content;
+                        if (content) {
+                            fullResponse += content;
+                            streamingContent.textContent = fullResponse;
+                            
+                            // Hide loader on first content
+                            if (loader.style.display !== 'none') {
+                                loader.style.display = 'none';
+                            }
+                        }
+
+                        // Handle completion
+                        if (data.choices[0]?.finish_reason === 'stop') {
+                            // Create apply button
+                            const applyButton = document.createElement('button');
+                            applyButton.textContent = '<%= l(:button_apply) %>';
+                            applyButton.style.marginTop = '10px';
+                            applyButton.style.marginRight = '10px';
+                            applyButton.onclick = function() {
+                                const issueNotes = document.getElementById("issue_notes");
+                                if (issueNotes) {
+                                    issueNotes.value = fullResponse;
+                                }
+                            };
+                            
+                            // Create copy button
+                            const copyButton = document.createElement('button');
+                            copyButton.textContent = '<%= l(:button_copy) %>';
+                            copyButton.style.marginTop = '10px';
+                            copyButton.onclick = function() {
+                                navigator.clipboard.writeText(fullResponse).then(function() {
+                                    copyButton.textContent = '<%= l(:copied) %>';
+                                    setTimeout(function() {
+                                        copyButton.textContent = '<%= l(:button_copy) %>';
+                                    }, 2000);
+                                });
+                            };
+                            
+                            replyArea.appendChild(applyButton);
+                            replyArea.appendChild(copyButton);
+                        }
+                    } catch (e) {
+                        console.error('Parse error:', e);
+                    }
+
+                    // Remove processed data from buffer
+                    buffer = buffer.replace(match, '');
+                });
+            }
+        };
+
+        xhr.onerror = function () {
+            loader.style.display = 'none';
+            streamingContent.textContent = '<%= l(:error_occurred) %>';
+        };
+
+        xhr.onload = function () {
+            if (xhr.status !== 200) {
+                loader.style.display = 'none';
+                streamingContent.textContent = `Error: ${xhr.status} ${xhr.statusText}`;
+            }
+        };
+
         xhr.send(JSON.stringify({ instructions: instructions }));
     };
 </script>
