@@ -96,9 +96,6 @@ class AiHelperController < ApplicationController
 
   # Call the LLM and stream the response
   def call_llm
-    response.headers["Content-Type"] = "text/event-stream"
-    response.headers["Cache-Control"] = "no-cache"
-    response.headers["Connection"] = "keep-alive"
     contoller_name = params[:controller_name]
     action_name = params[:action_name]
     content_id = params[:content_id].to_i unless params[:content_id].blank?
@@ -115,55 +112,11 @@ class AiHelperController < ApplicationController
       additional_info: additional_info,
     }
 
-    response_id = "chatcmpl-#{SecureRandom.hex(12)}"
-
-    write_chunk({
-      id: response_id,
-      object: "chat.completion.chunk",
-      created: Time.now.to_i,
-      model: "gpt-3.5-turbo-0613",
-      choices: [{
-        index: 0,
-        delta: {
-          role: "assistant",
-        },
-        finish_reason: nil,
-      }],
-    })
-
-    proc = Proc.new do |content|
-      write_chunk({
-        id: response_id,
-        object: "chat.completion.chunk",
-        created: Time.now.to_i,
-        model: "gpt-3.5-turbo-0613",
-        choices: [{
-          index: 0,
-          delta: {
-            content: content,
-          },
-          finish_reason: nil,
-        }],
-      })
+    stream_llm_response do |stream_proc|
+      @conversation.messages << llm.chat(@conversation, stream_proc, option)
+      @conversation.save!
+      AiHelperConversation.cleanup_old_conversations
     end
-
-    @conversation.messages << llm.chat(@conversation, proc, option)
-    @conversation.save!
-    AiHelperConversation.cleanup_old_conversations
-
-    write_chunk({
-      id: response_id,
-      object: "chat.completion.chunk",
-      created: Time.now.to_i,
-      model: "gpt-3.5-turbo-0613",
-      choices: [{
-        index: 0,
-        delta: {},
-        finish_reason: "stop",
-      }],
-    })
-  ensure
-    response.stream.close
   end
 
   # Clear the chat screen
@@ -185,65 +138,12 @@ class AiHelperController < ApplicationController
       render json: { error: "Invalid JSON" }, status: :bad_request and return
     end
 
-    # Set up streaming response headers
-    response.headers["Content-Type"] = "text/event-stream"
-    response.headers["Cache-Control"] = "no-cache"
-    response.headers["Connection"] = "keep-alive"
-
     instructions = data["instructions"]
     llm = RedmineAiHelper::Llm.new
 
-    response_id = "chatcmpl-#{SecureRandom.hex(12)}"
-
-    # Send initial chunk
-    write_chunk({
-      id: response_id,
-      object: "chat.completion.chunk",
-      created: Time.now.to_i,
-      model: "gpt-3.5-turbo-0613",
-      choices: [{
-        index: 0,
-        delta: {
-          role: "assistant",
-        },
-        finish_reason: nil,
-      }],
-    })
-
-    # Define streaming callback
-    stream_proc = Proc.new do |content|
-      write_chunk({
-        id: response_id,
-        object: "chat.completion.chunk",
-        created: Time.now.to_i,
-        model: "gpt-3.5-turbo-0613",
-        choices: [{
-          index: 0,
-          delta: {
-            content: content,
-          },
-          finish_reason: nil,
-        }],
-      })
+    stream_llm_response do |stream_proc|
+      llm.generate_issue_reply(issue: @issue, instructions: instructions, stream_proc: stream_proc)
     end
-
-    # Generate reply with streaming
-    llm.generate_issue_reply(issue: @issue, instructions: instructions, stream_proc: stream_proc)
-
-    # Send completion chunk
-    write_chunk({
-      id: response_id,
-      object: "chat.completion.chunk",
-      created: Time.now.to_i,
-      model: "gpt-3.5-turbo-0613",
-      choices: [{
-        index: 0,
-        delta: {},
-        finish_reason: "stop",
-      }],
-    })
-  ensure
-    response.stream.close
   end
 
   # Generate sub-issues drafts for the given issue
@@ -335,6 +235,67 @@ class AiHelperController < ApplicationController
   # Write a chunk of data to the response stream
   def write_chunk(data)
     response.stream.write("data: #{data.to_json}\n\n")
+  end
+
+  # Common method for streaming LLM responses
+  # @param block [Block] The block to execute with the streaming proc
+  def stream_llm_response(&block)
+    # Set up streaming response headers
+    response.headers["Content-Type"] = "text/event-stream"
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Connection"] = "keep-alive"
+
+    response_id = "chatcmpl-#{SecureRandom.hex(12)}"
+
+    # Send initial chunk
+    write_chunk({
+      id: response_id,
+      object: "chat.completion.chunk",
+      created: Time.now.to_i,
+      model: "gpt-3.5-turbo-0613",
+      choices: [{
+        index: 0,
+        delta: {
+          role: "assistant",
+        },
+        finish_reason: nil,
+      }],
+    })
+
+    # Define streaming callback
+    stream_proc = Proc.new do |content|
+      write_chunk({
+        id: response_id,
+        object: "chat.completion.chunk",
+        created: Time.now.to_i,
+        model: "gpt-3.5-turbo-0613",
+        choices: [{
+          index: 0,
+          delta: {
+            content: content,
+          },
+          finish_reason: nil,
+        }],
+      })
+    end
+
+    # Execute the provided block with the streaming proc
+    block.call(stream_proc)
+
+    # Send completion chunk
+    write_chunk({
+      id: response_id,
+      object: "chat.completion.chunk",
+      created: Time.now.to_i,
+      model: "gpt-3.5-turbo-0613",
+      choices: [{
+        index: 0,
+        delta: {},
+        finish_reason: "stop",
+      }],
+    })
+  ensure
+    response.stream.close
   end
 
   # Find wiki page for wiki summary
