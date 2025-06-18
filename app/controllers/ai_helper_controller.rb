@@ -173,7 +173,7 @@ class AiHelperController < ApplicationController
     render partial: "ai_helper/chat"
   end
 
-  # Receives a POST message with application/json content to generate an issue reply
+  # Receives a POST message with application/json content to generate an issue reply with streaming
   def generate_issue_reply
     unless request.content_type == "application/json"
       render json: { error: "Unsupported Media Type" }, status: :unsupported_media_type and return
@@ -185,12 +185,65 @@ class AiHelperController < ApplicationController
       render json: { error: "Invalid JSON" }, status: :bad_request and return
     end
 
+    # Set up streaming response headers
+    response.headers["Content-Type"] = "text/event-stream"
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Connection"] = "keep-alive"
+
     instructions = data["instructions"]
     llm = RedmineAiHelper::Llm.new
 
-    reply = llm.generate_issue_reply(issue: @issue, instructions: instructions)
+    response_id = "chatcmpl-#{SecureRandom.hex(12)}"
 
-    render partial: "ai_helper/issue_reply", locals: { issue: @issue, reply: reply }
+    # Send initial chunk
+    write_chunk({
+      id: response_id,
+      object: "chat.completion.chunk",
+      created: Time.now.to_i,
+      model: "gpt-3.5-turbo-0613",
+      choices: [{
+        index: 0,
+        delta: {
+          role: "assistant",
+        },
+        finish_reason: nil,
+      }],
+    })
+
+    # Define streaming callback
+    stream_proc = Proc.new do |content|
+      write_chunk({
+        id: response_id,
+        object: "chat.completion.chunk",
+        created: Time.now.to_i,
+        model: "gpt-3.5-turbo-0613",
+        choices: [{
+          index: 0,
+          delta: {
+            content: content,
+          },
+          finish_reason: nil,
+        }],
+      })
+    end
+
+    # Generate reply with streaming
+    llm.generate_issue_reply(issue: @issue, instructions: instructions, stream_proc: stream_proc)
+
+    # Send completion chunk
+    write_chunk({
+      id: response_id,
+      object: "chat.completion.chunk",
+      created: Time.now.to_i,
+      model: "gpt-3.5-turbo-0613",
+      choices: [{
+        index: 0,
+        delta: {},
+        finish_reason: "stop",
+      }],
+    })
+  ensure
+    response.stream.close
   end
 
   # Generate sub-issues drafts for the given issue

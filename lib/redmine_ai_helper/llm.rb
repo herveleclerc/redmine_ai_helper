@@ -59,22 +59,26 @@ module RedmineAiHelper
       answer
     end
 
-    # Generate a reply to the issue using IssueAgent
+    # Generate a reply to the issue using IssueAgent with streaming support
     # @param issue [Issue] The issue object
     # @param instructions [String] Instructions for generating the reply
+    # @param stream_proc [Proc] Optional callback proc for streaming content
     # return [String] The generated reply
-    def generate_issue_reply(issue:, instructions:)
+    def generate_issue_reply(issue:, instructions:, stream_proc: nil)
       begin
         prompt = "Please generate a reply to the issue #{issue.id} with the instructions.\n\n#{instructions}"
         langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: prompt)
         agent = RedmineAiHelper::Agents::IssueAgent.new(project: issue.project, langfuse: langfuse)
         langfuse.create_span(name: "user_request", input: prompt)
-        answer = agent.generate_issue_reply(issue: issue, instructions: instructions)
+        
+        answer = agent.generate_issue_reply(issue: issue, instructions: instructions, stream_proc: stream_proc)
+        
         langfuse.finish_current_span(output: answer)
         langfuse.flush
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
         answer = e.message
+        stream_proc.call(answer) if stream_proc
       end
       ai_helper_logger.info "answer: #{answer}"
       answer
