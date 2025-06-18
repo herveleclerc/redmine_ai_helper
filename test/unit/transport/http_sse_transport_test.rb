@@ -541,5 +541,373 @@ class HttpSseTransportTest < ActiveSupport::TestCase
       timeout = @transport.instance_variable_get(:@timeout)
       assert_equal 5, timeout
     end
+
+    should 'handle authorization token in config' do
+      config = {
+        'url' => 'http://localhost:3000',
+        'authorization_token' => 'Bearer test-token'
+      }
+      @transport.instance_variable_set(:@config, config)
+      @transport.instance_variable_set(:@message_endpoint, '/messages')
+      
+      # Mock HTTP client to verify request is made with proper config
+      mock_client = mock()
+      mock_headers = {}
+      mock_request = mock()
+      mock_request.stubs(:headers).returns(mock_headers)
+      mock_request.expects(:body=).with('{"method":"test","id":1}')
+      mock_client.expects(:post).with('/messages').yields(mock_request).returns(stub(status: 200, body: '{}'))
+      @transport.instance_variable_set(:@http_client, mock_client)
+      
+      message = { 'method' => 'test', 'id' => 1 }
+      result = @transport.send(:perform_http_request, message)
+      
+      # Verify Authorization header was set
+      assert_equal 'Bearer test-token', mock_headers['Authorization']
+      assert_not_nil result
+    end
+
+    should 'handle SSE response format parsing' do
+      sse_body = "event: message\ndata: {\"result\": \"test\"}\n\n"
+      result = @transport.send(:parse_sse_response, sse_body)
+      assert_equal 'test', result['result']
+    end
+
+    should 'handle multiline SSE data' do
+      sse_body = "event: message\ndata: {\"result\": \ndata: \"test\"}\n\n"
+      result = @transport.send(:parse_sse_response, sse_body)
+      assert_equal 'test', result['result']
+    end
+
+    should 'handle invalid SSE format gracefully' do
+      sse_body = "invalid sse format"
+      assert_raises(StandardError) do
+        @transport.send(:parse_sse_response, sse_body)
+      end
+    end
+
+    should 'detect message endpoint correctly' do
+      base_url = 'http://localhost:3000/'
+      @transport.instance_variable_set(:@base_url, base_url)
+      
+      endpoint = @transport.send(:detect_message_endpoint)
+      assert_equal 'http://localhost:3000', endpoint
+    end
+
+    should 'handle thread-based SSE connection cleanup' do
+      mock_thread = Thread.new { sleep 0.01 }
+      @transport.instance_variable_set(:@sse_connection, mock_thread)
+      
+      # Should not raise error
+      assert_nothing_raised do
+        @transport.send(:close_sse_connection)
+      end
+      
+      # Thread should be killed
+      sleep 0.1
+      assert_equal false, mock_thread.alive?
+    end
+
+    should 'handle connection retry with exponential backoff' do
+      @transport.instance_variable_set(:@reconnect, true)
+      @transport.instance_variable_set(:@max_retries, 2)
+      @transport.instance_variable_set(:@retry_count, 1)
+      
+      error = StandardError.new('Connection failed')
+      
+      # Mock sleep to avoid actual delay in tests
+      @transport.expects(:sleep).with(4).once # 2^2 = 4
+      @transport.expects(:connect).once
+      
+      @transport.send(:handle_connection_error, error)
+      
+      assert_equal 2, @transport.instance_variable_get(:@retry_count)
+    end
+
+    should 'handle SSE connection errors without retry when disabled' do
+      @transport.instance_variable_set(:@reconnect, false)
+      error = StandardError.new('SSE error')
+      
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::ConnectionError) do
+        @transport.send(:handle_sse_error, error)
+      end
+    end
+
+    should 'handle valid_url method with edge cases' do
+      assert_equal true, @transport.send(:valid_url?, 'http://example.com')
+      assert_equal true, @transport.send(:valid_url?, 'https://example.com')
+      assert_equal false, @transport.send(:valid_url?, 'ftp://example.com')
+      assert_equal false, @transport.send(:valid_url?, 'invalid url')
+      assert_equal false, @transport.send(:valid_url?, '')
+    end
+
+    should 'handle zero timeout configuration' do
+      assert_raises(ArgumentError) do
+        RedmineAiHelper::Transport::HttpSseTransport.new({
+          'url' => 'http://localhost:3000',
+          'timeout' => 0
+        })
+      end
+    end
+
+    should 'handle transport_type method' do
+      transport_type = @transport.transport_type
+      assert_equal 'httpsse', transport_type
+    end
+
+    should 'handle connect method when already connected' do
+      @transport.instance_variable_set(:@connected, true)
+      @transport.instance_variable_set(:@message_endpoint, '/messages')
+      
+      # Should not attempt to connect again
+      @transport.unstub(:connect)
+      @transport.expects(:detect_message_endpoint).never
+      
+      @transport.connect
+    end
+
+    should 'handle endpoint event timeout' do
+      @transport.instance_variable_set(:@timeout, 0.1)
+      @transport.instance_variable_set(:@message_endpoint, nil)
+      
+      start_time = Time.current
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::TimeoutError) do
+        @transport.send(:wait_for_endpoint_event)
+      end
+      
+      # Should have waited for the timeout duration
+      elapsed_time = Time.current - start_time
+      assert elapsed_time >= 0.1
+    end
+
+    should 'initialize with full configuration options' do
+      config = {
+        'url' => 'https://example.com',
+        'timeout' => 45,
+        'reconnect' => true,
+        'max_retries' => 5,
+        'headers' => { 'X-Custom' => 'value' }
+      }
+      
+      transport = RedmineAiHelper::Transport::HttpSseTransport.new(config)
+      
+      assert_equal 'https://example.com', transport.instance_variable_get(:@base_url)
+      assert_equal 45, transport.instance_variable_get(:@timeout)
+      assert_equal true, transport.instance_variable_get(:@reconnect)
+      assert_equal 5, transport.instance_variable_get(:@max_retries)
+      assert_equal({ 'X-Custom' => 'value' }, transport.instance_variable_get(:@headers))
+      assert_equal 0, transport.instance_variable_get(:@retry_count)
+    end
+
+    should 'initialize with default values when options missing' do
+      config = { 'url' => 'http://localhost:3000' }
+      transport = RedmineAiHelper::Transport::HttpSseTransport.new(config)
+      
+      assert_equal 30, transport.instance_variable_get(:@timeout)
+      assert_equal false, transport.instance_variable_get(:@reconnect)
+      assert_equal 3, transport.instance_variable_get(:@max_retries)
+      assert_equal({}, transport.instance_variable_get(:@headers))
+      assert_nil transport.instance_variable_get(:@sse_connection)
+      assert_nil transport.instance_variable_get(:@message_endpoint)
+      assert_nil transport.instance_variable_get(:@session_id)
+      assert_equal false, transport.instance_variable_get(:@connected)
+    end
+
+    should 'call super in initialize method' do
+      config = { 'url' => 'http://localhost:3000' }
+      
+      # Mock the base class initialize method
+      RedmineAiHelper::Transport::BaseTransport.any_instance.expects(:initialize).with(config).once
+      
+      RedmineAiHelper::Transport::HttpSseTransport.new(config)
+    end
+
+    should 'build http client in initialize' do
+      config = { 'url' => 'http://localhost:3000' }
+      transport = RedmineAiHelper::Transport::HttpSseTransport.new(config)
+      
+      http_client = transport.instance_variable_get(:@http_client)
+      assert_not_nil http_client
+      assert_kind_of Faraday::Connection, http_client
+    end
+
+    should 'handle specific custom exception types' do
+      # Test that exception classes are defined and can be raised
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::ConnectionError) do
+        raise RedmineAiHelper::Transport::HttpSseTransport::ConnectionError, "test"
+      end
+      
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::TimeoutError) do
+        raise RedmineAiHelper::Transport::HttpSseTransport::TimeoutError, "test"
+      end
+      
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::ServerError) do
+        raise RedmineAiHelper::Transport::HttpSseTransport::ServerError, "test"
+      end
+      
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::ClientError) do
+        raise RedmineAiHelper::Transport::HttpSseTransport::ClientError, "test"
+      end
+    end
+
+    should 'access attr_reader attributes' do
+      config = { 'url' => 'http://localhost:3000' }
+      transport = RedmineAiHelper::Transport::HttpSseTransport.new(config)
+      
+      # Test attr_reader accessors
+      assert_equal 'http://localhost:3000', transport.base_url
+      assert_nil transport.message_endpoint
+      assert_nil transport.session_id
+    end
+
+    should 'handle require_relative and module structure' do
+      # Test that the class is properly defined within the module structure
+      assert defined?(RedmineAiHelper::Transport::HttpSseTransport)
+      assert RedmineAiHelper::Transport::HttpSseTransport < RedmineAiHelper::Transport::BaseTransport
+      assert RedmineAiHelper::Transport::HttpSseTransport.included_modules.include?(RedmineAiHelper::Logger)
+    end
+
+    should 'handle connection failure with immediate error when no retry' do
+      @transport.instance_variable_set(:@reconnect, false)
+      error = StandardError.new('Connection failed')
+      
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::ConnectionError) do
+        @transport.send(:handle_connection_error, error)
+      end
+      
+      # Should remain disconnected
+      assert_equal false, @transport.instance_variable_get(:@connected)
+    end
+
+    should 'handle SSE event data with empty JSON' do
+      assert_nothing_raised do
+        @transport.send(:handle_sse_event_data, 'endpoint', '{}')
+      end
+    end
+
+    should 'handle waiting for endpoint with immediate success' do
+      @transport.instance_variable_set(:@message_endpoint, '/test')
+      @transport.instance_variable_set(:@timeout, 1)
+      
+      # Should return immediately without timeout
+      assert_nothing_raised do
+        @transport.send(:wait_for_endpoint_event)
+      end
+    end
+
+    should 'execute actual connect method successfully' do
+      # Remove global stub to test actual connect method
+      @transport.unstub(:connect)
+      @transport.unstub(:establish_sse_connection)
+      
+      # Mock detect_message_endpoint to return a valid endpoint
+      @transport.stubs(:detect_message_endpoint).returns('/messages')
+      
+      # Mock ai_helper_logger
+      @transport.stubs(:ai_helper_logger).returns(stub(info: nil))
+      
+      @transport.connect
+      
+      assert_equal '/messages', @transport.instance_variable_get(:@message_endpoint)
+      assert_not_nil @transport.instance_variable_get(:@session_id)
+      assert_equal true, @transport.instance_variable_get(:@connected)
+    end
+
+    should 'handle connect method failure and error handling' do
+      # Remove global stub to test actual connect method
+      @transport.unstub(:connect)
+      @transport.unstub(:establish_sse_connection)
+      
+      # Mock detect_message_endpoint to raise an error
+      @transport.stubs(:detect_message_endpoint).raises(StandardError.new('Connection failed'))
+      
+      # Mock ai_helper_logger and handle_connection_error
+      @transport.stubs(:ai_helper_logger).returns(stub(error: nil))
+      @transport.expects(:handle_connection_error).with(instance_of(StandardError))
+      
+      @transport.connect
+    end
+
+    should 'handle send_request with actual error paths' do
+      @transport.instance_variable_set(:@connected, true)
+      @transport.instance_variable_set(:@message_endpoint, '/messages')
+      
+      # Test Faraday::TimeoutError path
+      @transport.stubs(:perform_http_request).raises(Faraday::TimeoutError.new('timeout'))
+      
+      message = { 'method' => 'test', 'id' => 1 }
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::TimeoutError) do
+        @transport.send_request(message)
+      end
+    end
+
+    should 'handle send_request with connection failed error' do
+      @transport.instance_variable_set(:@connected, true)
+      @transport.instance_variable_set(:@message_endpoint, '/messages')
+      
+      # Test Faraday::ConnectionFailed path
+      @transport.stubs(:perform_http_request).raises(Faraday::ConnectionFailed.new('connection failed'))
+      
+      message = { 'method' => 'test', 'id' => 1 }
+      assert_raises(RedmineAiHelper::Transport::HttpSseTransport::ConnectionError) do
+        @transport.send_request(message)
+      end
+    end
+
+    should 'handle send_request with general error and logging' do
+      @transport.instance_variable_set(:@connected, true)
+      @transport.instance_variable_set(:@message_endpoint, '/messages')
+      
+      # Mock ai_helper_logger for error logging
+      mock_logger = mock()
+      mock_logger.expects(:error).with(regexp_matches(/HTTP request error/))
+      @transport.stubs(:ai_helper_logger).returns(mock_logger)
+      
+      # Test general error path
+      error = StandardError.new('general error')
+      @transport.stubs(:perform_http_request).raises(error)
+      @transport.stubs(:handle_request_error).raises(error)
+      
+      message = { 'method' => 'test', 'id' => 1 }
+      assert_raises(StandardError) do
+        @transport.send_request(message)
+      end
+    end
+
+    should 'log debug information during successful request' do
+      @transport.instance_variable_set(:@connected, true)
+      @transport.instance_variable_set(:@message_endpoint, '/messages')
+      
+      # Mock successful response
+      mock_response = stub(status: 200, body: '{"result": "success"}')
+      @transport.stubs(:perform_http_request).returns(mock_response)
+      @transport.stubs(:handle_response).returns({'result' => 'success'})
+      
+      # Mock ai_helper_logger for debug logging
+      mock_logger = mock()
+      mock_logger.expects(:debug).with("HTTP response: 200 {\"result\": \"success\"}")
+      @transport.stubs(:ai_helper_logger).returns(mock_logger)
+      
+      message = { 'method' => 'test', 'id' => 1 }
+      @transport.send_request(message)
+    end
+
+    should 'handle initialization with all configuration parameters' do
+      # Test lines 20-34 by creating new transport instances
+      config1 = {
+        'url' => 'http://localhost:3000',
+        'timeout' => nil,
+        'reconnect' => nil,
+        'max_retries' => nil,
+        'headers' => nil
+      }
+      
+      transport1 = RedmineAiHelper::Transport::HttpSseTransport.new(config1)
+      assert_equal 30, transport1.instance_variable_get(:@timeout)
+      assert_equal false, transport1.instance_variable_get(:@reconnect)
+      assert_equal 3, transport1.instance_variable_get(:@max_retries)
+      assert_equal({}, transport1.instance_variable_get(:@headers))
+      assert_equal 0, transport1.instance_variable_get(:@retry_count)
+    end
   end
 end
