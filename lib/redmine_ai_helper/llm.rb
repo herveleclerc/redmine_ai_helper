@@ -107,21 +107,23 @@ module RedmineAiHelper
       sub_issues
     end
 
-    # Get the summary of the wiki page using WikiAgent
+    # Get the summary of the wiki page using WikiAgent with streaming support
     # @param wiki_page [WikiPage] The wiki page object
+    # @param stream_proc [Proc] Optional callback proc for streaming content
     # return [String] The summary of the wiki page
-    def wiki_summary(wiki_page:)
+    def wiki_summary(wiki_page:, stream_proc: nil)
       begin
         prompt = "Please summarize the wiki page '#{wiki_page.title}'."
         langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: prompt)
         agent = RedmineAiHelper::Agents::WikiAgent.new(project: wiki_page.wiki.project, langfuse: langfuse)
         langfuse.create_span(name: "user_request", input: prompt)
-        answer = agent.wiki_summary(wiki_page: wiki_page)
+        answer = agent.wiki_summary(wiki_page: wiki_page, stream_proc: stream_proc)
         langfuse.finish_current_span(output: answer)
         langfuse.flush
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
         answer = e.message
+        stream_proc.call(answer) if stream_proc
       end
       ai_helper_logger.info "answer: #{answer}"
       answer

@@ -12,6 +12,7 @@ RedmineApp::Application.routes.draw do
   get "ai_helper/issue/:id/summary", to: "ai_helper#issue_summary", as: "ai_helper_issue_summary"
   post "ai_helper/issue/:id/generate_summary", to: "ai_helper#generate_issue_summary", as: "ai_helper_generate_issue_summary"
   get "ai_helper/wiki/:id/summary", to: "ai_helper#wiki_summary", as: "ai_helper_wiki_summary"
+  post "ai_helper/wiki/:id/generate_summary", to: "ai_helper#generate_wiki_summary", as: "ai_helper_generate_wiki_summary"
   post "ai_helper/issue/:id/generate_reply", to: "ai_helper#generate_issue_reply", as: "ai_helper_generate_issue_reply"
   post "ai_helper/issue/:id/subissue_gen", to: "ai_helper#generate_sub_issues", as: "ai_helper_subissue_gen"
   post "ai_helper/issue/:id/add_sub_issues", to: "ai_helper#add_sub_issues", as: "ai_helper_add_sub_issues"

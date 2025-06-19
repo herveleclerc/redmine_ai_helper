@@ -34,12 +34,20 @@
     xhr.send();
   };
 
+  function generateWikiSummaryStream() {
+    ai_helper.generateWikiSummaryStream(
+      "<%= ai_helper_generate_wiki_summary_path(id: @page.id) %>",
+      '<%= j l(:ai_helper_loading) %>',
+      '<%= j l(:ai_helper_error_occurred) %>'
+    );
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     const summaryButtons = document.querySelectorAll('.ai-helper-wiki-summary-button');
     summaryButtons.forEach(function(button) {
       button.addEventListener('click', function(e) {
         e.preventDefault();
-        getWikiSummary();
+        generateWikiSummaryStream();
       });
     });
   });

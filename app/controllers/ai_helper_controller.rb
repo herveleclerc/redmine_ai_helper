@@ -9,8 +9,8 @@ class AiHelperController < ApplicationController
   include AiHelperHelper
 
   before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
-  before_action :find_wiki_page, only: [:wiki_summary]
-  before_action :find_project, except: [:issue_summary, :wiki_summary, :generate_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
+  before_action :find_wiki_page, only: [:wiki_summary, :generate_wiki_summary]
+  before_action :find_project, except: [:issue_summary, :wiki_summary, :generate_issue_summary, :generate_wiki_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
   before_action :find_user, :authorize, :create_session, :find_conversation
 
   # Display the chat form in the sidebar
@@ -109,6 +109,28 @@ class AiHelperController < ApplicationController
     end
 
     render partial: "ai_helper/wiki_summary_content", locals: { summary: summary }
+  end
+
+  # Generate wiki summary with streaming
+  def generate_wiki_summary
+    # Clear existing cache
+    summary = AiHelperSummaryCache.wiki_cache(wiki_page_id: @wiki_page.id)
+    summary&.destroy!
+
+    llm = RedmineAiHelper::Llm.new
+    full_content = ""
+
+    stream_llm_response do |stream_proc|
+      # Wrap stream_proc to capture content for caching
+      cache_proc = Proc.new do |content|
+        full_content += content if content
+        stream_proc.call(content)
+      end
+
+      content = llm.wiki_summary(wiki_page: @wiki_page, stream_proc: cache_proc)
+      # Update cache with final content
+      AiHelperSummaryCache.update_wiki_cache(wiki_page_id: @wiki_page.id, content: content)
+    end
   end
 
   # Call the LLM and stream the response

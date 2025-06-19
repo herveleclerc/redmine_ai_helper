@@ -96,7 +96,7 @@ class WikiAgentTest < ActiveSupport::TestCase
         @agent.stubs(:load_prompt).returns(mock_prompt)
         
         expected_messages = [{ role: "user", content: formatted_text }]
-        @agent.expects(:chat).with(expected_messages).returns("Summary")
+        @agent.expects(:chat).with(expected_messages, {}, nil).returns("Summary")
         
         @agent.wiki_summary(wiki_page: @wiki_page)
       end
