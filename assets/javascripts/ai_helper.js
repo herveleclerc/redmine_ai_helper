@@ -635,7 +635,7 @@ class AiHelper {
     xhr.send('{}');
   }
 
-  generateReplyStream = function(generateReplyUrl, instructions, loadingText, errorText, applyButtonText, copyButtonText, copiedText) {
+  generateReplyStream = function(generateReplyUrl, instructions, loadingText, errorText, applyButtonText, copyButtonText) {
     const replyArea = document.getElementById('ai-helper-generate_reply-area');
     replyArea.style.display = '';
 
@@ -677,12 +677,15 @@ class AiHelper {
       function(fullResponse) {
         // Create apply button
         const applyButton = document.createElement('button');
+        applyButton.type = 'button';
         applyButton.textContent = applyButtonText;
-        applyButton.onclick = function() {
+        applyButton.onclick = function(e) {
+          e.preventDefault();
           const issueNotes = document.getElementById("issue_notes");
           if (issueNotes) {
             issueNotes.value = fullResponse;
           }
+          return false;
         };
 
         // Create copy link
@@ -692,12 +695,7 @@ class AiHelper {
         copyLink.innerHTML = copyButtonText;
         copyLink.onclick = function(e) {
           e.preventDefault();
-          navigator.clipboard.writeText(fullResponse).then(function() {
-            copyLink.innerHTML = copiedText;
-            setTimeout(function() {
-              copyLink.innerHTML = copyButtonText;
-            }, 2000);
-          });
+          navigator.clipboard.writeText(fullResponse);
           return false;
         };
 
