@@ -1,10 +1,18 @@
+<% if summary %>
 <div class="ai-helper-issue-summary-content">
   <div class="ai-helper-summary-header">
     <small><%= l(:ai_helper_text_summary_generated_time, time: format_time(summary.updated_at)) %>
-    <%= link_to sprite_icon("reload", l(:button_update)), "#", onclick: "getSummary(true); return false;"%>
+    <%= link_to sprite_icon("reload", l(:button_update)), "#", onclick: "generateSummaryStream(); return false;"%>
     </small>
   </div>
   <div class="ai-helper-summary-body">
     <%= md_to_html(summary.content) %>
   </div>
 </div>
+<% else %>
+<div class="ai-helper-issue-summary-content">
+  <div class="ai-helper-summary-header">
+    <small><%= l(:ai_helper_no_summary_available) %></small>
+  </div>
+</div>
+<% end %>

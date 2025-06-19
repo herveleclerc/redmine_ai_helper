@@ -39,21 +39,23 @@ module RedmineAiHelper
       AiHelperMessage.new(role: "assistant", content: answer, conversation: conversation)
     end
 
-    # Get the summary of the issue using IssueAgent
+    # Get the summary of the issue using IssueAgent with streaming support
     # @param issue [Issue] The issue object
+    # @param stream_proc [Proc] Optional callback proc for streaming content
     # return [String] The summary of the issue
-    def issue_summary(issue:)
+    def issue_summary(issue:, stream_proc: nil)
       begin
         prompt = "Please summarize the issue #{issue.id}."
         langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: prompt)
         agent = RedmineAiHelper::Agents::IssueAgent.new(project: issue.project, langfuse: langfuse)
         langfuse.create_span(name: "user_request", input: prompt)
-        answer = agent.issue_summary(issue: issue)
+        answer = agent.issue_summary(issue: issue, stream_proc: stream_proc)
         langfuse.finish_current_span(output: answer)
         langfuse.flush
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
         answer = e.message
+        stream_proc.call(answer) if stream_proc
       end
       ai_helper_logger.info "answer: #{answer}"
       answer
