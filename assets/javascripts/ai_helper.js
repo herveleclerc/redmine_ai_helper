@@ -143,7 +143,7 @@ class AiHelper {
     const parser = new AiHelperMarkdownParser();
 
     // Use the common SSE handler
-    this.handleSSEStream(xhr, 
+    this.handleSSEStream(xhr,
       // onContentCallback
       function(content, fullResponse) {
         const lastMessage = document.getElementById('aihelper_last_message');
@@ -573,19 +573,18 @@ class AiHelper {
   generateSummaryStream = function(generateSummaryUrl, summaryLoadingText, summaryErrorText) {
     const summaryArea = document.getElementById('ai-helper-summary-area');
     const url = generateSummaryUrl;
-    
+
     // Set up streaming content area
     const streamingContent = document.createElement('div');
     streamingContent.id = 'ai-helper-streaming-summary';
     streamingContent.style.padding = '10px';
     streamingContent.style.marginTop = '10px';
-    streamingContent.style.minHeight = '100px';
     streamingContent.style.whiteSpace = 'pre-wrap';
-    
+
     const loader = document.createElement('div');
     loader.className = 'loader';
     loader.innerHTML = summaryLoadingText;
-    
+
     summaryArea.innerHTML = '';
     summaryArea.appendChild(loader);
     summaryArea.appendChild(streamingContent);
@@ -593,7 +592,7 @@ class AiHelper {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (csrfToken) {
       xhr.setRequestHeader('X-CSRF-Token', csrfToken);
@@ -606,7 +605,7 @@ class AiHelper {
       // onContentCallback
       function(_content, fullResponse) {
         streamingContent.textContent = fullResponse;
-        
+
         // Hide loader on first content
         if (loader.style.display !== 'none') {
           loader.style.display = 'none';
@@ -639,15 +638,15 @@ class AiHelper {
   generateReplyStream = function(generateReplyUrl, instructions, loadingText, errorText, applyButtonText, copyButtonText, copiedText) {
     const replyArea = document.getElementById('ai-helper-generate_reply-area');
     replyArea.style.display = '';
-    
+
     // Initialize streaming response area
     const streamingContent = document.createElement('div');
     streamingContent.id = 'ai-helper-streaming-reply';
-    
+
     const loader = document.createElement('div');
     loader.className = 'loader';
     loader.innerHTML = loadingText;
-    
+
     replyArea.innerHTML = '';
     replyArea.appendChild(loader);
     replyArea.appendChild(streamingContent);
@@ -655,7 +654,7 @@ class AiHelper {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', generateReplyUrl, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (csrfToken) {
       xhr.setRequestHeader('X-CSRF-Token', csrfToken);
@@ -668,7 +667,7 @@ class AiHelper {
       // onContentCallback
       function(_content, fullResponse) {
         streamingContent.textContent = fullResponse;
-        
+
         // Hide loader on first content
         if (loader.style.display !== 'none') {
           loader.style.display = 'none';
@@ -685,7 +684,7 @@ class AiHelper {
             issueNotes.value = fullResponse;
           }
         };
-        
+
         // Create copy link
         const copyLink = document.createElement('a');
         copyLink.href = '#';
@@ -701,7 +700,7 @@ class AiHelper {
           });
           return false;
         };
-        
+
         replyArea.appendChild(applyButton);
         replyArea.appendChild(copyLink);
       }
@@ -724,19 +723,18 @@ class AiHelper {
 
   generateWikiSummaryStream = function(generateSummaryUrl, summaryLoadingText, summaryErrorText) {
     const summaryArea = document.getElementById('ai-helper-wiki-summary-area');
-    
+
     // Set up streaming content area
     const streamingContent = document.createElement('div');
     streamingContent.id = 'ai-helper-streaming-wiki-summary';
     streamingContent.style.padding = '10px';
     streamingContent.style.marginTop = '10px';
-    streamingContent.style.minHeight = '100px';
     streamingContent.style.whiteSpace = 'pre-wrap';
-    
+
     const loader = document.createElement('div');
     loader.className = 'loader';
     loader.innerHTML = summaryLoadingText;
-    
+
     summaryArea.innerHTML = '';
     summaryArea.appendChild(loader);
     summaryArea.appendChild(streamingContent);
@@ -744,7 +742,7 @@ class AiHelper {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', generateSummaryUrl, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (csrfToken) {
       xhr.setRequestHeader('X-CSRF-Token', csrfToken);
@@ -757,7 +755,7 @@ class AiHelper {
       // onContentCallback
       function(_content, fullResponse) {
         streamingContent.textContent = fullResponse;
-        
+
         // Hide loader on first content
         if (loader.style.display !== 'none') {
           loader.style.display = 'none';
