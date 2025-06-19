@@ -129,10 +129,53 @@ class AiHelperControllerTest < ActionController::TestCase
         assert_template partial: "_issue_summary"
       end
 
+      should "destroy existing summary when update=true" do
+        # Create a mock summary
+        summary = AiHelperSummaryCache.new(object_class: "Issue", object_id: @issue.id, content: "Test summary")
+        summary.stubs(:destroy!).returns(true)
+        AiHelperSummaryCache.stubs(:issue_cache).with(issue_id: @issue.id).returns(summary)
+        
+        get :issue_summary, params: { id: @project.id, issue_id: @issue.id, update: "true" }
+        assert_response :success
+        assert_template partial: "_issue_summary"
+      end
+
       should "deny access for non-visible issue" do
         @issue.stubs(:visible?).returns(false)
         summary = @llm.issue_summary(issue: @issue)
         assert_equal "Permission denied", summary
+      end
+    end
+
+    context "#generate_issue_summary" do
+      setup do
+        @issue = Issue.find(1)
+        @llm = RedmineAiHelper::Llm.new
+      end
+
+      should "generate issue summary with streaming" do
+        # Mock the LLM response
+        RedmineAiHelper::Llm.any_instance.stubs(:issue_summary).returns("Generated summary")
+        
+        # Mock cache operations
+        AiHelperSummaryCache.stubs(:issue_cache).with(issue_id: @issue.id).returns(nil)
+        AiHelperSummaryCache.stubs(:update_issue_cache).with(issue_id: @issue.id, content: "Generated summary").returns(true)
+        
+        post :generate_issue_summary, params: { id: @issue.id }
+        assert_response :success
+      end
+
+      should "clear existing cache before generating new summary" do
+        # Create mock existing summary
+        existing_summary = AiHelperSummaryCache.new(object_class: "Issue", object_id: @issue.id, content: "Old summary")
+        existing_summary.stubs(:destroy!).returns(true)
+        
+        AiHelperSummaryCache.stubs(:issue_cache).with(issue_id: @issue.id).returns(existing_summary)
+        RedmineAiHelper::Llm.any_instance.stubs(:issue_summary).returns("New summary")
+        AiHelperSummaryCache.stubs(:update_issue_cache).with(issue_id: @issue.id, content: "New summary").returns(true)
+        
+        post :generate_issue_summary, params: { id: @issue.id }
+        assert_response :success
       end
     end
 

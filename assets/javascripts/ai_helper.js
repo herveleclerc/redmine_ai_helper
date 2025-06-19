@@ -82,22 +82,8 @@ class AiHelper {
     });
   };
 
-  call_llm = function () {
-    const url = ai_helper_urls.call_llm;
-    const data = JSON.stringify(this.page_info);
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', url, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    if (csrfToken) {
-      xhr.setRequestHeader('X-CSRF-Token', csrfToken);
-    }
-
-    xhr.responseType = 'text';
-
-    const parser = new AiHelperMarkdownParser();
-
+  // SSE stream processing helper
+  handleSSEStream = function(xhr, onContentCallback, onCompleteCallback) {
     let fullResponse = '';
     let buffer = '';
     let lastProcessedIndex = 0;
@@ -119,34 +105,67 @@ class AiHelper {
             const content = data.choices[0]?.delta?.content;
             if (content) {
               fullResponse += content;
-              const lastMessage = document.getElementById('aihelper_last_message');
-              if (lastMessage) {
-                ai_helper.innerHTMLwithScripts(lastMessage, parser.parse(fullResponse));
-              }
-
-              const chatConversation = document.getElementById("aihelper-chat-conversation");
-              if (chatConversation) {
-                chatConversation.scrollTop = chatConversation.scrollHeight;
-              }
-
-              const loaderArea = document.getElementById("ai-helper-loader-area");
-              if (loaderArea) {
-                loaderArea.style.display = "none";
+              if (onContentCallback) {
+                onContentCallback(content, fullResponse);
               }
             }
 
             if (data.choices[0]?.finish_reason === 'stop') {
-              ai_helper.reload_chat();
+              if (onCompleteCallback) {
+                onCompleteCallback(fullResponse);
+              }
             }
           } catch (e) {
             console.error('Parse error:', e);
           }
 
-            // Remove processed data from buffer
+          // Remove processed data from buffer
           buffer = buffer.replace(match, '');
         });
       }
     };
+  };
+
+  call_llm = function () {
+    const url = ai_helper_urls.call_llm;
+    const data = JSON.stringify(this.page_info);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+      xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+    }
+
+    xhr.responseType = 'text';
+
+    const parser = new AiHelperMarkdownParser();
+
+    // Use the common SSE handler
+    this.handleSSEStream(xhr, 
+      // onContentCallback
+      function(content, fullResponse) {
+        const lastMessage = document.getElementById('aihelper_last_message');
+        if (lastMessage) {
+          ai_helper.innerHTMLwithScripts(lastMessage, parser.parse(fullResponse));
+        }
+
+        const chatConversation = document.getElementById("aihelper-chat-conversation");
+        if (chatConversation) {
+          chatConversation.scrollTop = chatConversation.scrollHeight;
+        }
+
+        const loaderArea = document.getElementById("ai-helper-loader-area");
+        if (loaderArea) {
+          loaderArea.style.display = "none";
+        }
+      },
+      // onCompleteCallback
+      function(fullResponse) {
+        ai_helper.reload_chat();
+      }
+    );
 
     xhr.onerror = function () {
       const loaderArea = document.getElementById("ai-helper-loader-area");
@@ -549,6 +568,158 @@ class AiHelper {
 
     descriptionSpan.style.display = 'inline';
     descriptionEditSpan.style.display = 'none';
+  }
+
+  generateSummaryStream = function(generateSummaryUrl, summaryLoadingText, summaryErrorText) {
+    const summaryArea = document.getElementById('ai-helper-summary-area');
+    const url = generateSummaryUrl;
+    
+    // Set up streaming content area
+    const streamingContent = document.createElement('div');
+    streamingContent.id = 'ai-helper-streaming-summary';
+    streamingContent.style.padding = '10px';
+    streamingContent.style.marginTop = '10px';
+    streamingContent.style.minHeight = '100px';
+    streamingContent.style.whiteSpace = 'pre-wrap';
+    
+    const loader = document.createElement('div');
+    loader.className = 'loader';
+    loader.innerHTML = summaryLoadingText;
+    
+    summaryArea.innerHTML = '';
+    summaryArea.appendChild(loader);
+    summaryArea.appendChild(streamingContent);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+      xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+    }
+
+    xhr.responseType = 'text';
+
+    // Use the common SSE handler
+    this.handleSSEStream(xhr,
+      // onContentCallback
+      function(_content, fullResponse) {
+        streamingContent.textContent = fullResponse;
+        
+        // Hide loader on first content
+        if (loader.style.display !== 'none') {
+          loader.style.display = 'none';
+        }
+      },
+      // onCompleteCallback
+      function(_fullResponse) {
+        // Reload the summary display to show cached version
+        setTimeout(() => {
+          getSummary();
+        }, 1000);
+      }
+    );
+
+    xhr.onerror = function () {
+      loader.style.display = 'none';
+      streamingContent.textContent = summaryErrorText;
+    };
+
+    xhr.onload = function () {
+      if (xhr.status !== 200) {
+        loader.style.display = 'none';
+        streamingContent.textContent = `Error: ${xhr.status} ${xhr.statusText}`;
+      }
+    };
+
+    xhr.send('{}');
+  }
+
+  generateReplyStream = function(generateReplyUrl, instructions, loadingText, errorText, applyButtonText, copyButtonText, copiedText) {
+    const replyArea = document.getElementById('ai-helper-generate_reply-area');
+    replyArea.style.display = '';
+    
+    // Initialize streaming response area
+    const streamingContent = document.createElement('div');
+    streamingContent.id = 'ai-helper-streaming-reply';
+    
+    const loader = document.createElement('div');
+    loader.className = 'loader';
+    loader.innerHTML = loadingText;
+    
+    replyArea.innerHTML = '';
+    replyArea.appendChild(loader);
+    replyArea.appendChild(streamingContent);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', generateReplyUrl, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+      xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+    }
+
+    xhr.responseType = 'text';
+
+    // Use the common SSE handler
+    this.handleSSEStream(xhr,
+      // onContentCallback
+      function(_content, fullResponse) {
+        streamingContent.textContent = fullResponse;
+        
+        // Hide loader on first content
+        if (loader.style.display !== 'none') {
+          loader.style.display = 'none';
+        }
+      },
+      // onCompleteCallback
+      function(fullResponse) {
+        // Create apply button
+        const applyButton = document.createElement('button');
+        applyButton.textContent = applyButtonText;
+        applyButton.onclick = function() {
+          const issueNotes = document.getElementById("issue_notes");
+          if (issueNotes) {
+            issueNotes.value = fullResponse;
+          }
+        };
+        
+        // Create copy link
+        const copyLink = document.createElement('a');
+        copyLink.href = '#';
+        copyLink.className = 'icon icon-copy-link';
+        copyLink.innerHTML = copyButtonText;
+        copyLink.onclick = function(e) {
+          e.preventDefault();
+          navigator.clipboard.writeText(fullResponse).then(function() {
+            copyLink.innerHTML = copiedText;
+            setTimeout(function() {
+              copyLink.innerHTML = copyButtonText;
+            }, 2000);
+          });
+          return false;
+        };
+        
+        replyArea.appendChild(applyButton);
+        replyArea.appendChild(copyLink);
+      }
+    );
+
+    xhr.onerror = function () {
+      loader.style.display = 'none';
+      streamingContent.textContent = errorText;
+    };
+
+    xhr.onload = function () {
+      if (xhr.status !== 200) {
+        loader.style.display = 'none';
+        streamingContent.textContent = `Error: ${xhr.status} ${xhr.statusText}`;
+      }
+    };
+
+    xhr.send(JSON.stringify({ instructions: instructions }));
   }
 };
 

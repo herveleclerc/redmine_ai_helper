@@ -254,3 +254,11 @@ li.aihelper-history-item a {
 table.ai-helper-sub-issues-table td {
   padding-right: 5px;
 }
+
+#ai-helper-streaming-reply {
+  border: 1px solid #ccc;
+  white-space: pre-wrap;
+  padding: 10px;
+  margin-top: 10px;
+  min-height: 100px;
+}

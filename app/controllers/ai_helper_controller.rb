@@ -8,9 +8,9 @@ class AiHelperController < ApplicationController
   include RedmineAiHelper::Logger
   include AiHelperHelper
 
-  before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
+  before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
   before_action :find_wiki_page, only: [:wiki_summary]
-  before_action :find_project, except: [:issue_summary, :wiki_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
+  before_action :find_project, except: [:issue_summary, :wiki_summary, :generate_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
   before_action :find_user, :authorize, :create_session, :find_conversation
 
   # Display the chat form in the sidebar
@@ -69,13 +69,30 @@ class AiHelperController < ApplicationController
       summary.destroy!
       summary = nil
     end
-    llm = RedmineAiHelper::Llm.new
-    unless summary
-      content = llm.issue_summary(issue: @issue)
-      summary = AiHelperSummaryCache.update_issue_cache(issue_id: @issue.id, content: content)
-    end
 
     render partial: "ai_helper/issue_summary", locals: { summary: summary }
+  end
+
+  # Generate issue summary with streaming
+  def generate_issue_summary
+    # Clear existing cache
+    summary = AiHelperSummaryCache.issue_cache(issue_id: @issue.id)
+    summary&.destroy!
+
+    llm = RedmineAiHelper::Llm.new
+    full_content = ""
+
+    stream_llm_response do |stream_proc|
+      # Wrap stream_proc to capture content for caching
+      cache_proc = Proc.new do |content|
+        full_content += content if content
+        stream_proc.call(content)
+      end
+
+      content = llm.issue_summary(issue: @issue, stream_proc: cache_proc)
+      # Update cache with final content
+      AiHelperSummaryCache.update_issue_cache(issue_id: @issue.id, content: content)
+    end
   end
 
   # Display the wiki summary
