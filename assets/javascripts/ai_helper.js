@@ -721,6 +721,71 @@ class AiHelper {
 
     xhr.send(JSON.stringify({ instructions: instructions }));
   }
+
+  generateWikiSummaryStream = function(generateSummaryUrl, summaryLoadingText, summaryErrorText) {
+    const summaryArea = document.getElementById('ai-helper-wiki-summary-area');
+    
+    // Set up streaming content area
+    const streamingContent = document.createElement('div');
+    streamingContent.id = 'ai-helper-streaming-wiki-summary';
+    streamingContent.style.padding = '10px';
+    streamingContent.style.marginTop = '10px';
+    streamingContent.style.minHeight = '100px';
+    streamingContent.style.whiteSpace = 'pre-wrap';
+    
+    const loader = document.createElement('div');
+    loader.className = 'loader';
+    loader.innerHTML = summaryLoadingText;
+    
+    summaryArea.innerHTML = '';
+    summaryArea.appendChild(loader);
+    summaryArea.appendChild(streamingContent);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', generateSummaryUrl, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) {
+      xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+    }
+
+    xhr.responseType = 'text';
+
+    // Use the common SSE handler
+    this.handleSSEStream(xhr,
+      // onContentCallback
+      function(_content, fullResponse) {
+        streamingContent.textContent = fullResponse;
+        
+        // Hide loader on first content
+        if (loader.style.display !== 'none') {
+          loader.style.display = 'none';
+        }
+      },
+      // onCompleteCallback
+      function(_fullResponse) {
+        // Reload the summary display to show cached version
+        setTimeout(() => {
+          getWikiSummary();
+        }, 1000);
+      }
+    );
+
+    xhr.onerror = function () {
+      loader.style.display = 'none';
+      streamingContent.textContent = summaryErrorText;
+    };
+
+    xhr.onload = function () {
+      if (xhr.status !== 200) {
+        loader.style.display = 'none';
+        streamingContent.textContent = `Error: ${xhr.status} ${xhr.statusText}`;
+      }
+    };
+
+    xhr.send('{}');
+  }
 };
 
 var ai_helper = new AiHelper();
