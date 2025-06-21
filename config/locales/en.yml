@@ -6,7 +6,6 @@ en:
   label_ai_helper_start_new_chat: "Start a new chat"
   ai_helper_summary: "Summarize with AI Helper"
   ai_helper_text_summary_generated_time: "Generated at %{time}"
-  ai_helper_loading: "Loading..."
   ai_helper_error_occurred: "An error occurred"
   permission_view_ai_helper: "View AI Helper"
   ai_helper:

@@ -11,7 +11,7 @@
 
     const summaryArea = document.getElementById('ai-helper-summary-area');
     if (summaryArea) {
-      summaryArea.innerHTML = '<div class="loader"><%= j l(:ai_helper_loading) %></div>';
+      summaryArea.innerHTML = '<div class="ai-helper-loader"></div>';
     }
 
     const xhr = new XMLHttpRequest();
@@ -38,7 +38,6 @@
   function generateSummaryStream() {
     ai_helper.generateSummaryStream(
       "<%= ai_helper_generate_issue_summary_path(id: @issue.id) %>",
-      '<%= j l(:ai_helper_loading) %>',
       '<%= j l(:ai_helper_error_occurred) %>'
     );
   }

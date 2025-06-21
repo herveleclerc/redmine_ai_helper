@@ -50,7 +50,7 @@
         <%= button_tag l(:button_create), id: "ai-helper-generate-reply-btn", onclick: "ai_helper_generate_reply(#{@issue.id}); return false;" %>
 
         <div id="ai-helper-generate_reply-area" style="display: none;">
-            <div class="loader"><%=  l(:ai_helper_loading) %></div>
+            <div class="ai-helper-loader"></div>
         </div>
 
     </div>
@@ -62,7 +62,6 @@
         ai_helper.generateReplyStream(
             "<%= ai_helper_generate_issue_reply_path(id: @issue.id)%>",
             instructions,
-            '<%= j l(:ai_helper_loading) %>',
             '<%= j l(:error_occurred) %>',
             '<%= j l(:button_apply) %>',
             '<%= j sprite_icon("copy-link", l(:button_copy)) %>'

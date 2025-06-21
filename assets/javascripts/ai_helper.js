@@ -570,7 +570,7 @@ class AiHelper {
     descriptionEditSpan.style.display = 'none';
   }
 
-  generateSummaryStream = function(generateSummaryUrl, summaryLoadingText, summaryErrorText) {
+  generateSummaryStream = function(generateSummaryUrl, summaryErrorText) {
     const summaryArea = document.getElementById('ai-helper-summary-area');
     const url = generateSummaryUrl;
 
@@ -582,8 +582,7 @@ class AiHelper {
     streamingContent.style.whiteSpace = 'pre-wrap';
 
     const loader = document.createElement('div');
-    loader.className = 'loader';
-    loader.innerHTML = summaryLoadingText;
+    loader.className = 'ai-helper-loader';
 
     summaryArea.innerHTML = '';
     summaryArea.appendChild(loader);
@@ -635,7 +634,7 @@ class AiHelper {
     xhr.send('{}');
   }
 
-  generateReplyStream = function(generateReplyUrl, instructions, loadingText, errorText, applyButtonText, copyButtonText) {
+  generateReplyStream = function(generateReplyUrl, instructions, errorText, applyButtonText, copyButtonText) {
     const replyArea = document.getElementById('ai-helper-generate_reply-area');
     replyArea.style.display = '';
 
@@ -644,8 +643,7 @@ class AiHelper {
     streamingContent.id = 'ai-helper-streaming-reply';
 
     const loader = document.createElement('div');
-    loader.className = 'loader';
-    loader.innerHTML = loadingText;
+    loader.className = 'ai-helper-loader';
 
     replyArea.innerHTML = '';
     replyArea.appendChild(loader);
@@ -719,7 +717,7 @@ class AiHelper {
     xhr.send(JSON.stringify({ instructions: instructions }));
   }
 
-  generateWikiSummaryStream = function(generateSummaryUrl, summaryLoadingText, summaryErrorText) {
+  generateWikiSummaryStream = function(generateSummaryUrl, summaryErrorText) {
     const summaryArea = document.getElementById('ai-helper-wiki-summary-area');
 
     // Set up streaming content area
@@ -730,8 +728,7 @@ class AiHelper {
     streamingContent.style.whiteSpace = 'pre-wrap';
 
     const loader = document.createElement('div');
-    loader.className = 'loader';
-    loader.innerHTML = summaryLoadingText;
+    loader.className = 'ai-helper-loader';
 
     summaryArea.innerHTML = '';
     summaryArea.appendChild(loader);
