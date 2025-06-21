@@ -262,3 +262,42 @@ table.ai-helper-sub-issues-table td {
   margin-top: 10px;
   min-height: 100px;
 }
+
+/* Similar issues styles */
+.ai-helper-similar-issues-table {
+  border-collapse: collapse;
+  margin: 10px 0;
+}
+
+.ai-helper-similar-issues-table td,
+.ai-helper-similar-issues-table th {
+  padding: 3px 12px 3px 0;
+  vertical-align: top;
+  border: none;
+  white-space: nowrap;
+}
+
+.ai-helper-similarity-score {
+  font-weight: bold;
+  text-align: right;
+}
+
+.ai-helper-issue-id {
+  text-align: right;
+}
+
+.ai-helper-issue-subject {
+}
+
+.ai-helper-project {
+}
+
+.ai-helper-status {
+}
+
+.ai-helper-priority {
+}
+
+.ai-helper-assigned {
+  text-align: center;
+}

@@ -8,9 +8,9 @@ class AiHelperController < ApplicationController
   include RedmineAiHelper::Logger
   include AiHelperHelper
 
-  before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
+  before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues, :similar_issues]
   before_action :find_wiki_page, only: [:wiki_summary, :generate_wiki_summary]
-  before_action :find_project, except: [:issue_summary, :wiki_summary, :generate_issue_summary, :generate_wiki_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues]
+  before_action :find_project, except: [:issue_summary, :wiki_summary, :generate_issue_summary, :generate_wiki_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues, :similar_issues]
   before_action :find_user, :authorize, :create_session, :find_conversation
 
   # Display the chat form in the sidebar
@@ -236,6 +236,20 @@ class AiHelperController < ApplicationController
       end
     end
     redirect_to issue_path(@issue), notice: l(:notice_sub_issues_added)
+  end
+
+  # Find similar issues using LLM and IssueAgent
+  def similar_issues
+    begin
+      llm = RedmineAiHelper::Llm.new
+      similar_issues = llm.find_similar_issues(issue: @issue)
+      
+      render partial: "ai_helper/similar_issues", locals: { similar_issues: similar_issues }
+    rescue => e
+      ai_helper_logger.error "Similar issues search error: #{e.message}"
+      ai_helper_logger.error e.backtrace.join("\n")
+      render json: { error: e.message }, status: :internal_server_error
+    end
   end
 
   private

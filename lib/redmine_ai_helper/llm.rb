@@ -107,6 +107,24 @@ module RedmineAiHelper
       sub_issues
     end
 
+    # Find similar issues using IssueAgent
+    # @param issue [Issue] The issue object to find similar issues for
+    # @return [Array<Hash>] Array of similar issues with metadata
+    def find_similar_issues(issue:)
+      begin
+        langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: "find similar issues for #{issue.id}")
+        agent = RedmineAiHelper::Agents::IssueAgent.new(project: issue.project, langfuse: langfuse)
+        langfuse.create_span(name: "find_similar_issues", input: "issue_id: #{issue.id}")
+        results = agent.find_similar_issues(issue: issue)
+        langfuse.finish_current_span(output: results)
+        langfuse.flush
+        results
+      rescue => e
+        ai_helper_logger.error "error: #{e.full_message}"
+        raise e
+      end
+    end
+
     # Get the summary of the wiki page using WikiAgent with streaming support
     # @param wiki_page [WikiPage] The wiki page object
     # @param stream_proc [Proc] Optional callback proc for streaming content
