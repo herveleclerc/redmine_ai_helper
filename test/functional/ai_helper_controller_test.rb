@@ -129,10 +129,53 @@ class AiHelperControllerTest < ActionController::TestCase
         assert_template partial: "_issue_summary"
       end
 
+      should "destroy existing summary when update=true" do
+        # Create a mock summary
+        summary = AiHelperSummaryCache.new(object_class: "Issue", object_id: @issue.id, content: "Test summary")
+        summary.stubs(:destroy!).returns(true)
+        AiHelperSummaryCache.stubs(:issue_cache).with(issue_id: @issue.id).returns(summary)
+        
+        get :issue_summary, params: { id: @project.id, issue_id: @issue.id, update: "true" }
+        assert_response :success
+        assert_template partial: "_issue_summary"
+      end
+
       should "deny access for non-visible issue" do
         @issue.stubs(:visible?).returns(false)
         summary = @llm.issue_summary(issue: @issue)
         assert_equal "Permission denied", summary
+      end
+    end
+
+    context "#generate_issue_summary" do
+      setup do
+        @issue = Issue.find(1)
+        @llm = RedmineAiHelper::Llm.new
+      end
+
+      should "generate issue summary with streaming" do
+        # Mock the LLM response
+        RedmineAiHelper::Llm.any_instance.stubs(:issue_summary).returns("Generated summary")
+        
+        # Mock cache operations
+        AiHelperSummaryCache.stubs(:issue_cache).with(issue_id: @issue.id).returns(nil)
+        AiHelperSummaryCache.stubs(:update_issue_cache).with(issue_id: @issue.id, content: "Generated summary").returns(true)
+        
+        post :generate_issue_summary, params: { id: @issue.id }
+        assert_response :success
+      end
+
+      should "clear existing cache before generating new summary" do
+        # Create mock existing summary
+        existing_summary = AiHelperSummaryCache.new(object_class: "Issue", object_id: @issue.id, content: "Old summary")
+        existing_summary.stubs(:destroy!).returns(true)
+        
+        AiHelperSummaryCache.stubs(:issue_cache).with(issue_id: @issue.id).returns(existing_summary)
+        RedmineAiHelper::Llm.any_instance.stubs(:issue_summary).returns("New summary")
+        AiHelperSummaryCache.stubs(:update_issue_cache).with(issue_id: @issue.id, content: "New summary").returns(true)
+        
+        post :generate_issue_summary, params: { id: @issue.id }
+        assert_response :success
       end
     end
 
@@ -249,6 +292,89 @@ class AiHelperControllerTest < ActionController::TestCase
       should "handle 404 for non-existent wiki page" do
         get :wiki_summary, params: { id: 999999 }
         assert_response :not_found
+      end
+    end
+
+    context "#generate_wiki_summary" do
+      setup do
+        @wiki = Wiki.find(1)
+        @wiki_page = @wiki.pages.first
+        @llm = RedmineAiHelper::Llm.new
+      end
+
+      should "generate wiki summary with streaming" do
+        # Mock the LLM response
+        RedmineAiHelper::Llm.any_instance.stubs(:wiki_summary).returns("Generated wiki summary")
+        
+        # Mock cache operations
+        AiHelperSummaryCache.stubs(:wiki_cache).with(wiki_page_id: @wiki_page.id).returns(nil)
+        AiHelperSummaryCache.stubs(:update_wiki_cache).with(wiki_page_id: @wiki_page.id, content: "Generated wiki summary").returns(true)
+        
+        post :generate_wiki_summary, params: { id: @wiki_page.id }
+        assert_response :success
+      end
+
+      should "clear existing cache before generating new summary" do
+        # Create mock existing summary
+        existing_summary = AiHelperSummaryCache.new(object_class: "WikiPage", object_id: @wiki_page.id, content: "Old wiki summary")
+        existing_summary.stubs(:destroy!).returns(true)
+        
+        AiHelperSummaryCache.stubs(:wiki_cache).with(wiki_page_id: @wiki_page.id).returns(existing_summary)
+        RedmineAiHelper::Llm.any_instance.stubs(:wiki_summary).returns("New wiki summary")
+        AiHelperSummaryCache.stubs(:update_wiki_cache).with(wiki_page_id: @wiki_page.id, content: "New wiki summary").returns(true)
+        
+        post :generate_wiki_summary, params: { id: @wiki_page.id }
+        assert_response :success
+      end
+
+      should "handle wiki page not found" do
+        get :generate_wiki_summary, params: { id: 999999 }
+        assert_response :not_found
+      end
+    end
+
+    context "#generate_issue_reply error handling" do
+      setup do
+        @issue = Issue.find(1)
+      end
+
+      should "return unsupported media type for non-JSON request" do
+        post :generate_issue_reply, params: { id: @issue.id, instructions: "test" }
+        assert_response :unsupported_media_type
+      end
+    end
+
+    context "#generate_sub_issues error handling" do
+      setup do
+        @issue = Issue.find(1)
+      end
+
+      should "return unsupported media type for non-JSON request" do
+        post :generate_sub_issues, params: { id: @issue.id, instructions: "test" }
+        assert_response :unsupported_media_type
+      end
+
+    end
+
+    context "#add_sub_issues error handling" do
+      setup do
+        @issue = Issue.new(subject: "Parent Issue", project: @project, author: @user, tracker_id: 1, status_id: 1)
+        @issue.save!
+        @sub_issue_params = {
+          "1" => { subject: "", description: "Invalid issue", tracker_id: 1, check: true },
+        }
+      end
+
+      should "handle validation errors when creating sub-issues" do
+        # Mock issue save failure
+        Issue.any_instance.stubs(:save).returns(false)
+        Issue.any_instance.stubs(:errors).returns(mock('errors').tap do |errors|
+          errors.stubs(:full_messages).returns(["Subject can't be blank"])
+        end)
+        
+        post :add_sub_issues, params: { id: @issue.id, sub_issues: @sub_issue_params, tracker_id: 1 }
+        assert_response :redirect
+        assert_not_nil flash[:error]
       end
     end
   end

@@ -50,7 +50,7 @@
         <%= button_tag l(:button_create), id: "ai-helper-generate-reply-btn", onclick: "ai_helper_generate_reply(#{@issue.id}); return false;" %>
 
         <div id="ai-helper-generate_reply-area" style="display: none;">
-            <div class="loader"><%=  l(:ai_helper_loading) %></div>
+            <div class="ai-helper-loader"></div>
         </div>
 
     </div>
@@ -59,30 +59,13 @@
 <script>
     function ai_helper_generate_reply(issue_id) {
         const instructions = document.getElementById("ai-helper-reply-instructions").value;
-        const url = "<%= ai_helper_generate_issue_reply_path(id: @issue.id)%>";
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', url, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (csrfToken) {
-            xhr.setRequestHeader('X-CSRF-Token', csrfToken);
-        }
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                const replyArea = document.getElementById('ai-helper-generate_reply-area');
-                replyArea.innerHTML = xhr.responseText;
-            } else {
-                alert('Error: ' + xhr.statusText);
-            }
-        };
-        replyArea = document.getElementById('ai-helper-generate_reply-area');
-        replyArea.style.display = '';
-        const loader = document.createElement('div');
-        loader.className = 'loader';
-        loader.innerHTML = '<%= j l(:ai_helper_loading) %>';
-        replyArea.innerHTML = '';
-        replyArea.appendChild(loader);
-        xhr.send(JSON.stringify({ instructions: instructions }));
+        ai_helper.generateReplyStream(
+            "<%= ai_helper_generate_issue_reply_path(id: @issue.id)%>",
+            instructions,
+            '<%= j l(:error_occurred) %>',
+            '<%= j l(:button_apply) %>',
+            '<%= j sprite_icon("copy-link", l(:button_copy)) %>'
+        );
     };
 </script>
 

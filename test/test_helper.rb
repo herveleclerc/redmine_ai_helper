@@ -3,11 +3,11 @@
 require "simplecov"
 require "simplecov-cobertura"
 
-SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
-  SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter,
+SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new([
+  SimpleCov::Formatter::CoberturaFormatter,
   SimpleCov::Formatter::HTMLFormatter
-# Coveralls::SimpleCov::Formatter
-]
+  # Coveralls::SimpleCov::Formatter
+])
 
 SimpleCov.start do
   root File.expand_path(File.dirname(__FILE__) + "/..")
@@ -25,7 +25,7 @@ require File.expand_path(File.dirname(__FILE__) + "/../../../test/test_helper")
 
 require File.expand_path(File.dirname(__FILE__) + "/model_factory")
 
-# このファイルと同じフォルダにあるmodel_factory.rbを読み込む
+# Load model_factory.rb from the same folder as this file
 require_relative "./model_factory"
 
 AiHelperModelProfile.delete_all

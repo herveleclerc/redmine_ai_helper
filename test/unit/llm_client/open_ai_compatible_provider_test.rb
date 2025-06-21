@@ -44,6 +44,86 @@ class RedmineAiHelper::LlmClient::OpenAiCompatibleProviderTest < ActiveSupport::
         @provider.generate_client
       end
     end
+
+    should "include organization_id in llm_options when present" do
+      profile = AiHelperModelProfile.create!(
+        name: "Test Profile with org",
+        llm_type: "OpenAI",
+        llm_model: "gpt-3.5-turbo", 
+        access_key: "test_key",
+        organization_id: "test_org_id",
+        base_uri: "https://api.openai.com"
+      )
+      @setting.model_profile = profile
+      @setting.save!
+
+      # Mock OpenAiCompatible creation to capture parameters
+      mock_client = mock('openai_compatible')
+      RedmineAiHelper::LlmClient::OpenAiCompatibleProvider::OpenAiCompatible.expects(:new).with() do |params|
+        params[:llm_options][:organization_id] == "test_org_id"
+      end.returns(mock_client)
+
+      @provider.generate_client
+    end
+
+    should "include embedding_model when not blank" do
+      profile = AiHelperModelProfile.create!(
+        name: "Test Profile embedding",
+        llm_type: "OpenAI",
+        llm_model: "gpt-3.5-turbo",
+        access_key: "test_key", 
+        base_uri: "https://api.openai.com"
+      )
+      @setting.model_profile = profile
+      @setting.embedding_model = "text-embedding-ada-002"
+      @setting.save!
+
+      mock_client = mock('openai_compatible')
+      RedmineAiHelper::LlmClient::OpenAiCompatibleProvider::OpenAiCompatible.expects(:new).with() do |params|
+        params[:llm_options][:embedding_model] == "text-embedding-ada-002" &&
+        params[:default_options][:embedding_model] == "text-embedding-ada-002"
+      end.returns(mock_client)
+
+      @provider.generate_client
+    end
+
+    should "include dimension when set" do
+      profile = AiHelperModelProfile.create!(
+        name: "Test Profile full",
+        llm_type: "OpenAI", 
+        llm_model: "gpt-3.5-turbo",
+        access_key: "test_key",
+        base_uri: "https://api.openai.com"
+      )
+      @setting.model_profile = profile
+      @setting.dimension = 1536
+      @setting.save!
+
+      mock_client = mock('openai_compatible')
+      RedmineAiHelper::LlmClient::OpenAiCompatibleProvider::OpenAiCompatible.expects(:new).with() do |params|
+        params[:default_options][:dimensions] == 1536
+      end.returns(mock_client)
+
+      @provider.generate_client
+    end
+
+    should "raise error when client creation fails" do
+      profile = AiHelperModelProfile.create!(
+        name: "Test Profile fail",
+        llm_type: "OpenAI",
+        llm_model: "gpt-3.5-turbo",
+        access_key: "test_key",
+        base_uri: "https://api.openai.com"
+      )
+      @setting.model_profile = profile
+      @setting.save!
+
+      RedmineAiHelper::LlmClient::OpenAiCompatibleProvider::OpenAiCompatible.expects(:new).returns(nil)
+
+      assert_raises(RuntimeError, "OpenAI LLM Create Erro") do
+        @provider.generate_client
+      end
+    end
   end
 
   context "OpenAiCompatible" do

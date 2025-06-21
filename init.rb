@@ -15,13 +15,13 @@ Redmine::Plugin.register :redmine_ai_helper do
   author_url "https://github.com/haru"
   requires_redmine :version_or_higher => "6.0.0"
 
-  version "1.3.0"
+  version "1.4.0"
 
   project_module :ai_helper do
     permission :view_ai_helper,
                { ai_helper: [
                  :chat, :chat_form, :reload, :clear, :call_llm,
-                 :history, :issue_summary, :wiki_summary, :conversation, :generate_issue_reply,
+                 :history, :issue_summary, :generate_issue_summary, :wiki_summary, :generate_wiki_summary, :conversation, :generate_issue_reply,
                  :generate_sub_issues, :add_sub_issues,
                ] }
     permission :manage_ai_helper_settings, { ai_helper_project_settings: [:show, :update] }

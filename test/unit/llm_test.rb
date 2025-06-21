@@ -201,7 +201,7 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         project: @wiki_page.wiki.project,
         langfuse: anything
       ).returns(mock('agent').tap do |agent|
-        agent.stubs(:wiki_summary).with(wiki_page: @wiki_page).returns("Summary")
+        agent.stubs(:wiki_summary).with(wiki_page: @wiki_page, stream_proc: nil).returns("Summary")
       end)
       
       @llm.wiki_summary(wiki_page: @wiki_page)

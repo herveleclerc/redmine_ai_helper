@@ -11,7 +11,7 @@
 
     const summaryArea = document.getElementById('ai-helper-summary-area');
     if (summaryArea) {
-      summaryArea.innerHTML = '<div class="loader"><%= j l(:ai_helper_loading) %></div>';
+      summaryArea.innerHTML = '<div class="ai-helper-loader"></div>';
     }
 
     const xhr = new XMLHttpRequest();
@@ -35,12 +35,19 @@
     xhr.send();
   };
 
+  function generateSummaryStream() {
+    ai_helper.generateSummaryStream(
+      "<%= ai_helper_generate_issue_summary_path(id: @issue.id) %>",
+      '<%= j l(:ai_helper_error_occurred) %>'
+    );
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
     const summaryButtons = document.querySelectorAll('.ai-helper-summary-button');
     summaryButtons.forEach(function(button) {
       button.addEventListener('click', function(e) {
         e.preventDefault();
-        getSummary();
+        generateSummaryStream();
       });
     });
   });
@@ -94,7 +101,7 @@
             });
         </script>
         <% else %>
-        <%= link_to l(:ai_helper_summary), '#', class: 'ai-helper-summary-button', id: 'ai-helper-summary-button' %>
+        <%= link_to l(:ai_helper_summary), '#', class: 'ai-helper-summary-button', id: 'ai-helper-summary-button', onclick: 'generateSummaryStream(); return false;' %>
         <% end %>
 
       </div>

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require "redmine_ai_helper/base_tools"
 require "redmine_ai_helper/util/langchain_patch"
+require "redmine_ai_helper/transport/transport_factory"
 
 module RedmineAiHelper
   module Tools
@@ -9,23 +10,25 @@ module RedmineAiHelper
     # This class is designed to be used in conjunction with the MCP server, which provides a JSON-RPC interface for tool execution.
     # The class dynamically generates tool classes based on the MCP server's JSON definition.
     # The generated tool classes can be used to define functions and execute commands with specific input schemas.
+    # Updated to use the new transport abstraction layer to support both STDIO and HTTP+SSE transports.
     class McpTools < RedmineAiHelper::BaseTools
       using RedmineAiHelper::Util::LangchainPatch
 
       class << self
 
         # Generate tool classes based on the definition JSON from the MCP server
-        # The JSON format is as follows
+        # The JSON format supports both STDIO and HTTP transports (auto-detected):
+        # STDIO format (detected by presence of 'command' or 'args'):
         # {
         #     "command": "npx",
-        #     "args": [
-        #       "-y",
-        #       "@modelcontextprotocol/server-slack"
-        #     ],
-        #     "env": {
-        #       "SLACK_BOT_TOKEN": "xoxb-your-bot-token",
-        #       "SLACK_TEAM_ID": "T01234567"
-        #     }
+        #     "args": ["-y", "@modelcontextprotocol/server-slack"],
+        #     "env": {"SLACK_BOT_TOKEN": "xoxb-your-bot-token"}
+        # }
+        # HTTP format (detected by presence of 'url'):
+        # {
+        #     "url": "http://localhost:3000",
+        #     "headers": {"Authorization": "Bearer token"},
+        #     "timeout": 30
         # }
         # @param name [String] The name of the tool class to be generated.
         # @param json [Hash] The JSON definition of the tool class.
@@ -36,18 +39,35 @@ module RedmineAiHelper
                            Class.new(RedmineAiHelper::Tools::McpTools) do
             @mcp_server_json = json
             @mcp_server_json.freeze
-            @mcp_server_commandline = nil
+            @transport = nil
             @mcp_server_call_counter = 0
+            
+            def self.transport
+              @transport ||= RedmineAiHelper::Transport::TransportFactory.create(@mcp_server_json)
+            end
+
+            # Backward compatibility methods (existing code may depend on these)
             def self.command_array
-              return @mcp_server_commandline if @mcp_server_commandline
+              return [] unless @mcp_server_json['command']
               command = @mcp_server_json["command"]
               args = [command]
               args = args + @mcp_server_json["args"] if @mcp_server_json["args"]
-              @mcp_server_commandline = args
+              args
             end
 
             def self.env_hash
               @mcp_server_json["env"] || {}
+            end
+
+            # Close the transport
+            def self.close_transport
+              @transport&.close
+              @transport = nil
+            end
+
+            # Send MCP request using the configured transport
+            def self.send_mcp_request(message)
+              transport.send_request(message)
             end
           end)
           klass = Object.const_get(class_name)
@@ -83,17 +103,22 @@ module RedmineAiHelper
         end
 
         # Executes the MCP command with the provided input JSON.
+        # @deprecated Use send_mcp_request instead which supports multiple transports
         # @param input_json [String] The input JSON to be passed to the MCP server.
         # @return [String] The output from the MCP server.
         def execut_mcp_command(input_json:)
-          env = env_hash
-          cmd = command_array
-          stdout, stderr, status = Open3.capture3(env, *cmd, { stdin_data: "#{input_json}\n" })
+          # For backward compatibility, use the new transport system
+          message = JSON.parse(input_json)
+          response = send_mcp_request(message)
+          response.to_json
+        end
 
-          unless status.success?
-            raise "Error: #{stderr}"
-          end
-          stdout
+        # Sends a request to the MCP server using the configured transport.
+        # @param message [Hash] The JSON-RPC message to send.
+        # @return [Hash] The response from the MCP server.
+        def send_mcp_request(message)
+          # This method should be overridden in generated subclasses to use their transport
+          raise NotImplementedError, "send_mcp_request must be implemented in generated subclass"
         end
 
         # Loads the tools from the MCP server.
@@ -101,18 +126,18 @@ module RedmineAiHelper
         # The response is then parsed and the tools are loaded into the class.
         # @return [Array] An array of loaded tools.
         def load_from_mcp_server
-          # input_data = '{"method": "tools/list", "params": {}, "jsonrpc": "2.0", "id": 0}'
-          input_data = {
+          request_message = {
             "method" => "tools/list",
             "params" => {},
             "jsonrpc" => "2.0",
             "id" => mcp_server_call_counter_up,
-          }.to_json
+          }
           @mcp_server_call_counter += 1
-          stdout = execut_mcp_command(input_json: input_data)
+          
+          response = send_mcp_request(request_message)
 
-          # Parse the JSON to retrieve the list of tools
-          tools = JSON.parse(stdout).dig("result", "tools") rescue nil
+          # Parse the response to retrieve the list of tools
+          tools = response.dig("result", "tools") rescue nil
 
           load_json(json: tools)
         end
@@ -147,7 +172,7 @@ module RedmineAiHelper
 
         raise ArgumentError, "Function not found: #{name}" unless function
 
-        input_json = {
+        request_message = {
           "method" => "tools/call",
           "params" => {
             "name" => name.to_s,
@@ -155,11 +180,12 @@ module RedmineAiHelper
           },
           "jsonrpc" => "2.0",
           "id" => self.class.mcp_server_call_counter_up,
-        }.to_json
+        }
 
-        stdout = self.class.execut_mcp_command(input_json: input_json)
+        response = self.class.send_mcp_request(request_message)
 
-        stdout
+        # Return response as string for backward compatibility
+        response.to_json
       end
     end
   end

@@ -31,11 +31,12 @@ module RedmineAiHelper
         base_tools
       end
 
-      # Generate a summary of the issue.
+      # Generate a summary of the issue with optional streaming support.
       # @param issue [Issue] The issue for which the summary is to be generated.
+      # @param stream_proc [Proc] Optional callback proc for streaming content.
       # @return [String] The generated summary of the issue.
       # @raise [PermissionDenied] if the issue is not visible to the user.
-      def issue_summary(issue:)
+      def issue_summary(issue:, stream_proc: nil)
         return "Permission denied" unless issue.visible?
 
         prompt = load_prompt("issue_agent/summary")
@@ -43,15 +44,17 @@ module RedmineAiHelper
         prompt_text = prompt.format(issue: JSON.pretty_generate(issue_json))
         message = { role: "user", content: prompt_text }
         messages = [message]
-        chat(messages)
+        
+        chat(messages, {}, stream_proc)
       end
 
-      # Generate sub-issues based on the provided issue and instructions.
-      # @param issue [Issue] The issue to base the sub-issues on.
-      # @param instructions [String] Instructions for generating the sub-issues.
-      # @return [String] The generated sub-issues.
+      # Generate issue reply with optional streaming support
+      # @param issue [Issue] The issue to base the reply on.
+      # @param instructions [String] Instructions for generating the reply.
+      # @param stream_proc [Proc] Optional callback proc for streaming content.
+      # @return [String] The generated reply.
       # @raise [PermissionDenied] if the issue is not visible to the user.
-      def generate_issue_reply(issue:, instructions:)
+      def generate_issue_reply(issue:, instructions:, stream_proc: nil)
         return "Permission denied" unless issue.visible?
         return "Permission denied" unless issue.notes_addable?(User.current)
 
@@ -66,7 +69,8 @@ module RedmineAiHelper
         )
         message = { role: "user", content: prompt_text }
         messages = [message]
-        chat(messages)
+        
+        chat(messages, {}, stream_proc)
       end
 
       # Generate a draft for sub-issues based on the provided issue and instructions.
