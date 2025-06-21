@@ -70,6 +70,51 @@
     localStorage.setItem('aiHelperIssueSummaryState', isOpen ? 'expanded' : 'collapsed');
   };
 
+
+  // Function to find similar issues
+  function findSimilarIssues() {
+    const url = "<%= ai_helper_similar_issues_path(id: @issue.id) %>";
+    const similarIssuesArea = document.getElementById('ai-helper-similar-issues-area');
+    
+    if (similarIssuesArea) {
+      similarIssuesArea.innerHTML = '<div class="ai-helper-loader"></div>';
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        if (similarIssuesArea) {
+          similarIssuesArea.innerHTML = xhr.responseText;
+        }
+      } else {
+        if (similarIssuesArea) {
+          similarIssuesArea.innerHTML = '<div class="error"><%= j l(:ai_helper_error_occurred) %>: ' + xhr.statusText + '</div>';
+        }
+      }
+    };
+    xhr.onerror = function() {
+      if (similarIssuesArea) {
+        similarIssuesArea.innerHTML = '<div class="error"><%= j l(:ai_helper_error_occurred) %></div>';
+      }
+    };
+    xhr.send();
+  };
+
+
+  // Function to move similar issues section to after relations
+  function moveSimilarIssuesToRelations() {
+    const similarIssuesSection = document.getElementById('ai-helper-similar-issues-section');
+    if (!similarIssuesSection) return;
+
+    // Look for relations section
+    const relationsDiv = document.getElementById('relations');
+    if (relationsDiv) {
+      // Insert after relations div
+      relationsDiv.parentNode.insertBefore(similarIssuesSection, relationsDiv.nextSibling);
+    }
+  };
+
   // On page load, retrieve the state from localStorage and set the open/closed state of the fieldset
   document.addEventListener('DOMContentLoaded', function() {
     const savedState = localStorage.getItem('aiHelperIssueSummaryState');
@@ -78,6 +123,9 @@
     } else {
       aiHelperSetSummayExpanded(false);
     }
+
+    // Move similar issues to relations area
+    moveSimilarIssuesToRelations();
   });
 
 <% end %>
@@ -109,4 +157,17 @@
 
 </fieldset>
 
+<% end %>
+
+<% if (@project and @project.module_enabled?(:ai_helper) and User.current.allowed_to?({ controller: :ai_helper, action: :similar_issues }, @project) and AiHelperSetting.find_or_create.model_profile and AiHelperSetting.vector_search_enabled?) %>
+<div id="ai-helper-similar-issues-section" style="border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px;">
+    <div class="contextual">
+    </div>
+    <%= link_to '#', class: 'ai-helper-similar-issues-button icon icon-list', id: 'ai-helper-similar-issues-button', onclick: 'findSimilarIssues(); return false;', style: 'text-decoration: none; font-weight: bold; font-size: 14px;' do %>
+        <%= sprite_icon("ai-helper-robot", plugin: :redmine_ai_helper)%>
+        <%= l(:ai_helper_similar_issues) %>
+    <% end %>
+    <div id="ai-helper-similar-issues-area">
+    </div>
+</div>
 <% end %>

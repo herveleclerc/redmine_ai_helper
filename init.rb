@@ -22,7 +22,7 @@ Redmine::Plugin.register :redmine_ai_helper do
                { ai_helper: [
                  :chat, :chat_form, :reload, :clear, :call_llm,
                  :history, :issue_summary, :generate_issue_summary, :wiki_summary, :generate_wiki_summary, :conversation, :generate_issue_reply,
-                 :generate_sub_issues, :add_sub_issues,
+                 :generate_sub_issues, :add_sub_issues, :similar_issues,
                ] }
     permission :manage_ai_helper_settings, { ai_helper_project_settings: [:show, :update] }
   end

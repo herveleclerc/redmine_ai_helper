@@ -377,5 +377,109 @@ class AiHelperControllerTest < ActionController::TestCase
         assert_not_nil flash[:error]
       end
     end
+
+    context "#similar_issues" do
+      setup do
+        @issue = Issue.find(1)
+        @issue.project = @project
+        @issue.save!
+        @llm_mock = mock("RedmineAiHelper::Llm")
+        RedmineAiHelper::Llm.stubs(:new).returns(@llm_mock)
+      end
+
+      should "return similar issues successfully" do
+        # Mock LLM find_similar_issues method with proper structure
+        similar_issues = [{
+          id: 2,
+          project: { name: "Test Project" },
+          subject: "Similar issue",
+          status: { name: "Open" },
+          updated_on: Time.now,
+          assigned_to: { name: "Test User" },
+          similarity_score: 85.0,
+          issue_url: "/issues/2"
+        }]
+        
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).returns(similar_issues)
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :success
+        
+        # Check that the response contains the expected content (HTML partial)
+        assert_match /Similar issue/, @response.body
+        assert_match /85\.0%/, @response.body
+        assert_match /Updated/, @response.body
+      end
+
+      should "exclude current issue from results" do
+        # Mock LLM find_similar_issues method (should already exclude current issue)
+        similar_issues = [{
+          id: 2,
+          project: { name: "Test Project" },
+          subject: "Similar issue",
+          status: { name: "Open" },
+          updated_on: Time.now,
+          assigned_to: { name: "Test User" },
+          similarity_score: 85.0,
+          issue_url: "/issues/2"
+        }]
+        
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).returns(similar_issues)
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :success
+        
+        # Check that only the other issue is included (current issue excluded)
+        assert_match /Similar issue/, @response.body
+        # Check that only issue ID 2 is present, not the current issue ID 1
+        assert_match />2</, @response.body
+        assert_no_match />#{@issue.id}</, @response.body
+      end
+
+      should "return empty array when no similar issues found" do
+        # Mock LLM find_similar_issues method returning empty array
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).returns([])
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :success
+        
+        # Check that no similar issues message is displayed
+        assert_match /No similar issues found/, @response.body
+      end
+
+      should "handle vector search errors gracefully" do
+        # Mock LLM find_similar_issues method raising an error
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).raises(StandardError.new("Vector search failed"))
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :internal_server_error
+        
+        response_data = JSON.parse(@response.body)
+        assert_equal "Vector search failed", response_data["error"]
+      end
+
+      should "handle missing assigned_to_name gracefully" do
+        # Mock LLM find_similar_issues method with nil assigned_to
+        similar_issues = [{
+          id: 2,
+          project: { name: "Test Project" },
+          subject: "Similar issue",
+          status: { name: "Open" },
+          updated_on: Time.now,
+          assigned_to: nil,
+          similarity_score: 85.0,
+          issue_url: "/issues/2"
+        }]
+        
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).returns(similar_issues)
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :success
+        
+        # Check that the similar issue is displayed even without assigned_to_name
+        assert_match /Similar issue/, @response.body
+        assert_match /85\.0%/, @response.body
+      end
+    end
   end
 end

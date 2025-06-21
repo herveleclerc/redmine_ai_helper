@@ -127,6 +127,79 @@ class RedmineAiHelper::Agents::IssueAgentTest < ActiveSupport::TestCase
         assert subissues
       end
     end
+
+    context "find_similar_issues" do
+      setup do
+        @mock_vector_tools = mock("VectorTools")
+        RedmineAiHelper::Tools::VectorTools.stubs(:new).returns(@mock_vector_tools)
+        @mock_setting = mock("AiHelperSetting")
+        @mock_setting.stubs(:vector_search_enabled).returns(true)
+        AiHelperSetting.stubs(:vector_search_enabled?).returns(true)
+      end
+
+      should "return empty array if issue not visible" do
+        @issue.stubs(:visible?).returns(false)
+        
+        result = @agent.find_similar_issues(issue: @issue)
+        
+        assert_equal [], result
+      end
+
+      should "return empty array if vector search not enabled" do
+        AiHelperSetting.stubs(:vector_search_enabled?).returns(false)
+        
+        result = @agent.find_similar_issues(issue: @issue)
+        
+        assert_equal [], result
+      end
+
+      should "call VectorTools with correct parameters" do
+        @issue.stubs(:visible?).returns(true)
+        similar_issues_data = [
+          {
+            id: 2,
+            subject: "Similar issue",
+            similarity_score: 85.0
+          }
+        ]
+        
+        @mock_vector_tools.expects(:find_similar_issues)
+                         .with(issue_id: @issue.id, k: 10)
+                         .returns(similar_issues_data)
+        
+        result = @agent.find_similar_issues(issue: @issue)
+        
+        assert_equal similar_issues_data, result
+      end
+
+      should "handle errors from VectorTools gracefully" do
+        @issue.stubs(:visible?).returns(true)
+        @mock_vector_tools.stubs(:find_similar_issues).raises(StandardError.new("Vector search failed"))
+        
+        # Should log error and re-raise (just check that logging happens)
+        mock_logger = mock("logger")
+        mock_logger.stubs(:error)  # Allow any error logging
+        @agent.stubs(:ai_helper_logger).returns(mock_logger)
+        
+        assert_raises(StandardError) do
+          @agent.find_similar_issues(issue: @issue)
+        end
+      end
+
+      should "log debug message with results count" do
+        @issue.stubs(:visible?).returns(true)
+        similar_issues_data = [{id: 2}, {id: 3}]
+        @mock_vector_tools.stubs(:find_similar_issues).returns(similar_issues_data)
+        
+        mock_logger = mock("logger")
+        mock_logger.expects(:debug).with("Found 2 similar issues for issue #{@issue.id}")
+        @agent.stubs(:ai_helper_logger).returns(mock_logger)
+        
+        result = @agent.find_similar_issues(issue: @issue)
+        
+        assert_equal similar_issues_data, result
+      end
+    end
   end
 
   class DummyFixParser

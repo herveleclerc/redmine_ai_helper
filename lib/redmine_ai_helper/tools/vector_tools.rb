@@ -92,6 +92,86 @@ module RedmineAiHelper
         end
       end
 
+      define_function :find_similar_issues, description: "Find similar issues using vector similarity search." do
+        property :issue_id, type: "integer", description: "The ID of the issue to find similar issues for.", required: true
+        property :k, type: "integer", description: "The number of similar issues to retrieve. Default is 10. Max is 50", required: false
+      end
+
+      # Find similar issues using vector similarity search.
+      # @param issue_id [Integer] The ID of the issue to find similar issues for.
+      # @param k [Integer] The number of similar issues to retrieve. Default is 10. Max is 50
+      # @return [Array<Hash>] An array of hashes containing similar issues with similarity scores.
+      def find_similar_issues(issue_id:, k: 10)
+        raise("The vector search functionality is not enabled.") unless vector_db_enabled?
+        raise("limit must be between 1 and 50.") unless k.between?(1, 50)
+
+        begin
+          ai_helper_logger.debug("Finding similar issues for issue_id: #{issue_id}, k: #{k}")
+          
+          issue = Issue.find_by(id: issue_id)
+          raise("Issue not found with ID: #{issue_id}") unless issue
+          raise("Permission denied") unless issue.visible?
+
+          # Use vector database for similarity search
+          ai_helper_logger.debug("Initializing vector database for issue target")
+          db = vector_db(target: "issue")
+          
+          # Check if vector search is enabled and client is available
+          ai_helper_logger.debug("Checking if vector search client is available")
+          unless db.client
+            raise("Vector search is not enabled or configured")
+          end
+          
+          query = "#{issue.subject} #{issue.description}"
+          ai_helper_logger.debug("Performing similarity search with query: #{query[0..100]}...")
+          
+          # Search for similar issues
+          results = db.similarity_search(question: query, k: k)
+          ai_helper_logger.debug("Raw similarity search results: #{results&.length || 0} items")
+          
+          # Handle case where results is nil or empty
+          results = [] if results.nil?
+          
+          # Filter out current issue and check permissions for each result
+          similar_issues = []
+          results.each do |result|
+            result_issue_id = result["payload"]["issue_id"]
+            
+            # Skip current issue
+            next if result_issue_id == issue_id
+            
+            # Check if the issue exists and is visible
+            result_issue = Issue.find_by(id: result_issue_id)
+            next unless result_issue
+            next unless result_issue.visible?
+            
+            # Check if ai_helper module is enabled in the issue's project
+            next unless result_issue.project&.module_enabled?(:ai_helper)
+            
+            begin
+              # Generate issue data using the same method as ask_with_filter
+              issue_data = generate_issue_data(result_issue)
+              # Add similarity score to the issue data
+              issue_data[:similarity_score] = (result["score"] * 100).round(1)
+              
+              similar_issues << issue_data
+            rescue => e
+              ai_helper_logger.warn("Failed to generate issue data for issue #{result_issue_id}: #{e.message}")
+              # Skip this issue if we can't generate its data
+              next
+            end
+          end
+          
+          ai_helper_logger.debug("Similar issues found: #{similar_issues.length} items")
+          similar_issues
+        rescue => e
+          ai_helper_logger.error("Error in find_similar_issues: #{e.message}")
+          ai_helper_logger.error("Error class: #{e.class}")
+          ai_helper_logger.error("Backtrace: #{e.backtrace.join("\n")}")
+          raise("Error: #{e.message}")
+        end
+      end
+
       private
 
       # Create a filter for the Qdrant database query.
