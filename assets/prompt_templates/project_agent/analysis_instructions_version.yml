@@ -1,0 +1,11 @@
+_type: prompt
+input_variables: []
+template: |
+  If there are open versions in the project, perform the following analysis for each version.
+  - Please analyze the entire period of each version.
+  - Version Overview: Summary of version scope, timeline, and current status
+  - Progress Tracking: Version completion status and milestone achievements
+  - Resource Allocation: Team assignment and workload for this version
+  - Quality Focus: Bug tracking and resolution specific to this version
+  - Timeline Analysis: Due date adherence and delivery risk assessment
+  - Version Recommendations: Specific actions to ensure successful version delivery

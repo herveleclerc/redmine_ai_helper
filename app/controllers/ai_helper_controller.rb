@@ -2,16 +2,21 @@
 # This controller is responsible for handling the chat messages between the user and the AI.
 require "redmine_ai_helper/llm"
 require "redmine_ai_helper/logger"
+require "redmine_ai_helper/export/pdf/project_health_pdf_helper"
 
 class AiHelperController < ApplicationController
   include ActionController::Live
   include RedmineAiHelper::Logger
   include AiHelperHelper
+  include RedmineAiHelper::Export::PDF::ProjectHealthPdfHelper
 
+  protect_from_forgery except: [:generate_project_health]
   before_action :find_issue, only: [:issue_summary, :update_issue_summary, :generate_issue_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues, :similar_issues]
   before_action :find_wiki_page, only: [:wiki_summary, :generate_wiki_summary]
   before_action :find_project, except: [:issue_summary, :wiki_summary, :generate_issue_summary, :generate_wiki_summary, :generate_issue_reply, :generate_sub_issues, :add_sub_issues, :similar_issues]
-  before_action :find_user, :authorize, :create_session, :find_conversation
+  before_action :find_user, :create_session, :find_conversation
+  before_action :authorize, except: [:project_health, :generate_project_health]
+  before_action :authorize_project_health, only: [:project_health, :generate_project_health]
 
   # Display the chat form in the sidebar
   def chat_form
@@ -252,6 +257,120 @@ class AiHelperController < ApplicationController
     end
   end
 
+  # Display project health report
+  def project_health
+    cache_key = "project_health_#{@project.id}_#{params[:version_id]}_#{params[:start_date]}_#{params[:end_date]}"
+    @health_report = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+      generate_project_health_report
+    end
+
+    respond_to do |format|
+      format.html { render partial: "ai_helper/project_health", locals: { health_report: @health_report } }
+      format.pdf do
+        if @health_report && !@health_report.is_a?(Hash)
+          filename = "#{@project.identifier}-health-report-#{Date.current.strftime('%Y%m%d')}.pdf"
+          send_data(project_health_to_pdf(@project, @health_report), 
+                   type: 'application/pdf', 
+                   filename: filename)
+        else
+          redirect_to project_path(@project), alert: l(:label_ai_helper_no_report_available, default: "No health report available for PDF export")
+        end
+      end
+    end
+  end
+
+  # Generate PDF from current health report content
+  def project_health_pdf
+    health_report_content = params[:health_report_content]
+    
+    if health_report_content.present?
+      # Validate and sanitize content - only allow Markdown, no HTML/JavaScript
+      # Remove any potential script tags or dangerous HTML while preserving Markdown
+      sanitized_content = health_report_content.gsub(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/mi, '')
+                                               .gsub(/<[^>]*>/, '')
+      
+      filename = "#{@project.identifier}-health-report-#{Date.current.strftime('%Y%m%d')}.pdf"
+      send_data(project_health_to_pdf(@project, sanitized_content), 
+               type: 'application/pdf', 
+               filename: filename)
+    else
+      redirect_to project_path(@project), alert: t('ai_helper.project_health.no_report_available')
+    end
+  end
+
+  # Generate Markdown from current health report content
+  def project_health_markdown
+    health_report_content = params[:health_report_content]
+    
+    if health_report_content.present?
+      # Validate and sanitize content - only allow Markdown, no HTML/JavaScript
+      # Remove any potential script tags or dangerous HTML while preserving Markdown
+      sanitized_content = health_report_content.gsub(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/mi, '')
+                                               .gsub(/<[^>]*>/, '')
+      
+      filename = "#{@project.identifier}-health-report-#{Date.current.strftime('%Y%m%d')}.md"
+      send_data(sanitized_content, 
+               type: 'text/markdown', 
+               filename: filename)
+    else
+      redirect_to project_path(@project), alert: t('ai_helper.project_health.no_report_available')
+    end
+  end
+
+  # Generate project health report with streaming
+  def generate_project_health
+    ai_helper_logger.info "Starting project health generation for project #{@project.id}"
+    cache_key = "project_health_#{@project.id}_#{params[:version_id]}_#{params[:start_date]}_#{params[:end_date]}"
+    Rails.cache.delete(cache_key)
+    
+    begin
+      llm = RedmineAiHelper::Llm.new
+      full_content = ""
+
+      stream_llm_response do |stream_proc|
+        cache_proc = Proc.new do |content|
+          full_content += content if content
+          stream_proc.call(content)
+        end
+
+        content = llm.project_health_report(
+          project: @project,
+          version_id: params[:version_id],
+          start_date: params[:start_date],
+          end_date: params[:end_date],
+          stream_proc: cache_proc
+        )
+        
+        Rails.cache.write(cache_key, content, expires_in: 1.hour)
+      end
+      
+    rescue => e
+      ai_helper_logger.error "Generate project health error: #{e.message}"
+      ai_helper_logger.error e.backtrace.join("\n")
+      
+      # Send error as streaming response
+      response.headers["Content-Type"] = "text/event-stream"
+      response.headers["Cache-Control"] = "no-cache"
+      response.headers["Connection"] = "keep-alive"
+      
+      write_chunk({
+        id: "error-#{SecureRandom.hex(6)}",
+        object: "chat.completion.chunk",
+        created: Time.now.to_i,
+        model: "error",
+        choices: [{
+          index: 0,
+          delta: {
+            content: "Error generating project health report: #{e.message}"
+          },
+          finish_reason: "stop"
+        }]
+      })
+      
+      response.stream.close
+    end
+  end
+
   private
 
   # Find the user
@@ -357,5 +476,29 @@ class AiHelperController < ApplicationController
     @project = @wiki_page.wiki.project
   rescue ActiveRecord::RecordNotFound
     render_404
+  end
+
+  # Generate project health report data
+  def generate_project_health_report
+    llm = RedmineAiHelper::Llm.new
+    llm.project_health_report(
+      project: @project,
+      version_id: params[:version_id],
+      start_date: params[:start_date],
+      end_date: params[:end_date]
+    )
+  rescue => e
+    ai_helper_logger.error "Project health report error: #{e.message}"
+    ai_helper_logger.error e.backtrace.join("\n")
+    { error: e.message }
+  end
+
+  # Authorize project health access
+  def authorize_project_health
+    unless @project&.visible? && User.current.allowed_to?(:view_ai_helper, @project)
+      render_403
+      return false
+    end
+    true
   end
 end

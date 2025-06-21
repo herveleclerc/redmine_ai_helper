@@ -9,26 +9,26 @@ module RedmineAiHelper
         json = {
           id: issue.id,
           subject: issue.subject,
-          project: {
+          project: issue.project ? {
             id: issue.project.id,
             name: issue.project.name,
-          },
-          tracker: {
+          } : nil,
+          tracker: issue.tracker ? {
             id: issue.tracker.id,
             name: issue.tracker.name,
-          },
-          status: {
+          } : nil,
+          status: issue.status ? {
             id: issue.status.id,
             name: issue.status.name,
-          },
-          priority: {
+          } : nil,
+          priority: issue.priority ? {
             id: issue.priority.id,
             name: issue.priority.name,
-          },
-          author: {
+          } : nil,
+          author: issue.author ? {
             id: issue.author.id,
             name: issue.author.name,
-          },
+          } : nil,
           assigned_to: issue.assigned_to ? {
             id: issue.assigned_to.id,
             name: issue.assigned_to.name,
@@ -59,10 +59,10 @@ module RedmineAiHelper
           children: issue.children.filter { |child| child.visible? }.map do |child|
             {
               id: child.id,
-              tracker: {
+              tracker: child.tracker ? {
                 id: child.tracker.id,
                 name: child.tracker.name,
-              },
+              } : nil,
               subject: child.subject,
               issue_url: issue_url(child, only_path: true),
             }
@@ -79,10 +79,10 @@ module RedmineAiHelper
           journals: issue.journals.filter { |journal| journal.visible? }.map do |journal|
             {
               id: journal.id,
-              user: {
+              user: journal.user ? {
                 id: journal.user.id,
                 name: journal.user.name,
-              },
+              } : nil,
               notes: journal.notes,
               created_on: journal.created_on,
               updated_on: journal.updated_on,

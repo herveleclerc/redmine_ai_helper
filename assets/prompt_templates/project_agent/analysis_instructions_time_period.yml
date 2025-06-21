@@ -1,0 +1,20 @@
+_type: prompt
+input_variables:
+  - one_week_ago
+  - today
+  - one_month_ago
+template: |
+  Since there are no open versions in the project, please perform time-series analysis. Generate reports for the following periods:
+
+  1. Last 1 week:({one_week_ago} - {today})
+  2. Last 1 month:（{one_month_ago} - {today})
+
+  If both 1 and 2 have no data, please analyze from the all-time metrics.
+
+  Perform the following analysis for each term.
+  - Activity Overview: Issue creation, updates, and resolution activities
+  - Progress Analysis: Work completion and productivity metrics
+  - Quality Metrics: Bug rates, resolution quality, and issue patterns
+  - Team Performance: Member activity levels and contribution patterns
+  - Trend Analysis: Comparison between the two periods to identify trends
+  - Recommendations: Actionable suggestions based on recent activity patterns

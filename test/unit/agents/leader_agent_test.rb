@@ -2,7 +2,7 @@ require File.expand_path("../../../test_helper", __FILE__)
 require "redmine_ai_helper/agents/leader_agent"
 
 class LeaderAgentTest < ActiveSupport::TestCase
-  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields
+  fixtures :projects, :issues, :issue_statuses, :trackers, :enumerations, :users, :issue_categories, :versions, :custom_fields, :enabled_modules
   setup do
     @openai_mock = MyOpenAI::DummyOpenAIClient.new
     Langchain::LLM::OpenAI.stubs(:new).returns(@openai_mock)
