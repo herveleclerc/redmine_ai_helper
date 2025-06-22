@@ -1,14 +1,14 @@
-<% 
+<%
   # Get project from hook context or controller instance
   project = @project || instance_variable_get(:@project) || (respond_to?(:project) ? project : nil)
-  
+
   # Skip rendering if no project is available
   if project
     # Safely access params
     version_id = defined?(params) ? params[:version_id] : nil
     start_date = defined?(params) ? params[:start_date] : nil
     end_date = defined?(params) ? params[:end_date] : nil
-    
+
     # Check for cached health report
     cache_key = "project_health_#{project.id}_#{version_id}_#{start_date}_#{end_date}"
     health_report = Rails.cache.read(cache_key)
@@ -68,47 +68,53 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize the markdown parser using the same one as issue summaries
   const parser = new AiHelperMarkdownParser();
   const generateLink = document.getElementById('ai-helper-generate-project-health-link');
-  
+
   // Check if report already exists and add PDF button if needed
   const resultDiv = document.getElementById('ai-helper-project-health-result');
   if (resultDiv && resultDiv.classList.contains('ai-helper-final-content')) {
     addPdfExportButton();
   }
-  
+
   if (generateLink) {
     generateLink.addEventListener('click', function(e) {
       e.preventDefault();
-      
+
       // Get the result div that should already exist in the scrollable container
       const resultDiv = document.getElementById('ai-helper-project-health-result');
-      
+
       // Show loading state and add has-report class
       if (resultDiv) {
-        resultDiv.innerHTML = '<div class="ai-helper-loading"><%= t('ai_helper.project_health.generating') %>...</div>';
+        resultDiv.innerHTML = '<div class="ai-helper-loader"></div>';
         resultDiv.parentElement.classList.add('has-report');
       }
-      
+
       // Remove existing PDF button during generation
       removePdfExportButton();
-      
+
       const url = this.href;
-      
+
       // Create EventSource for streaming
       const eventSource = new EventSource(url);
       let content = '';
-      
+
       eventSource.onmessage = function(event) {
         try {
           const data = JSON.parse(event.data);
           if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
             content += data.choices[0].delta.content;
             if (resultDiv) {
+              // Hide loader on first content
+              const loader = resultDiv.querySelector('.ai-helper-loader');
+              if (loader && loader.style.display !== 'none') {
+                loader.style.display = 'none';
+              }
+
               const formattedContent = parser.parse(content);
-              const newHTML = '<div class="ai-helper-streaming-content">' + 
-                formattedContent + 
+              const newHTML = '<div class="ai-helper-streaming-content">' +
+                formattedContent +
                 '<span class="ai-helper-cursor">|</span></div>';
               resultDiv.innerHTML = newHTML;
-              
+
               // Auto-scroll to bottom to show new content
               const scrollableContainer = document.querySelector('.ai-helper-project-health-content.has-report');
               if (scrollableContainer) {
@@ -116,24 +122,24 @@ document.addEventListener('DOMContentLoaded', function() {
               }
             }
           }
-          
+
           if (data.choices && data.choices[0] && data.choices[0].finish_reason === 'stop') {
             eventSource.close();
             if (resultDiv) {
               const formattedContent = parser.parse(content);
-              const finalHTML = '<div class="ai-helper-final-content">' + 
+              const finalHTML = '<div class="ai-helper-final-content">' +
                 formattedContent + '</div>';
               resultDiv.innerHTML = finalHTML;
-              
+
               // Store the markdown content in hidden field for PDF generation
               updateHiddenReportContent(content);
-              
+
               // Final scroll to bottom
               const scrollableContainer = document.querySelector('.ai-helper-project-health-content.has-report');
               if (scrollableContainer) {
                 scrollableContainer.scrollTop = scrollableContainer.scrollHeight;
               }
-              
+
               // Add PDF export button after generation completes
               addPdfExportButton();
             }
@@ -142,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // Silently handle parsing errors
         }
       };
-      
+
       eventSource.onerror = function(event) {
         eventSource.close();
         if (resultDiv) {
@@ -153,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function() {
       };
     });
   }
-  
+
   // Function to add PDF export button after report generation
   function addPdfExportButton() {
     const healthDiv = document.querySelector('.ai-helper-project-health');
@@ -165,13 +171,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const otherFormatsP = document.createElement('p');
         otherFormatsP.className = 'other-formats';
         otherFormatsP.innerHTML = '<%= l(:label_export_to) %> <span><a href="<%= ai_helper_project_health_markdown_path(project) %>" class="text" id="ai-helper-markdown-export-link-dynamic">Markdown</a></span> <span><a href="<%= ai_helper_project_health_pdf_path(project) %>" class="pdf" id="ai-helper-pdf-export-link-dynamic">PDF</a></span>';
-        
+
         // Add the button to the health div
         healthDiv.appendChild(otherFormatsP);
       }
     }
   }
-  
+
   // Function to remove PDF export button
   function removePdfExportButton() {
     const healthDiv = document.querySelector('.ai-helper-project-health');
@@ -182,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   }
-  
+
   // Function to update hidden field with report content
   function updateHiddenReportContent(content) {
     let hiddenField = document.getElementById('ai-helper-health-report-content');
@@ -196,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Safely set the value to prevent XSS
     hiddenField.value = content;
   }
-  
+
   // Function to handle PDF export with current content
   function handlePdfExport(event) {
     event.preventDefault();
@@ -206,17 +212,17 @@ document.addEventListener('DOMContentLoaded', function() {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = event.target.href;
-      
+
       const contentField = document.createElement('input');
       contentField.type = 'hidden';
       contentField.name = 'health_report_content';
       contentField.value = hiddenField.value;
-      
+
       const csrfField = document.createElement('input');
       csrfField.type = 'hidden';
       csrfField.name = 'authenticity_token';
       csrfField.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-      
+
       form.appendChild(contentField);
       form.appendChild(csrfField);
       document.body.appendChild(form);
@@ -224,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.removeChild(form);
     }
   }
-  
+
   // Add event listeners to export links
   document.addEventListener('click', function(event) {
     if (event.target.id === 'ai-helper-pdf-export-link' || event.target.id === 'ai-helper-pdf-export-link-dynamic') {
@@ -243,17 +249,17 @@ document.addEventListener('DOMContentLoaded', function() {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = event.target.href;
-      
+
       const contentField = document.createElement('input');
       contentField.type = 'hidden';
       contentField.name = 'health_report_content';
       contentField.value = hiddenField.value;
-      
+
       const csrfField = document.createElement('input');
       csrfField.type = 'hidden';
       csrfField.name = 'authenticity_token';
       csrfField.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-      
+
       form.appendChild(contentField);
       form.appendChild(csrfField);
       document.body.appendChild(form);
