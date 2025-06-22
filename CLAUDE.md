@@ -107,3 +107,10 @@ To create custom agents:
 - Use mocks only when absolutely necessary, such as when connecting to external servers
 - Aim for a test coverage of 95% or higher
   - The coverage information files will be generated under the `coverage` directory, so please check there.
+
+## Commit Guidelines
+- Do not include any information about Claude Code in commit messages
+- Write commit messages in plain English
+
+## Logging Guidelines
+- Don't use Rails.logger for logging. Use ai_helper_logger

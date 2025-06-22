@@ -81,6 +81,89 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         assert_equal "Sub issue 1", sub_issues[0].subject
       end
     end
+
+    context "wiki_summary" do
+      setup do
+        @wiki = Wiki.find(1)
+        @wiki_page = @wiki.pages.first
+        @llm = RedmineAiHelper::Llm.new(@params)
+      end
+
+      should "generate summary for wiki page" do
+        summary = @llm.wiki_summary(wiki_page: @wiki_page)
+        assert_equal "test answer", summary
+      end
+
+      should "generate summary for visible wiki page" do
+        @wiki_page.stubs(:visible?).returns(true)
+        summary = @llm.wiki_summary(wiki_page: @wiki_page)
+        assert_equal "test answer", summary
+      end
+    end
+
+    context "find_similar_issues" do
+      setup do
+        @issue = Issue.find(1)
+        @llm = RedmineAiHelper::Llm.new(@params)
+      end
+
+      should "deny access for non-visible issue" do
+        @issue.stubs(:visible?).returns(false)
+        result = @llm.find_similar_issues(issue: @issue)
+        assert_equal [], result
+      end
+
+      should "return empty array when no similar issues found" do
+        @issue.stubs(:visible?).returns(true)
+        result = @llm.find_similar_issues(issue: @issue)
+        assert_equal [], result
+      end
+    end
+
+    context "error handling" do
+      should "handle basic chat functionality" do
+        message = AiHelperMessage.new(content: "test", role: "user")
+        @conversation.messages << message
+        
+        result = @llm.chat(@conversation, nil, { controller_name: "issues", action_name: "show", content_id: 1 })
+        assert_equal "assistant", result.role
+        assert_not_nil result.content
+      end
+    end
+
+    context "permission checks" do
+      setup do
+        @issue = Issue.find(1)
+        @wiki_page = WikiPage.first
+        @llm = RedmineAiHelper::Llm.new(@params)
+      end
+
+      should "check issue visibility for issue_summary" do
+        @issue.expects(:visible?).returns(false)
+        
+        result = @llm.issue_summary(issue: @issue)
+        assert_equal "Permission denied", result
+      end
+
+      should "check issue visibility for generate_issue_reply" do
+        @issue.expects(:visible?).returns(false)
+        
+        result = @llm.generate_issue_reply(issue: @issue, instructions: "test")
+        assert_equal "Permission denied", result
+      end
+
+      should "check issue visibility for generate_sub_issues" do
+        @issue.expects(:visible?).returns(false)
+        
+        result = @llm.generate_sub_issues(issue: @issue, instructions: "test")
+        assert_equal "Permission denied", result
+      end
+
+      should "generate wiki summary successfully" do
+        result = @llm.wiki_summary(wiki_page: @wiki_page)
+        assert_equal "test answer", result
+      end
+    end
   end
 
   private

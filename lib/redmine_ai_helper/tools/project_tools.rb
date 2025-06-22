@@ -189,6 +189,255 @@ module RedmineAiHelper
         json = { "activities": list }
         ToolResponse.create_success json # TODO: jsonだけ返せば良い？
       end
+
+      define_function :get_metrics, description: "REQUIRED FIRST STEP: Get comprehensive project health metrics for a specific project. You MUST call this function BEFORE generating any project health report. Returns essential raw data including issue statistics, timing metrics, workload distribution, quality metrics, progress metrics, and team metrics that are absolutely necessary for accurate health analysis." do
+        property :project_id, type: "integer", description: "The project ID to get health metrics for.", required: true
+        property :version_id, type: "integer", description: "The version ID to filter metrics by. If not specified, returns metrics for all versions.", required: false
+        property :start_date, type: "string", description: "Start date for metrics collection in YYYY-MM-DD format. If not specified, uses 30 days ago.", required: false
+        property :end_date, type: "string", description: "End date for metrics collection in YYYY-MM-DD format. If not specified, uses today.", required: false
+      end
+
+      def get_metrics(project_id:, version_id: nil, start_date: nil, end_date: nil)
+        ai_helper_logger.info "get_metrics called with args: project_id=#{project_id}, version_id=#{version_id}, start_date=#{start_date}, end_date=#{end_date}"
+
+        begin
+          project = Project.find(project_id)
+          raise "Project not found" unless project
+          raise "You don't have permission to view this project" unless accessible_project? project
+
+          if start_date || end_date
+            start_date = start_date ? Date.parse(start_date) : 30.days.ago.to_date
+            end_date = end_date ? Date.parse(end_date) : Date.current
+            issues_scope = project.issues.where(created_on: start_date.beginning_of_day..end_date.end_of_day)
+          else
+            start_date = nil
+            end_date = nil
+            issues_scope = project.issues
+          end
+          issues_scope = issues_scope.where(fixed_version_id: version_id) if version_id
+
+          issues = issues_scope.includes(:status, :priority, :tracker, :assigned_to, :author, :fixed_version, :time_entries)
+
+          metrics = {
+            project_info: {
+              id: project.id,
+              name: project.name,
+              identifier: project.identifier,
+              created_on: project.created_on,
+              last_activity_date: project.last_activity_date,
+            },
+            period: {
+              start_date: start_date,
+              end_date: end_date,
+              version_id: version_id,
+            },
+            issue_statistics: calculate_issue_statistics(issues),
+            timing_metrics: calculate_timing_metrics(issues),
+            workload_metrics: calculate_workload_metrics(issues),
+            quality_metrics: calculate_quality_metrics(issues),
+            progress_metrics: calculate_progress_metrics(issues),
+            member_metrics: calculate_member_metrics(issues),
+            issue_list: extract_issue_list(issues),
+          }
+
+          ai_helper_logger.info "get_metrics returning: #{metrics.to_json}"
+          # ToolResponse.create_success metrics
+          metrics
+        rescue => e
+          ai_helper_logger.error "get_metrics error: #{e.message}"
+          ai_helper_logger.error e.backtrace.join("\n")
+          raise e
+        end
+      end
+
+      private
+
+      def calculate_issue_statistics(issues)
+        issue_list = issues.to_a
+
+        open_issues = issue_list.select { |issue| !issue.status.is_closed? }
+        closed_issues = issue_list.select { |issue| issue.status.is_closed? }
+
+        by_priority = issue_list.group_by { |issue| issue.priority.name }.transform_values(&:count)
+        by_tracker = issue_list.group_by { |issue| issue.tracker.name }.transform_values(&:count)
+        by_status = issue_list.group_by { |issue| issue.status.name }.transform_values(&:count)
+        by_assigned_to = issue_list.select { |issue| issue.assigned_to }.group_by { |issue| issue.assigned_to.name }.transform_values(&:count)
+        by_author = issue_list.select { |issue| issue.author }.group_by { |issue| issue.author.name }.transform_values(&:count)
+
+        {
+          total_issues: issue_list.count,
+          open_issues: open_issues.count,
+          closed_issues: closed_issues.count,
+          by_priority: by_priority,
+          by_tracker: by_tracker,
+          by_status: by_status,
+          by_assigned_to: by_assigned_to,
+          by_author: by_author,
+        }
+      end
+
+      def calculate_timing_metrics(issues)
+        issue_list = issues.to_a
+        closed_issues = issue_list.select { |issue| issue.status.is_closed? }
+
+        resolution_times = closed_issues.filter_map do |issue|
+          next unless issue.closed_on && issue.created_on
+          (issue.closed_on - issue.created_on) / 1.day
+        end
+
+        overdue_issues = issue_list.select do |issue|
+          issue.due_date && issue.due_date < Date.current && !issue.status.is_closed?
+        end
+
+        issues_with_due_date = issue_list.select { |issue| issue.due_date }
+
+        {
+          average_resolution_time_days: resolution_times.empty? ? 0 : resolution_times.sum / resolution_times.size,
+          median_resolution_time_days: resolution_times.empty? ? 0 : resolution_times.sort[resolution_times.size / 2],
+          min_resolution_time_days: resolution_times.empty? ? 0 : resolution_times.min,
+          max_resolution_time_days: resolution_times.empty? ? 0 : resolution_times.max,
+          overdue_issues_count: overdue_issues.count,
+          issues_with_due_date: issues_with_due_date.count,
+          resolution_time_distribution: resolution_times.empty? ? {} : {
+            under_1_day: resolution_times.count { |t| t < 1 },
+            one_to_7_days: resolution_times.count { |t| t >= 1 && t < 7 },
+            one_to_4_weeks: resolution_times.count { |t| t >= 7 && t < 28 },
+            over_4_weeks: resolution_times.count { |t| t >= 28 },
+          },
+        }
+      end
+
+      def calculate_workload_metrics(issues)
+        issue_list = issues.to_a
+
+        total_estimated_hours = issue_list.sum { |issue| issue.estimated_hours || 0 }
+        total_spent_hours = issue_list.sum { |issue| issue.time_entries.sum(&:hours) }
+
+        estimated_vs_actual = issue_list.filter_map do |issue|
+          estimated = issue.estimated_hours
+          spent = issue.time_entries.sum(&:hours)
+          next unless estimated && estimated > 0 && spent > 0
+          {
+            issue_id: issue.id,
+            estimated_hours: estimated,
+            spent_hours: spent,
+            variance_percentage: ((spent - estimated) / estimated * 100).round(2),
+          }
+        end
+
+        issues_with_estimates = issue_list.select { |issue| issue.estimated_hours }
+        issues_with_time_entries = issue_list.select { |issue| issue.time_entries.any? }
+
+        {
+          total_estimated_hours: total_estimated_hours,
+          total_spent_hours: total_spent_hours,
+          estimation_accuracy: total_estimated_hours > 0 ? ((total_spent_hours / total_estimated_hours) * 100).round(2) : 0,
+          issues_with_estimates: issues_with_estimates.count,
+          issues_with_time_entries: issues_with_time_entries.count,
+          estimated_vs_actual_details: estimated_vs_actual,
+          average_estimation_variance: estimated_vs_actual.empty? ? 0 : estimated_vs_actual.sum { |e| e[:variance_percentage] } / estimated_vs_actual.size,
+        }
+      end
+
+      def calculate_quality_metrics(issues)
+        issue_list = issues.to_a
+
+        # Group issues by tracker for statistics
+        by_tracker = issue_list.group_by { |issue| issue.tracker.name }.transform_values(&:count)
+
+        # Count reopened issues by checking journal entries for status changes
+        reopened_issues = issue_list.select do |issue|
+          status_changes = issue.journals.joins(:details).where(journal_details: { property: "attr", prop_key: "status_id" })
+          status_changes.count > 1
+        end
+
+        {
+          by_tracker: by_tracker,
+          tracker_ratios: by_tracker.transform_values { |count| issue_list.count > 0 ? (count.to_f / issue_list.count * 100).round(2) : 0 },
+          reopened_issues_count: reopened_issues.count,
+          reopened_ratio: issue_list.count > 0 ? (reopened_issues.count.to_f / issue_list.count * 100).round(2) : 0,
+        }
+      end
+
+      def calculate_progress_metrics(issues)
+        issue_list = issues.to_a
+
+        total_done_ratio = issue_list.sum { |issue| issue.done_ratio || 0 }
+        issues_with_progress = issue_list.select { |issue| (issue.done_ratio || 0) > 0 }
+
+        not_started = issue_list.select { |issue| (issue.done_ratio || 0) == 0 }
+        in_progress = issue_list.select { |issue| ratio = (issue.done_ratio || 0); ratio > 0 && ratio < 100 }
+        completed = issue_list.select { |issue| (issue.done_ratio || 0) == 100 }
+
+        {
+          average_completion_percentage: issue_list.count > 0 ? (total_done_ratio.to_f / issue_list.count).round(2) : 0,
+          issues_with_progress: issues_with_progress.count,
+          completion_distribution: {
+            not_started: not_started.count,
+            in_progress: in_progress.count,
+            completed: completed.count,
+          },
+        }
+      end
+
+      def calculate_member_metrics(issues)
+        issue_list = issues.to_a
+
+        assigned_issues = issue_list.select { |issue| issue.assigned_to }
+        unassigned_issues = issue_list.select { |issue| !issue.assigned_to }
+
+        members_workload = assigned_issues.group_by { |issue| issue.assigned_to }.map do |user, user_issues|
+          total_progress = user_issues.sum { |issue| issue.done_ratio || 0 }
+          average_progress = user_issues.count > 0 ? (total_progress.to_f / user_issues.count).round(2) : 0
+
+          {
+            user_name: user.name,
+            user_id: user.id,
+            assigned_issues: user_issues.count,
+            average_progress: average_progress,
+          }
+        end
+
+        {
+          members_workload: members_workload,
+          unassigned_issues: unassigned_issues.count,
+          total_active_members: members_workload.size,
+          workload_balance: calculate_workload_balance(members_workload),
+        }
+      end
+
+      def calculate_workload_balance(members_workload)
+        return 0 if members_workload.empty?
+
+        issue_counts = members_workload.map { |m| m[:assigned_issues] }
+        average_workload = issue_counts.sum.to_f / issue_counts.size
+        variance = issue_counts.sum { |count| (count - average_workload) ** 2 } / issue_counts.size
+
+        {
+          average_issues_per_member: average_workload.round(2),
+          workload_variance: variance.round(2),
+          max_workload: issue_counts.max,
+          min_workload: issue_counts.min,
+        }
+      end
+
+      def extract_issue_list(issues)
+        issues.map do |issue|
+          {
+            id: issue.id,
+            tracker: issue.tracker&.name,
+            created_on: issue.created_on,
+            updated_on: issue.updated_on,
+            closed_on: issue.closed_on,
+            status: issue.status&.name,
+            priority: issue.priority&.name,
+            author: issue.author&.name,
+            assigned_to: issue.assigned_to&.name,
+            due_date: issue.due_date,
+            done_ratio: issue.done_ratio,
+          }
+        end
+      end
     end
   end
 end

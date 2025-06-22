@@ -12,7 +12,16 @@ en:
   ai_helper_text_summary_generated_time: "Generated at %{time}"
   ai_helper_error_occurred: "An error occurred"
   permission_view_ai_helper: "View AI Helper"
+  label_ai_helper_error: "Error"
   ai_helper:
+    project_health:
+      title: "Project Health Report"
+      generate_report: "Generate Report"
+      generating: "Generating"
+      placeholder: "Click 'Generate Report' to analyze project metrics and get insights."
+      note: "The report will analyze issue statistics, timing metrics, workload distribution, and provide actionable recommendations."
+      no_report_available: "No health report available for PDF export"
+      report_content: "Health Report Content"
     generate_issue_reply:
       title: "Create a comment draft with AI Helper"
       instructions: "Please enter the key points or instructions for the reply."
@@ -84,3 +93,4 @@ en:
       ai_helper_project_setting:
         issue_draft_instructions: "Instructions for issue comment generation"
         subtask_instructions: "Instructions for subtask generation"
+        health_report_instructions: "Instructions for health report generation"

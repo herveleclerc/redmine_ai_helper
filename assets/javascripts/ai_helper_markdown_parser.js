@@ -70,8 +70,8 @@ class AiHelperMarkdownParser {
     }
   
     processTables(markdown) {
-      const tableRegex = /^\|(.+)\|$/gm;
-      const headerSeparatorRegex = /^\|(\s*:?-+:?\s*\|)+$/gm;
+      const tableRegex = /^\|(.+)\|$/;
+      const headerSeparatorRegex = /^\|(\s*:?-+:?\s*\|)+$/;
       
       const lines = markdown.split('\n');
       let html = [];
@@ -88,6 +88,7 @@ class AiHelperMarkdownParser {
           if (!inTable) {
             inTable = true;
             tableData = [];
+            alignments = [];
           }
           
           // Process the row data
@@ -109,8 +110,10 @@ class AiHelperMarkdownParser {
               if (sep.startsWith(':')) return 'left';
               return 'left';
             });
+            // Skip the separator line
+            i++;
           }
-        } else if (!isHeaderSeparator) {
+        } else {
           if (inTable) {
             // Convert table data to HTML
             html.push(this.convertTableToHtml(tableData, alignments));
@@ -118,7 +121,11 @@ class AiHelperMarkdownParser {
             tableData = [];
             alignments = [];
           }
-          html.push(line);
+          
+          // Only add non-separator lines
+          if (!isHeaderSeparator) {
+            html.push(line);
+          }
         }
       }
       
@@ -133,14 +140,15 @@ class AiHelperMarkdownParser {
     convertTableToHtml(tableData, alignments) {
       if (tableData.length === 0) return '';
       
-      let html = ['<table>'];
+      let html = ['<table class="list">'];
       
       // Add header row
       html.push('<thead>');
       html.push('<tr>');
       tableData[0].forEach((cell, index) => {
         const alignment = alignments[index] || 'left';
-        html.push(`<th style="text-align: ${alignment}">${cell}</th>`);
+        const alignAttr = alignment !== 'left' ? ` align="${alignment}"` : '';
+        html.push(`<th${alignAttr}>${cell}</th>`);
       });
       html.push('</tr>');
       html.push('</thead>');
@@ -152,7 +160,8 @@ class AiHelperMarkdownParser {
           html.push('<tr>');
           tableData[i].forEach((cell, index) => {
             const alignment = alignments[index] || 'left';
-            html.push(`<td style="text-align: ${alignment}">${cell}</td>`);
+            const alignAttr = alignment !== 'left' ? ` align="${alignment}"` : '';
+            html.push(`<td${alignAttr}>${cell}</td>`);
           });
           html.push('</tr>');
         }

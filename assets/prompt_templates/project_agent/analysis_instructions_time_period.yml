@@ -1,0 +1,22 @@
+_type: prompt
+input_variables:
+  - one_week_ago
+  - today
+  - one_month_ago
+template: |
+    There are no open versions in the project, so please perform a time series analysis. Generate a report for the following periods:
+
+    1. Last 1 week: ({one_week_ago} - {today})
+    2. Last 1 month: ({one_month_ago} - {today})
+
+    If there is no data for both 1 and 2, please analyze using metrics for the entire period.
+
+    For each period, please perform the following analysis:
+    - At the beginning of each period, provide a health score. (e.g., 7.5/10)
+    - Below the health score, briefly state the reasons in 2-3 lines.
+    - Activity Overview: Issue creation, updates, and resolution activities
+    - Progress Analysis: Work completion and productivity metrics
+    - Quality Metrics: Bug rate, resolution quality, and issue patterns
+    - Team Performance: Member activity levels and contribution patterns
+    - Trend Analysis: Identify trends by comparing the two periods
+    - Recommendations: Actionable suggestions based on recent activity patterns

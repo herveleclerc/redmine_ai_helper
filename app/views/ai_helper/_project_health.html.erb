@@ -1,0 +1,498 @@
+<%
+  # Get project from hook context or controller instance
+  project = @project || instance_variable_get(:@project) || (respond_to?(:project) ? project : nil)
+
+  # Skip rendering if no project is available
+  if project
+    # Safely access params
+    version_id = defined?(params) ? params[:version_id] : nil
+    start_date = defined?(params) ? params[:start_date] : nil
+    end_date = defined?(params) ? params[:end_date] : nil
+
+    # Check for cached health report
+    cache_key = "project_health_#{project.id}_#{version_id}_#{start_date}_#{end_date}"
+    health_report = Rails.cache.read(cache_key)
+%>
+
+<div class="ai-helper-project-health">
+  <h3><%= sprite_icon("ai-helper-robot", t('ai_helper.project_health.title'), plugin: :redmine_ai_helper) %></h3>
+  <div class="contextual">
+    <%= link_to t('ai_helper.project_health.generate_report'),
+                ai_helper_generate_project_health_path(project,
+                  version_id: version_id,
+                  start_date: start_date,
+                  end_date: end_date
+                ),
+                class: "icon icon-loading-action",
+                id: "ai-helper-generate-project-health-link" %>
+  </div>
+
+  <div class="ai-helper-project-health-content">
+    <% if health_report && !health_report.is_a?(Hash) %>
+      <div id="ai-helper-project-health-result" class="ai-helper-final-content">
+        <%= raw textilizable(health_report.to_s, :object => project) %>
+      </div>
+      <!-- Hidden field to store the health report content for PDF generation -->
+      <input type="hidden" id="ai-helper-health-report-content" value="<%= html_escape(health_report.to_s) %>" />
+    <% elsif health_report && health_report.is_a?(Hash) && health_report[:error] %>
+      <div id="ai-helper-project-health-result" class="ai-helper-error">
+        <p><strong><%= l(:label_ai_helper_error) %>:</strong> <%= health_report[:error] %></p>
+      </div>
+    <% else %>
+      <div id="ai-helper-project-health-result" class="ai-helper-project-health-placeholder">
+        <p><%= t('ai_helper.project_health.placeholder') %></p>
+        <p class="ai-helper-note">
+          <%= t('ai_helper.project_health.note') %>
+        </p>
+      </div>
+    <% end %>
+  </div>
+
+  <% if health_report && !health_report.is_a?(Hash) %>
+    <p class="other-formats">
+      <%= l(:label_export_to) %>
+      <span><%= link_to 'Markdown', ai_helper_project_health_markdown_path(project),
+                        class: "text",
+                        id: "ai-helper-markdown-export-link" %></span>
+      <span><%= link_to 'PDF', ai_helper_project_health_pdf_path(project),
+                        class: "pdf",
+                        id: "ai-helper-pdf-export-link" %></span>
+    </p>
+  <% end %>
+</div>
+
+<%= javascript_include_tag 'ai_helper_markdown_parser', plugin: 'redmine_ai_helper' %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize the markdown parser using the same one as issue summaries
+  const parser = new AiHelperMarkdownParser();
+  const generateLink = document.getElementById('ai-helper-generate-project-health-link');
+
+  // Check if report already exists and add PDF button if needed
+  const resultDiv = document.getElementById('ai-helper-project-health-result');
+  if (resultDiv && resultDiv.classList.contains('ai-helper-final-content')) {
+    addPdfExportButton();
+  }
+
+  if (generateLink) {
+    generateLink.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      // Get the result div that should already exist in the scrollable container
+      const resultDiv = document.getElementById('ai-helper-project-health-result');
+
+      // Show loading state and add has-report class
+      if (resultDiv) {
+        resultDiv.innerHTML = '<div class="ai-helper-loader"></div>';
+        resultDiv.parentElement.classList.add('has-report');
+      }
+
+      // Remove existing PDF button during generation
+      removePdfExportButton();
+
+      const url = this.href;
+
+      // Create EventSource for streaming
+      const eventSource = new EventSource(url);
+      let content = '';
+
+      eventSource.onmessage = function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
+            content += data.choices[0].delta.content;
+            if (resultDiv) {
+              // Hide loader on first content
+              const loader = resultDiv.querySelector('.ai-helper-loader');
+              if (loader && loader.style.display !== 'none') {
+                loader.style.display = 'none';
+              }
+
+              const formattedContent = parser.parse(content);
+              const newHTML = '<div class="ai-helper-streaming-content">' +
+                formattedContent +
+                '<span class="ai-helper-cursor">|</span></div>';
+              resultDiv.innerHTML = newHTML;
+
+              // Auto-scroll to bottom to show new content
+              const scrollableContainer = document.querySelector('.ai-helper-project-health-content.has-report');
+              if (scrollableContainer) {
+                scrollableContainer.scrollTop = scrollableContainer.scrollHeight;
+              }
+            }
+          }
+
+          if (data.choices && data.choices[0] && data.choices[0].finish_reason === 'stop') {
+            eventSource.close();
+            if (resultDiv) {
+              const formattedContent = parser.parse(content);
+              const finalHTML = '<div class="ai-helper-final-content">' +
+                formattedContent + '</div>';
+              resultDiv.innerHTML = finalHTML;
+
+              // Store the markdown content in hidden field for PDF generation
+              updateHiddenReportContent(content);
+
+              // Final scroll to bottom
+              const scrollableContainer = document.querySelector('.ai-helper-project-health-content.has-report');
+              if (scrollableContainer) {
+                scrollableContainer.scrollTop = scrollableContainer.scrollHeight;
+              }
+
+              // Add PDF export button after generation completes
+              addPdfExportButton();
+            }
+          }
+        } catch (error) {
+          // Silently handle parsing errors
+        }
+      };
+
+      eventSource.onerror = function(event) {
+        eventSource.close();
+        if (resultDiv) {
+          resultDiv.innerHTML = '<div class="ai-helper-error"><%= l(:label_ai_helper_error) %></div>';
+        }
+        // Remove PDF button if it exists on error
+        removePdfExportButton();
+      };
+    });
+  }
+
+  // Function to add PDF export button after report generation
+  function addPdfExportButton() {
+    const healthDiv = document.querySelector('.ai-helper-project-health');
+    if (healthDiv) {
+      // Check if PDF button already exists
+      const existingPdfButton = healthDiv.querySelector('.other-formats');
+      if (!existingPdfButton) {
+        // Create other-formats paragraph
+        const otherFormatsP = document.createElement('p');
+        otherFormatsP.className = 'other-formats';
+        otherFormatsP.innerHTML = '<%= l(:label_export_to) %> <span><a href="<%= ai_helper_project_health_markdown_path(project) %>" class="text" id="ai-helper-markdown-export-link-dynamic">Markdown</a></span> <span><a href="<%= ai_helper_project_health_pdf_path(project) %>" class="pdf" id="ai-helper-pdf-export-link-dynamic">PDF</a></span>';
+
+        // Add the button to the health div
+        healthDiv.appendChild(otherFormatsP);
+      }
+    }
+  }
+
+  // Function to remove PDF export button
+  function removePdfExportButton() {
+    const healthDiv = document.querySelector('.ai-helper-project-health');
+    if (healthDiv) {
+      const otherFormatsP = healthDiv.querySelector('.other-formats');
+      if (otherFormatsP) {
+        otherFormatsP.remove();
+      }
+    }
+  }
+
+  // Function to update hidden field with report content
+  function updateHiddenReportContent(content) {
+    let hiddenField = document.getElementById('ai-helper-health-report-content');
+    if (!hiddenField) {
+      // Create hidden field if it doesn't exist
+      hiddenField = document.createElement('input');
+      hiddenField.type = 'hidden';
+      hiddenField.id = 'ai-helper-health-report-content';
+      document.querySelector('.ai-helper-project-health').appendChild(hiddenField);
+    }
+    // Safely set the value to prevent XSS
+    hiddenField.value = content;
+  }
+
+  // Function to handle PDF export with current content
+  function handlePdfExport(event) {
+    event.preventDefault();
+    const hiddenField = document.getElementById('ai-helper-health-report-content');
+    if (hiddenField && hiddenField.value) {
+      // Create a form to submit the content
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = event.target.href;
+
+      const contentField = document.createElement('input');
+      contentField.type = 'hidden';
+      contentField.name = 'health_report_content';
+      contentField.value = hiddenField.value;
+
+      const csrfField = document.createElement('input');
+      csrfField.type = 'hidden';
+      csrfField.name = 'authenticity_token';
+      csrfField.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+      form.appendChild(contentField);
+      form.appendChild(csrfField);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    }
+  }
+
+  // Add event listeners to export links
+  document.addEventListener('click', function(event) {
+    if (event.target.id === 'ai-helper-pdf-export-link' || event.target.id === 'ai-helper-pdf-export-link-dynamic') {
+      handlePdfExport(event);
+    } else if (event.target.id === 'ai-helper-markdown-export-link' || event.target.id === 'ai-helper-markdown-export-link-dynamic') {
+      handleMarkdownExport(event);
+    }
+  });
+
+  // Function to handle Markdown export with current content
+  function handleMarkdownExport(event) {
+    event.preventDefault();
+    const hiddenField = document.getElementById('ai-helper-health-report-content');
+    if (hiddenField && hiddenField.value) {
+      // Create a form to submit the content
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = event.target.href;
+
+      const contentField = document.createElement('input');
+      contentField.type = 'hidden';
+      contentField.name = 'health_report_content';
+      contentField.value = hiddenField.value;
+
+      const csrfField = document.createElement('input');
+      csrfField.type = 'hidden';
+      csrfField.name = 'authenticity_token';
+      csrfField.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+      form.appendChild(contentField);
+      form.appendChild(csrfField);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    }
+  }
+});
+</script>
+
+<style>
+.ai-helper-project-health {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.ai-helper-project-health-content {
+  margin-top: 10px;
+  padding: 15px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  width: 100%;
+  display: block;
+}
+
+.ai-helper-project-health-content.has-report {
+  height: 480px !important;
+  overflow-y: scroll !important;
+}
+
+.ai-helper-project-health-placeholder {
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+}
+
+.ai-helper-project-health-placeholder p {
+  font-style: italic;
+}
+
+.ai-helper-project-health-placeholder .ai-helper-note {
+  font-style: italic;
+}
+
+.ai-helper-loading {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 10px;
+}
+
+.ai-helper-streaming-content,
+.ai-helper-streaming-content *,
+.ai-helper-final-content,
+.ai-helper-final-content * {
+  font-family: inherit;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: left;
+  font-style: normal !important;
+}
+
+/* Tables use Redmine's standard list classes for styling */
+.ai-helper-streaming-content table.list,
+.ai-helper-final-content table.list {
+  margin-bottom: 1em;
+  width: 100%;
+}
+
+/* Override Redmine's default table alignment with Markdown-based alignment */
+.ai-helper-streaming-content table.list td,
+.ai-helper-final-content table.list td {
+  text-align: left !important;
+}
+
+.ai-helper-streaming-content table.list th,
+.ai-helper-final-content table.list th {
+  text-align: left !important;
+}
+
+.ai-helper-streaming-content table.list td[align=left],
+.ai-helper-streaming-content table.list th[align=left],
+.ai-helper-final-content table.list td[align=left],
+.ai-helper-final-content table.list th[align=left] {
+  text-align: left !important;
+}
+
+.ai-helper-streaming-content table.list td[align=right],
+.ai-helper-streaming-content table.list th[align=right],
+.ai-helper-final-content table.list td[align=right],
+.ai-helper-final-content table.list th[align=right] {
+  text-align: right !important;
+}
+
+.ai-helper-streaming-content table.list td[align=center],
+.ai-helper-streaming-content table.list th[align=center],
+.ai-helper-final-content table.list td[align=center],
+.ai-helper-final-content table.list th[align=center] {
+  text-align: center !important;
+}
+
+.ai-helper-streaming-content em,
+.ai-helper-streaming-content i,
+.ai-helper-final-content em,
+.ai-helper-final-content i {
+  font-style: italic !important;
+}
+
+.ai-helper-streaming-content h1,
+.ai-helper-streaming-content h2,
+.ai-helper-streaming-content h3,
+.ai-helper-final-content h1,
+.ai-helper-final-content h2,
+.ai-helper-final-content h3 {
+  margin: 1em 0 0.5em 0;
+  font-weight: bold;
+}
+
+.ai-helper-streaming-content h1,
+.ai-helper-final-content h1 {
+  font-size: 1.4em;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.3em;
+}
+
+.ai-helper-streaming-content h2,
+.ai-helper-final-content h2 {
+  font-size: 1.2em;
+}
+
+.ai-helper-streaming-content h3,
+.ai-helper-final-content h3 {
+  font-size: 1.1em;
+}
+
+.ai-helper-streaming-content ul,
+.ai-helper-final-content ul {
+  margin: 0.5em 0;
+  padding-left: 2em;
+}
+
+.ai-helper-streaming-content li,
+.ai-helper-final-content li {
+  margin: 0.25em 0;
+}
+
+.ai-helper-streaming-content code,
+.ai-helper-final-content code {
+  background-color: #f1f1f1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.ai-helper-streaming-content pre,
+.ai-helper-final-content pre {
+  background-color: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+  margin: 1em 0;
+}
+
+.ai-helper-streaming-content pre code,
+.ai-helper-final-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.ai-helper-streaming-content strong,
+.ai-helper-final-content strong {
+  font-weight: bold;
+}
+
+.ai-helper-streaming-content em,
+.ai-helper-final-content em {
+  font-style: italic;
+}
+
+.ai-helper-cursor {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.ai-helper-error {
+  color: #d33;
+  background-color: #ffe6e6;
+  border: 1px solid #ffb3b3;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.ai-helper-note {
+  font-size: 0.9em;
+  margin-top: 10px;
+}
+
+/* Force scrollbar visibility */
+.ai-helper-project-health-content {
+  scrollbar-width: thin;
+  scrollbar-color: auto;
+}
+
+/* Custom scrollbar styling for webkit browsers */
+.ai-helper-project-health-content::-webkit-scrollbar {
+  width: 12px;
+  background: transparent;
+}
+
+.ai-helper-project-health-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.ai-helper-project-health-content::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+}
+
+.ai-helper-project-health-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+</style>
+
+<% end # if project %>
