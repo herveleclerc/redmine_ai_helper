@@ -27,7 +27,7 @@
                 id: "ai-helper-generate-project-health-link" %>
   </div>
 
-  <div class="ai-helper-project-health-content">
+  <div class="ai-helper-project-health-content<% if health_report && !health_report.is_a?(Hash) %> has-report<% end %>">
     <% if health_report && !health_report.is_a?(Hash) %>
       <div id="ai-helper-project-health-result" class="ai-helper-final-content">
         <%= raw textilizable(health_report.to_s, :object => project) %>
@@ -69,10 +69,60 @@ document.addEventListener('DOMContentLoaded', function() {
   const parser = new AiHelperMarkdownParser();
   const generateLink = document.getElementById('ai-helper-generate-project-health-link');
 
-  // Check if report already exists and add PDF button if needed
+  // Check if report already exists and ensure proper initialization
   const resultDiv = document.getElementById('ai-helper-project-health-result');
+  const contentDiv = document.querySelector('.ai-helper-project-health-content');
+  
   if (resultDiv && resultDiv.classList.contains('ai-helper-final-content')) {
+    // Ensure the has-report class is applied for existing content
+    if (contentDiv && !contentDiv.classList.contains('has-report')) {
+      contentDiv.classList.add('has-report');
+    }
+    
+    // Re-parse markdown content to ensure proper formatting
+    const hiddenField = document.getElementById('ai-helper-health-report-content');
+    if (hiddenField && hiddenField.value) {
+      const formattedContent = parser.parse(hiddenField.value);
+      resultDiv.innerHTML = '<div class="ai-helper-final-content">' + formattedContent + '</div>';
+    }
+    
     addPdfExportButton();
+  }
+
+  // Set up MutationObserver to watch for DOM changes and re-initialize as needed
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'childList') {
+        // Check if the health report content was re-rendered
+        const newResultDiv = document.getElementById('ai-helper-project-health-result');
+        const newContentDiv = document.querySelector('.ai-helper-project-health-content');
+        
+        if (newResultDiv && newResultDiv.classList.contains('ai-helper-final-content')) {
+          // Ensure proper classes and formatting
+          if (newContentDiv && !newContentDiv.classList.contains('has-report')) {
+            newContentDiv.classList.add('has-report');
+          }
+          
+          // Re-parse markdown content if needed
+          const hiddenField = document.getElementById('ai-helper-health-report-content');
+          if (hiddenField && hiddenField.value) {
+            const formattedContent = parser.parse(hiddenField.value);
+            newResultDiv.innerHTML = '<div class="ai-helper-final-content">' + formattedContent + '</div>';
+          }
+          
+          // Ensure PDF button exists
+          if (!document.querySelector('.other-formats')) {
+            addPdfExportButton();
+          }
+        }
+      }
+    });
+  });
+  
+  // Start observing the project health container
+  const healthContainer = document.querySelector('.ai-helper-project-health');
+  if (healthContainer) {
+    observer.observe(healthContainer, { childList: true, subtree: true });
   }
 
   if (generateLink) {
