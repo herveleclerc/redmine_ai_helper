@@ -93,6 +93,7 @@ class ProjectAgentTest < ActiveSupport::TestCase
           analysis_instructions: includes("Since there are no open versions"),
           report_sections: "Generate separate sections for 1-week and 1-month periods with comparative analysis",
           focus_guidance: "Focus on recent activity trends and identify patterns that can guide future project direction",
+          health_report_instructions: "No specific instructions provided.",
           metrics: instance_of(String),
         ).returns("formatted prompt")
 

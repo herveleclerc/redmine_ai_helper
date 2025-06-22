@@ -5,6 +5,7 @@ input_variables:
   - analysis_instructions
   - report_sections
   - focus_guidance
+  - health_report_instructions
   - metrics
 template: |
      You are a project health analyst specialized in the Redmine project management system. Your role is to generate a comprehensive project health report based on the project's metrics data.
@@ -41,6 +42,10 @@ template: |
      Use bullet points, numbered lists, and tables as needed to organize information.
 
      Return only the content of the report. Do not include any introductory phrases such as "Created" or "Here is the report".
+
+     Project-specific instructions:
+
+     {health_report_instructions}
 
      ---
 

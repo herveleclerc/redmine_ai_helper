@@ -132,12 +132,17 @@ module RedmineAiHelper
           end
         end
 
+        # Get project-specific health report instructions
+        project_settings = AiHelperProjectSetting.settings(project)
+        health_report_instructions = project_settings.health_report_instructions
+
         prompt_text = prompt.format(
           project_id: project.id,
           analysis_focus: analysis_focus,
           analysis_instructions: analysis_instructions,
           report_sections: report_sections,
           focus_guidance: focus_guidance,
+          health_report_instructions: health_report_instructions.present? ? health_report_instructions : "No specific instructions provided.",
           metrics: JSON.pretty_generate(metrics_list),
         )
 

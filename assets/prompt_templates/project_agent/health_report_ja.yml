@@ -5,6 +5,7 @@ input_variables:
   - analysis_instructions
   - report_sections
   - focus_guidance
+  - health_report_instructions
   - metrics
 template: |
    あなたはRedmineプロジェクト管理システムに特化したプロジェクト健全性アナリストです。プロジェクトのメトリクスデータに基づいて包括的なプロジェクト健全性レポートを生成することが役割です。
@@ -41,6 +42,10 @@ template: |
    必要に応じて、箇条書きや番号付きリスト、表を使用して情報を整理してください。
 
    返答はレポートの内容のみを返して下さい。「作成しました」や「以下がレポートです」といった前置きは不要です。
+
+   プロジェクト固有の指示:
+
+   {health_report_instructions}
 
    ---
 
