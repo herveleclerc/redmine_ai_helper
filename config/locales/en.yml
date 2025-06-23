@@ -16,6 +16,7 @@ en:
   ai_helper:
     project_health:
       title: "Project Health Report"
+      pdf_title: "Project Health Report"
       generate_report: "Generate Report"
       generating: "Generating"
       placeholder: "Click 'Generate Report' to analyze project metrics and get insights."
