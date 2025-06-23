@@ -11,6 +11,7 @@ en:
   ai_helper_no_similar_issues_found: "No similar issues found"
   ai_helper_text_summary_generated_time: "Generated at %{time}"
   ai_helper_error_occurred: "An error occurred"
+  ai_helper_project_health_title: "Project Health Report"
   permission_view_ai_helper: "View AI Helper"
   label_ai_helper_error: "Error"
   ai_helper:
