@@ -40,12 +40,13 @@ The Redmine AI Helper Plugin adds AI chat functionality to Redmine, enhancing pr
 # ✨ Features
 
 - Adds an AI chat sidebar to the right side of your Redmine interface
-- Enables various AI-assisted queries including:
+- Enables various AI-assisted features including:
   - Issue search
   - Issue and Wiki content summarization
   - Repository source code explanation
   - Generate subtasks from issues
   - Other project and Redmine-related inquiries
+- Provides a project health report
 - Supports multiple AI models and services
 - MCP server integration
 - Vector search using Qdrant
@@ -73,6 +74,20 @@ You can create a comment draft for an issue using the AI Helper Plugin. This fea
 You can generate subtasks from issues using the AI Helper Plugin. This feature allows you to create detailed subtasks based on the content of an issue, helping you break down complex tasks into manageable parts.
 
 ![Image](https://github.com/user-attachments/assets/c91a8d96-b608-43f2-9461-a0bdf8b35936)
+
+## Similar Issues Search
+
+You can search for similar issues using the AI Helper Plugin. This feature is only available if vector search is set up. The AI Helper Plugin allows you to find issues similar to the current one based on its content, making it easier to discover related past issues and solutions.
+
+![Image](https://github.com/user-attachments/assets/3217149b-4874-49b9-aa98-b35a7324bca3)
+
+## Project Health Report
+
+You can generate a project health report using the AI Helper Plugin. This feature provides a comprehensive overview of the project's status, including metrics such as open issues, closed issues, and overall project health.
+
+![Image](https://github.com/user-attachments/assets/8f01c6ef-6cee-4e79-b693-c17081566c78)
+
+Helth report can be exported to Markdown and PDF formats.
 
 # 📦 Installation
 
