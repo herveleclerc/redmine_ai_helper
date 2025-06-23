@@ -28,7 +28,7 @@ module RedmineAiHelper
             pdf.set_rtl(true) if pdf.respond_to?(:set_rtl)
           end
           
-          pdf.set_title("#{project.name} - #{l(:ai_helper_project_health_title)}")
+          pdf.set_title("#{project.name} - #{l('ai_helper.project_health.pdf_title')}")
           pdf.alias_nb_pages
           pdf.footer_date = format_date(User.current.today)
           
@@ -48,7 +48,7 @@ module RedmineAiHelper
           pdf.ln(8)
           
           pdf.SetFontStyle('B', 14)
-          pdf.cell(0, 8, l(:ai_helper_project_health_title), 0, 0, text_align)
+          pdf.cell(0, 8, l('ai_helper.project_health.pdf_title'), 0, 0, text_align)
           pdf.ln(10)
 
           # Project information section
