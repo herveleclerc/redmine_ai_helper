@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('AI Helper Project Health JS loaded');
 
   // Set flag to indicate main script is loaded
   window.aiHelperProjectHealthLoaded = true;
@@ -10,20 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof AiHelperMarkdownParser !== 'undefined') {
       parser = new AiHelperMarkdownParser();
     } else {
-      console.error('AiHelperMarkdownParser is not available');
       return;
     }
   } catch (error) {
-    console.error('Error initializing AiHelperMarkdownParser:', error);
     return;
   }
 
   const generateLink = document.getElementById('ai-helper-generate-project-health-link');
 
-  console.log('Generate link found:', generateLink);
-
   if (!generateLink) {
-    console.log('Generate link not found, script will not attach event listener');
     return;
   }
 
@@ -80,7 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (generateLink) {
     generateLink.addEventListener('click', function(e) {
-      console.log('Generate link clicked');
       e.preventDefault();
 
       // Close any existing EventSource to prevent conflicts
