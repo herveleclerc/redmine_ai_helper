@@ -41,7 +41,11 @@ class ProjectAgentTest < ActiveSupport::TestCase
         # Create a mock version for testing
         version = Version.new(name: "Test Version", project: @project, status: "open")
         version.stubs(:save!).returns(true)
-        @project.versions.stubs(:open).returns([version])
+        
+        # Mock open versions with order method
+        mock_versions = mock("OpenVersions")
+        mock_versions.stubs(:order).with(created_on: :desc).returns([version])
+        @project.versions.stubs(:open).returns(mock_versions)
 
         # Mock ProjectTools
         mock_tools = mock("ProjectTools")
@@ -57,8 +61,10 @@ class ProjectAgentTest < ActiveSupport::TestCase
       end
 
       should "generate time-period report when no open versions exist" do
-        # Mock empty open versions
-        @project.versions.stubs(:open).returns([])
+        # Mock empty open versions with order method
+        mock_versions = mock("OpenVersions")
+        mock_versions.stubs(:order).with(created_on: :desc).returns([])
+        @project.versions.stubs(:open).returns(mock_versions)
 
         # Mock ProjectTools
         mock_tools = mock("ProjectTools")
@@ -74,7 +80,10 @@ class ProjectAgentTest < ActiveSupport::TestCase
       end
 
       should "pass correct parameters to prompt format" do
-        @project.versions.stubs(:open).returns([])
+        # Mock empty open versions with order method
+        mock_versions = mock("OpenVersions")
+        mock_versions.stubs(:order).with(created_on: :desc).returns([])
+        @project.versions.stubs(:open).returns(mock_versions)
 
         # Mock ProjectTools
         mock_tools = mock("ProjectTools")
