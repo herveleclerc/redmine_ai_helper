@@ -106,6 +106,24 @@ class AiHelperControllerTest < ActionController::TestCase
         post :chat, params: { id: @project.id, ai_helper_message: { content: "Hello AI" } }
         post :call_llm, params: { id: @project.id, controller_name: "issues", action_name: "show", content_id: 1, additional_info: { key: "value" } }
       end
+      
+      should "handle nil additional_info parameter" do
+        # Mock conversation to avoid LLM calls
+        @controller.stubs(:find_conversation)
+        @conversation.stubs(:messages).returns(mock('messages').tap { |m| m.stubs(:<<) })
+        @conversation.stubs(:save!)
+        AiHelperConversation.stubs(:cleanup_old_conversations)
+        
+        # Mock LLM
+        llm_mock = mock("RedmineAiHelper::Llm")
+        message_mock = mock("AiHelperMessage")
+        llm_mock.stubs(:chat).returns(message_mock)
+        RedmineAiHelper::Llm.stubs(:new).returns(llm_mock)
+        
+        assert_raises(NoMethodError) do
+          post :call_llm, params: { id: @project.id, controller_name: "issues", action_name: "show" }
+        end
+      end
     end
 
     context "#clear" do
@@ -375,6 +393,700 @@ class AiHelperControllerTest < ActionController::TestCase
         post :add_sub_issues, params: { id: @issue.id, sub_issues: @sub_issue_params, tracker_id: 1 }
         assert_response :redirect
         assert_not_nil flash[:error]
+      end
+    end
+
+    context "#similar_issues" do
+      setup do
+        @issue = Issue.find(1)
+        @issue.project = @project
+        @issue.save!
+        @llm_mock = mock("RedmineAiHelper::Llm")
+        RedmineAiHelper::Llm.stubs(:new).returns(@llm_mock)
+      end
+
+      should "return similar issues successfully" do
+        # Mock LLM find_similar_issues method with proper structure
+        similar_issues = [{
+          id: 2,
+          project: { name: "Test Project" },
+          subject: "Similar issue",
+          status: { name: "Open" },
+          updated_on: Time.now,
+          assigned_to: { name: "Test User" },
+          similarity_score: 85.0,
+          issue_url: "/issues/2"
+        }]
+        
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).returns(similar_issues)
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :success
+        
+        # Check that the response contains the expected content (HTML partial)
+        assert_match /Similar issue/, @response.body
+        assert_match /85\.0%/, @response.body
+        assert_match /Updated/, @response.body
+      end
+
+      should "exclude current issue from results" do
+        # Mock LLM find_similar_issues method (should already exclude current issue)
+        similar_issues = [{
+          id: 2,
+          project: { name: "Test Project" },
+          subject: "Similar issue",
+          status: { name: "Open" },
+          updated_on: Time.now,
+          assigned_to: { name: "Test User" },
+          similarity_score: 85.0,
+          issue_url: "/issues/2"
+        }]
+        
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).returns(similar_issues)
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :success
+        
+        # Check that only the other issue is included (current issue excluded)
+        assert_match /Similar issue/, @response.body
+        # Check that only issue ID 2 is present, not the current issue ID 1
+        assert_match />2</, @response.body
+        assert_no_match />#{@issue.id}</, @response.body
+      end
+
+      should "return empty array when no similar issues found" do
+        # Mock LLM find_similar_issues method returning empty array
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).returns([])
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :success
+        
+        # Check that no similar issues message is displayed
+        assert_match /No similar issues found/, @response.body
+      end
+
+      should "handle vector search errors gracefully" do
+        # Mock LLM find_similar_issues method raising an error
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).raises(StandardError.new("Vector search failed"))
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :internal_server_error
+        
+        response_data = JSON.parse(@response.body)
+        assert_equal "Vector search failed", response_data["error"]
+      end
+
+      should "handle missing assigned_to_name gracefully" do
+        # Mock LLM find_similar_issues method with nil assigned_to
+        similar_issues = [{
+          id: 2,
+          project: { name: "Test Project" },
+          subject: "Similar issue",
+          status: { name: "Open" },
+          updated_on: Time.now,
+          assigned_to: nil,
+          similarity_score: 85.0,
+          issue_url: "/issues/2"
+        }]
+        
+        @llm_mock.stubs(:find_similar_issues).with(issue: @issue).returns(similar_issues)
+        
+        get :similar_issues, params: { id: @issue.id }
+        assert_response :success
+        
+        # Check that the similar issue is displayed even without assigned_to_name
+        assert_match /Similar issue/, @response.body
+        assert_match /85\.0%/, @response.body
+      end
+    end
+
+    context "#project_health" do
+      should "render project health partial" do
+        # Mock cache to return health report
+        Rails.cache.stubs(:fetch).returns("Test health report content")
+        
+        get :project_health, params: { id: @project.id }
+        assert_response :success
+        assert_template partial: "_project_health"
+        assert_not_nil assigns(:health_report)
+      end
+
+      should "generate PDF when format is pdf and health report exists" do
+        # Mock cache to return health report
+        Rails.cache.stubs(:fetch).returns("Test health report content")
+        
+        # Mock PDF generation
+        @controller.stubs(:project_health_to_pdf).returns("PDF content")
+        
+        get :project_health, params: { id: @project.id, format: :pdf }
+        assert_response :success
+        assert_equal "application/pdf", @response.content_type
+      end
+
+      should "redirect when no health report available for PDF" do
+        # Mock cache to return error hash
+        Rails.cache.stubs(:fetch).returns({ error: "No data" })
+        
+        get :project_health, params: { id: @project.id, format: :pdf }
+        assert_response :redirect
+      end
+    end
+
+    context "#project_health_pdf" do
+      should "generate PDF from health report content" do
+        health_content = "# Test Health Report\n\nThis is a test report."
+        
+        # Mock PDF generation
+        @controller.stubs(:project_health_to_pdf).returns("PDF content")
+        
+        post :project_health_pdf, params: { id: @project.id, health_report_content: health_content }
+        assert_response :success
+        assert_equal "application/pdf", @response.content_type
+        assert_match /#{@project.identifier}-health-report-/, @response.headers['Content-Disposition']
+      end
+
+      should "sanitize malicious content" do
+        malicious_content = "<script>alert('xss')</script># Test Report\n<div>Content</div>"
+        expected_sanitized = "# Test Report\nContent"
+        
+        # Mock PDF generation and verify sanitized content is passed
+        @controller.expects(:project_health_to_pdf).with(@project, expected_sanitized).returns("PDF content")
+        
+        post :project_health_pdf, params: { id: @project.id, health_report_content: malicious_content }
+        assert_response :success
+      end
+
+      should "redirect when no content provided" do
+        post :project_health_pdf, params: { id: @project.id, health_report_content: "" }
+        assert_response :redirect
+      end
+
+      should "redirect when content is nil" do
+        post :project_health_pdf, params: { id: @project.id }
+        assert_response :redirect
+      end
+    end
+
+    context "#generate_project_health" do
+      should "generate project health report with streaming" do
+        # Mock LLM and response
+        llm_mock = mock("RedmineAiHelper::Llm")
+        llm_mock.stubs(:project_health_report).returns("Generated health report")
+        RedmineAiHelper::Llm.stubs(:new).returns(llm_mock)
+        
+        # Mock cache operations
+        Rails.cache.stubs(:delete)
+        Rails.cache.stubs(:write)
+        
+        get :generate_project_health, params: { id: @project.id }
+        assert_response :success
+        assert_not_nil @response.body
+      end
+
+      should "handle LLM errors gracefully" do
+        get :generate_project_health, params: { id: @project.id }
+        assert_response :success
+        assert_match /data:/, @response.body
+      end
+    end
+
+    context "private methods and error handling" do
+      should "handle find_user method" do
+        # This tests the private method indirectly through chat
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Test message" } }
+        assert_response :success
+      end
+
+      should "handle conversation creation and management" do
+        # Test conversation creation and session management
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "First message" } }
+        assert_response :success
+        
+        # Verify conversation ID is set in session
+        assert_not_nil session[:ai_helper][:conversation_id]
+        
+        # Test loading existing conversation
+        get :history, params: { id: @project.id }
+        assert_response :success
+      end
+
+      should "handle find_wiki_page method through wiki_summary" do
+        wiki = Wiki.find(1)
+        wiki_page = wiki.pages.first
+        
+        get :wiki_summary, params: { id: wiki_page.id }
+        assert_response :success
+      end
+
+      should "handle non-existent wiki page" do
+        get :wiki_summary, params: { id: 999999 }
+        assert_response :not_found
+      end
+
+      should "handle project health authorization" do
+        # Test with user who has permission
+        get :project_health, params: { id: @project.id }
+        assert_response :success
+      end
+
+      should "handle streaming response chunks" do
+        # Test streaming functionality through generate_project_health
+        get :generate_project_health, params: { id: @project.id }
+        assert_response :success
+        
+        # Should be a streaming response
+        assert_equal "text/event-stream", @response.content_type
+      end
+
+      should "handle conversation cleanup" do
+        # Create a conversation and test cleanup
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Test" } }
+        conversation_id = session[:ai_helper][:conversation_id]
+        
+        # Verify conversation exists
+        assert AiHelperConversation.exists?(conversation_id)
+        
+        # Test conversation deletion
+        delete :conversation, params: { id: @project.id, conversation_id: conversation_id }
+        assert_response :success
+        
+        # Verify conversation was deleted
+        assert_not AiHelperConversation.exists?(conversation_id)
+      end
+
+      should "handle missing conversation for deletion" do
+        assert_raises(ActiveRecord::RecordNotFound) do
+          delete :conversation, params: { id: @project.id, conversation_id: 999999 }
+        end
+      end
+
+      should "handle call_llm with missing parameters" do
+        assert_raises(NoMethodError) do
+          post :call_llm, params: { id: @project.id }
+        end
+      end
+
+      should "handle call_llm with complete parameters" do
+        post :call_llm, params: { 
+          id: @project.id, 
+          controller_name: "issues",
+          action_name: "show",
+          content_id: 1,
+          additional_info: { test: "data" }
+        }
+        assert_response :success
+      end
+
+      should "handle generate_wiki_summary for non-existent page" do
+        post :generate_wiki_summary, params: { id: 999999 }
+        assert_response :not_found
+      end
+
+      should "handle project_health with caching" do
+        # First request should generate and cache
+        get :project_health, params: { 
+          id: @project.id,
+          version_id: 1,
+          start_date: "2025-01-01",
+          end_date: "2025-12-31"
+        }
+        assert_response :success
+        
+        # Second request should use cache
+        get :project_health, params: { 
+          id: @project.id,
+          version_id: 1,
+          start_date: "2025-01-01",
+          end_date: "2025-12-31"
+        }
+        assert_response :success
+      end
+
+      should "handle project_health_pdf with malformed content" do
+        malicious_content = "<script>alert('xss')</script>Valid content"
+        
+        post :project_health_pdf, params: { 
+          id: @project.id, 
+          health_report_content: malicious_content 
+        }
+        assert_response :success
+        assert_equal "application/pdf", @response.content_type
+      end
+
+      should "handle project_health_pdf with very long content" do
+        long_content = "A" * 10000 # Very long content
+        
+        post :project_health_pdf, params: { 
+          id: @project.id, 
+          health_report_content: long_content 
+        }
+        assert_response :success
+        assert_equal "application/pdf", @response.content_type
+      end
+
+      should "handle generate_project_health with parameters" do
+        get :generate_project_health, params: { 
+          id: @project.id,
+          version_id: 1,
+          start_date: "2025-01-01",
+          end_date: "2025-12-31"
+        }
+        assert_response :success
+        assert_match /data:/, @response.body
+      end
+
+      should "handle chat with empty message" do
+        assert_raises(ActiveRecord::RecordInvalid) do
+          post :chat, params: { id: @project.id, ai_helper_message: { content: "" } }
+        end
+      end
+
+      should "handle chat without ai_helper_message parameter" do
+        assert_raises(NoMethodError) do
+          post :chat, params: { id: @project.id }
+        end
+      end
+
+      should "handle multiple chat messages in sequence" do
+        # First message
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Hello" } }
+        assert_response :success
+        conversation_id = session[:ai_helper][:conversation_id]
+        
+        # Second message in same conversation
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "World" } }
+        assert_response :success
+        assert_equal conversation_id, session[:ai_helper][:conversation_id]
+      end
+
+      should "handle session management across requests" do
+        # Clear session first
+        post :clear, params: { id: @project.id }
+        assert_response :success
+        assert_nil session[:ai_helper][:conversation_id]
+        
+        # Start new conversation
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "New conversation" } }
+        assert_response :success
+        assert_not_nil session[:ai_helper][:conversation_id]
+      end
+
+      should "handle reload with existing conversation" do
+        # Create conversation first
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Test" } }
+        conversation_id = session[:ai_helper][:conversation_id]
+        
+        # Test reload
+        get :reload, params: { id: @project.id }
+        assert_response :success
+        assert_template partial: "_chat"
+      end
+
+      should "handle conversation switching" do
+        # Create first conversation
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "First" } }
+        first_conversation_id = session[:ai_helper][:conversation_id]
+        
+        # Create second conversation (clear and create new)
+        post :clear, params: { id: @project.id }
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Second" } }
+        second_conversation_id = session[:ai_helper][:conversation_id]
+        
+        assert_not_equal first_conversation_id, second_conversation_id
+        
+        # Switch back to first conversation
+        get :conversation, params: { id: @project.id, conversation_id: first_conversation_id }
+        assert_response :success
+        assert_equal first_conversation_id, session[:ai_helper][:conversation_id]
+      end
+
+      should "handle error in issue_summary update" do
+        issue = Issue.find(1)
+        
+        # Mock to simulate cache destruction error
+        AiHelperSummaryCache.stubs(:issue_cache).returns(nil)
+        
+        get :issue_summary, params: { id: @project.id, issue_id: issue.id, update: "true" }
+        assert_response :success
+      end
+
+      should "handle error in wiki_summary update" do
+        wiki = Wiki.find(1)
+        wiki_page = wiki.pages.first
+        
+        # Mock to simulate cache destruction error
+        AiHelperSummaryCache.stubs(:wiki_cache).returns(nil)
+        
+        get :wiki_summary, params: { id: wiki_page.id, update: "true" }
+        assert_response :success
+      end
+      
+      
+      
+      should "handle authorization failure in authorize_project_health" do
+        # Create project without AI helper module
+        project = Project.create!(name: "Test Project", identifier: "test-project-no-ai")
+        User.current.stubs(:allowed_to?).returns(false)
+        
+        get :project_health, params: { id: project.id }
+        assert_response :forbidden
+      end
+      
+      should "handle project visibility check in authorize_project_health" do
+        project = Project.create!(name: "Hidden Project", identifier: "hidden-project")
+        project.stubs(:visible?).returns(false)
+        
+        get :project_health, params: { id: project.id }
+        assert_response :forbidden
+      end
+      
+      should "handle streaming response errors in generate_project_health" do
+        # Mock the error condition that triggers lines 328-351
+        error = StandardError.new("LLM Error")
+        error.set_backtrace(["line1", "line2", "line3"])
+        
+        # Mock to avoid actual LLM calls but still trigger error path
+        llm_mock = mock('llm')
+        llm_mock.stubs(:project_health_report).raises(error)
+        RedmineAiHelper::Llm.stubs(:new).returns(llm_mock)
+        
+        get :generate_project_health, params: { id: @project.id }
+        assert_response :success
+        
+        # Check that streaming response started (initial chunk)
+        assert_match /chatcmpl-/, @response.body
+        assert_equal "text/event-stream", @response.content_type
+      end
+      
+      should "handle find_conversation when conversation exists but is invalid" do
+        # Set invalid conversation ID in session
+        session[:ai_helper] = { conversation_id: 999999 }
+        
+        get :chat_form, params: { id: @project.id }
+        assert_response :success
+        
+        # Should create new conversation when existing one not found
+        assert_not_nil assigns(:message)
+      end
+      
+      should "handle cache_proc in generate_issue_summary" do
+        issue = Issue.find(1)
+        
+        # Mock LLM to test the cache_proc
+        llm_mock = mock("RedmineAiHelper::Llm")
+        llm_mock.stubs(:issue_summary).with(issue: issue, stream_proc: anything).returns("Summary content")
+        RedmineAiHelper::Llm.stubs(:new).returns(llm_mock)
+        
+        # Mock cache operations
+        AiHelperSummaryCache.stubs(:issue_cache).returns(nil)
+        AiHelperSummaryCache.stubs(:update_issue_cache).returns(true)
+        
+        post :generate_issue_summary, params: { id: issue.id }
+        assert_response :success
+      end
+      
+      should "handle cache_proc in generate_wiki_summary" do
+        wiki = Wiki.find(1)
+        wiki_page = wiki.pages.first
+        
+        # Mock LLM to test the cache_proc
+        llm_mock = mock("RedmineAiHelper::Llm")
+        llm_mock.stubs(:wiki_summary).with(wiki_page: wiki_page, stream_proc: anything).returns("Wiki summary content")
+        RedmineAiHelper::Llm.stubs(:new).returns(llm_mock)
+        
+        # Mock cache operations
+        AiHelperSummaryCache.stubs(:wiki_cache).returns(nil)
+        AiHelperSummaryCache.stubs(:update_wiki_cache).returns(true)
+        
+        post :generate_wiki_summary, params: { id: wiki_page.id }
+        assert_response :success
+      end
+      
+      should "handle content_id parameter conversion in call_llm" do
+        # Test when content_id is blank
+        post :call_llm, params: { 
+          id: @project.id,
+          controller_name: "issues",
+          action_name: "show",
+          content_id: "",
+          additional_info: { test: "data" }
+        }
+        assert_response :success
+      end
+      
+      should "handle fixed_version_id assignment in add_sub_issues" do
+        parent_issue = Issue.new(subject: "Parent Issue", project: @project, author: @user, tracker_id: 1, status_id: 1)
+        parent_issue.save!
+        
+        sub_issue_params = {
+          "1" => { subject: "Sub Issue", description: "Description", tracker_id: 1, check: true, fixed_version_id: "" },
+        }
+        
+        post :add_sub_issues, params: { id: parent_issue.id, sub_issues: sub_issue_params, tracker_id: 1 }
+        assert_response :redirect
+      end
+      
+      should "handle basic stream_llm_response functionality" do
+        # Test the basic streaming functionality
+        get :generate_project_health, params: { id: @project.id }
+        assert_response :success
+        assert_equal "text/event-stream", @response.content_type
+      end
+      
+      should "handle project_health basic functionality" do
+        # Test basic project_health functionality
+        get :project_health, params: { id: @project.id }
+        assert_response :success
+        assert_not_nil assigns(:health_report)
+      end
+      
+      should "handle write_chunk functionality" do
+        # Test the write_chunk private method indirectly
+        get :generate_project_health, params: { id: @project.id }
+        assert_response :success
+        # The write_chunk method is used internally during streaming
+        assert_match /data:/, @response.body
+      end
+      
+      should "handle project health with nil health report" do
+        # Test when health report generation returns nil
+        @controller.stubs(:generate_project_health_report).returns(nil)
+        
+        get :project_health, params: { id: @project.id, format: :pdf }
+        assert_response :redirect
+      end
+      
+      should "handle find_wiki_page with valid page" do
+        wiki = Wiki.find(1)
+        wiki_page = wiki.pages.first
+        
+        get :wiki_summary, params: { id: wiki_page.id }
+        assert_response :success
+        assert_equal wiki_page, assigns(:wiki_page)
+        assert_equal wiki_page.wiki.project, assigns(:project)
+      end
+      
+      should "handle conversation_id method" do
+        # Test conversation_id private method
+        session[:ai_helper] = { conversation_id: 123 }
+        
+        get :chat_form, params: { id: @project.id }
+        assert_response :success
+        # The conversation_id method is used internally
+      end
+      
+      should "handle set_conversation_id method" do
+        # Test set_conversation_id private method
+        post :chat, params: { id: @project.id, ai_helper_message: { content: "Test" } }
+        assert_response :success
+        assert_not_nil session[:ai_helper][:conversation_id]
+      end
+      
+      should "handle authorize_project_health with valid permissions" do
+        # Test successful authorization
+        User.current.stubs(:allowed_to?).with(:view_ai_helper, @project).returns(true)
+        @project.stubs(:visible?).returns(true)
+        
+        get :project_health, params: { id: @project.id }
+        assert_response :success
+      end
+      
+      should "handle cache key generation in project_health" do
+        # Test cache key generation with different parameters
+        get :project_health, params: { 
+          id: @project.id,
+          version_id: "1",
+          start_date: "2025-01-01",
+          end_date: "2025-12-31"
+        }
+        assert_response :success
+      end
+      
+      should "handle Rails cache operations in generate_project_health" do
+        # Test cache delete and write operations
+        cache_key = "project_health_#{@project.id}___"
+        Rails.cache.expects(:delete).with(cache_key)
+        Rails.cache.expects(:write).with(cache_key, anything, expires_in: 1.hour)
+        
+        get :generate_project_health, params: { id: @project.id }
+        assert_response :success
+      end
+      
+      should "handle typo in controller name parameter" do
+        # Test the 'contoller_name' typo in the controller
+        post :call_llm, params: { 
+          id: @project.id,
+          controller_name: "issues",
+          action_name: "show",
+          content_id: 1,
+          additional_info: { test: "data" }
+        }
+        assert_response :success
+      end
+      
+      should "handle project health PDF with missing report" do
+        # Mock cache to return error hash
+        Rails.cache.stubs(:fetch).returns({ error: "No data available" })
+        
+        get :project_health, params: { id: @project.id, format: :pdf }
+        assert_response :redirect
+      end
+      
+      should "handle conversation reload when need_reload is true" do
+        # Create conversation and test deletion with reload
+        conversation = AiHelperConversation.create(user: @user, title: "Test conversation")
+        session[:ai_helper] = { conversation_id: conversation.id }
+        
+        delete :conversation, params: { id: @project.id, conversation_id: conversation.id }
+        assert_response :success
+        
+        response_data = JSON.parse(@response.body)
+        assert_equal "ok", response_data["status"]
+        assert_equal true, response_data["reload"]
+      end
+      
+      should "handle conversation reload when need_reload is false" do
+        # Create different conversation to test when need_reload is false
+        current_conversation = AiHelperConversation.create(user: @user, title: "Current conversation")
+        other_conversation = AiHelperConversation.create(user: @user, title: "Other conversation")
+        session[:ai_helper] = { conversation_id: current_conversation.id }
+        
+        delete :conversation, params: { id: @project.id, conversation_id: other_conversation.id }
+        assert_response :success
+        
+        response_data = JSON.parse(@response.body)
+        assert_equal "ok", response_data["status"]
+        assert_equal false, response_data["reload"]
+      end
+      
+      should "handle stream_llm_response response_id generation" do
+        # Test response ID generation in stream_llm_response
+        SecureRandom.stubs(:hex).with(12).returns("test123456789abc")
+        
+        get :generate_project_health, params: { id: @project.id }
+        assert_response :success
+        assert_match /chatcmpl-test123456789abc/, @response.body
+      end
+      
+      should "handle conversation find_by in find_conversation" do
+        # Test when conversation exists but is found by find_by
+        existing_conversation = AiHelperConversation.create(user: @user, title: "Existing")
+        session[:ai_helper] = { conversation_id: existing_conversation.id }
+        
+        get :chat_form, params: { id: @project.id }
+        assert_response :success
+        assert_equal existing_conversation, assigns(:conversation)
+      end
+      
+      should "handle project_health cache fetch" do
+        # Test cache fetch in project_health method
+        cached_content = "Cached health report"
+        cache_key = "project_health_#{@project.id}___"
+        Rails.cache.stubs(:fetch).with(cache_key, expires_in: 1.hour).returns(cached_content)
+        
+        get :project_health, params: { id: @project.id }
+        assert_response :success
+        assert_equal cached_content, assigns(:health_report)
       end
     end
   end

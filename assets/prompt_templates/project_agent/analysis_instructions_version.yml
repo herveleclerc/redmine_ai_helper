@@ -1,0 +1,13 @@
+_type: prompt
+input_variables: []
+template: |
+    If there are any open versions in the project, please perform the following analysis for each version:
+    - Analyze the entire period of each version.
+    - At the beginning of each version, provide a health score. (e.g., 7.5/10)
+    - Below the health score, briefly state the reasons in 2-3 lines.
+    - Version Overview: Summarize the version range, timeline, and current status.
+    - Progress Tracking: Completion status of the version and achievement of milestones.
+    - Resource Allocation: Team assignments and workload for this version.
+    - Quality Focus: Bug tracking and resolution specific to this version.
+    - Timeline Analysis: Deadline adherence and release risk assessment.
+    - Version Recommendations: Specific actions to ensure a successful release.

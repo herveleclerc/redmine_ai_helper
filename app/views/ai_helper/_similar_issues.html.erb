@@ -1,0 +1,34 @@
+<% if similar_issues.empty? %>
+  <p><%= l(:ai_helper_no_similar_issues_found) %></p>
+<% else %>
+  <table class="ai-helper-similar-issues-table">
+    <thead>
+      <tr>
+        <th><%= l(:ai_helper_similarity) %></th>
+        <th>#</th>
+        <th><%= l(:field_subject) %></th>
+        <th><%= l(:field_project) %></th>
+        <th><%= l(:field_status) %></th>
+        <th><%= l(:field_updated_on) %></th>
+        <th><%= l(:field_assigned_to) %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% similar_issues.each do |similar_issue| %>
+        <tr>
+          <td class="ai-helper-similarity-score"><%= similar_issue[:similarity_score] %>%</td>
+          <td class="ai-helper-issue-id">
+            <%= link_to similar_issue[:id], similar_issue[:issue_url] %>
+          </td>
+          <td class="ai-helper-issue-subject">
+            <%= link_to similar_issue[:subject], similar_issue[:issue_url] %>
+          </td>
+          <td class="ai-helper-project"><%= similar_issue[:project][:name] %></td>
+          <td class="ai-helper-status"><%= similar_issue[:status][:name] %></td>
+          <td class="ai-helper-updated-on"><%= format_time(similar_issue[:updated_on]) %></td>
+          <td class="ai-helper-assigned"><%= similar_issue[:assigned_to] ? similar_issue[:assigned_to][:name] : "" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

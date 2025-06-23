@@ -262,3 +262,266 @@ table.ai-helper-sub-issues-table td {
   margin-top: 10px;
   min-height: 100px;
 }
+
+/* Similar issues styles */
+.ai-helper-similar-issues-table {
+  border-collapse: collapse;
+  margin: 10px 0;
+}
+
+.ai-helper-similar-issues-table td,
+.ai-helper-similar-issues-table th {
+  padding: 3px 12px 3px 0;
+  vertical-align: top;
+  border: none;
+  white-space: nowrap;
+}
+
+.ai-helper-similarity-score {
+  font-weight: bold;
+  text-align: right;
+}
+
+.ai-helper-issue-id {
+  text-align: right;
+}
+
+.ai-helper-issue-subject {
+}
+
+.ai-helper-project {
+}
+
+.ai-helper-status {
+}
+
+.ai-helper-priority {
+}
+
+.ai-helper-assigned {
+  text-align: center;
+}
+
+/* Project Health Report Styles */
+.ai-helper-project-health {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fafafa;
+}
+
+.ai-helper-project-health-content {
+  margin-top: 10px;
+  padding: 15px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  width: 100%;
+  display: block;
+}
+
+.ai-helper-project-health-content.has-report {
+  height: 480px !important;
+  overflow-y: scroll !important;
+}
+
+.ai-helper-project-health-placeholder {
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+}
+
+.ai-helper-project-health-placeholder p {
+  font-style: italic;
+}
+
+.ai-helper-project-health-placeholder .ai-helper-note {
+  font-style: italic;
+}
+
+.ai-helper-loading {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 10px;
+}
+
+.ai-helper-streaming-content,
+.ai-helper-streaming-content *,
+.ai-helper-final-content,
+.ai-helper-final-content * {
+  font-family: inherit;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: left;
+  font-style: normal !important;
+}
+
+/* Tables use Redmine's standard list classes for styling */
+.ai-helper-streaming-content table.list,
+.ai-helper-final-content table.list {
+  margin-bottom: 1em;
+  width: 100%;
+}
+
+/* Override Redmine's default table alignment with Markdown-based alignment */
+.ai-helper-streaming-content table.list td,
+.ai-helper-final-content table.list td {
+  text-align: left !important;
+}
+
+.ai-helper-streaming-content table.list th,
+.ai-helper-final-content table.list th {
+  text-align: left !important;
+}
+
+.ai-helper-streaming-content table.list td[align=left],
+.ai-helper-streaming-content table.list th[align=left],
+.ai-helper-final-content table.list td[align=left],
+.ai-helper-final-content table.list th[align=left] {
+  text-align: left !important;
+}
+
+.ai-helper-streaming-content table.list td[align=right],
+.ai-helper-streaming-content table.list th[align=right],
+.ai-helper-final-content table.list td[align=right],
+.ai-helper-final-content table.list th[align=right] {
+  text-align: right !important;
+}
+
+.ai-helper-streaming-content table.list td[align=center],
+.ai-helper-streaming-content table.list th[align=center],
+.ai-helper-final-content table.list td[align=center],
+.ai-helper-final-content table.list th[align=center] {
+  text-align: center !important;
+}
+
+.ai-helper-streaming-content em,
+.ai-helper-streaming-content i,
+.ai-helper-final-content em,
+.ai-helper-final-content i {
+  font-style: italic !important;
+}
+
+.ai-helper-streaming-content h1,
+.ai-helper-streaming-content h2,
+.ai-helper-streaming-content h3,
+.ai-helper-final-content h1,
+.ai-helper-final-content h2,
+.ai-helper-final-content h3 {
+  margin: 1em 0 0.5em 0;
+  font-weight: bold;
+}
+
+.ai-helper-streaming-content h1,
+.ai-helper-final-content h1 {
+  font-size: 1.4em;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.3em;
+}
+
+.ai-helper-streaming-content h2,
+.ai-helper-final-content h2 {
+  font-size: 1.2em;
+}
+
+.ai-helper-streaming-content h3,
+.ai-helper-final-content h3 {
+  font-size: 1.1em;
+}
+
+.ai-helper-streaming-content ul,
+.ai-helper-final-content ul {
+  margin: 0.5em 0;
+  padding-left: 2em;
+}
+
+.ai-helper-streaming-content li,
+.ai-helper-final-content li {
+  margin: 0.25em 0;
+}
+
+.ai-helper-streaming-content code,
+.ai-helper-final-content code {
+  background-color: #f1f1f1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.ai-helper-streaming-content pre,
+.ai-helper-final-content pre {
+  background-color: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+  margin: 1em 0;
+}
+
+.ai-helper-streaming-content pre code,
+.ai-helper-final-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.ai-helper-streaming-content strong,
+.ai-helper-final-content strong {
+  font-weight: bold;
+}
+
+.ai-helper-streaming-content em,
+.ai-helper-final-content em {
+  font-style: italic;
+}
+
+.ai-helper-cursor {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.ai-helper-error {
+  color: #d33;
+  background-color: #ffe6e6;
+  border: 1px solid #ffb3b3;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.ai-helper-note {
+  font-size: 0.9em;
+  margin-top: 10px;
+}
+
+/* Force scrollbar visibility */
+.ai-helper-project-health-content {
+  scrollbar-width: thin;
+  scrollbar-color: auto;
+}
+
+/* Custom scrollbar styling for webkit browsers */
+.ai-helper-project-health-content::-webkit-scrollbar {
+  width: 12px;
+  background: transparent;
+}
+
+.ai-helper-project-health-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.ai-helper-project-health-content::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+}
+
+.ai-helper-project-health-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

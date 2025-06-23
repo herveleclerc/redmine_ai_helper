@@ -110,5 +110,146 @@ class RedmineAiHelper::Tools::VectorToolsTest < ActiveSupport::TestCase
       @setting.stubs(:vector_search_enabled).returns(false)
       assert_equal false, @vector_tools.send(:vector_db_enabled?)
     end
+
+    context "#find_similar_issues" do
+      setup do
+        @issue = Issue.find(1)
+        @issue.project.enable_module!(:ai_helper)
+        User.current = User.find(1)
+        @mock_db = mock("vector_db")
+        @vector_tools.stubs(:vector_db).with(target: "issue").returns(@mock_db)
+        @mock_db.stubs(:client).returns(true)
+        @mock_logger.stubs(:warn)
+      end
+
+      should "raise error if vector search is not enabled" do
+        @setting.stubs(:vector_search_enabled).returns(false)
+        assert_raises(RuntimeError, "The vector search functionality is not enabled.") do
+          @vector_tools.find_similar_issues(issue_id: @issue.id, k: 10)
+        end
+      end
+
+      should "raise error if k is out of range" do
+        assert_raises(RuntimeError, "limit must be between 1 and 50.") do
+          @vector_tools.find_similar_issues(issue_id: @issue.id, k: 0)
+        end
+        assert_raises(RuntimeError, "limit must be between 1 and 50.") do
+          @vector_tools.find_similar_issues(issue_id: @issue.id, k: 51)
+        end
+      end
+
+      should "raise error if issue not found" do
+        assert_raises(RuntimeError, "Issue not found with ID: 99999") do
+          @vector_tools.find_similar_issues(issue_id: 99999, k: 10)
+        end
+      end
+
+      should "raise error if issue not visible" do
+        # Issue.find_by should return the issue, then visible? should return false
+        Issue.stubs(:find_by).with(id: @issue.id).returns(@issue)
+        @issue.stubs(:visible?).returns(false)
+        assert_raises(RuntimeError, "Permission denied") do
+          @vector_tools.find_similar_issues(issue_id: @issue.id, k: 10)
+        end
+      end
+
+      should "raise error if vector search client not available" do
+        @mock_db.stubs(:client).returns(false)
+        assert_raises(RuntimeError, "Vector search is not enabled or configured") do
+          @vector_tools.find_similar_issues(issue_id: @issue.id, k: 10)
+        end
+      end
+
+      should "return similar issues successfully" do
+        # Create another issue for similar results
+        other_issue = Issue.find(2)
+        other_issue.project.enable_module!(:ai_helper)
+        
+        # Mock vector search results
+        mock_results = [
+          {
+            "payload" => {
+              "issue_id" => @issue.id  # Current issue - should be filtered out
+            },
+            "score" => 1.0
+          },
+          {
+            "payload" => {
+              "issue_id" => other_issue.id
+            },
+            "score" => 0.85
+          }
+        ]
+        
+        @mock_db.expects(:similarity_search).returns(mock_results)
+        
+        result = @vector_tools.find_similar_issues(issue_id: @issue.id, k: 10)
+        
+        assert_equal 1, result.length
+        assert_equal other_issue.id, result.first[:id]
+        assert_equal 85.0, result.first[:similarity_score]
+      end
+
+      should "filter out issues from projects without ai_helper module" do
+        # Create issue in project without ai_helper module
+        other_issue = Issue.find(2)
+        other_issue.project.disable_module!(:ai_helper)
+        
+        mock_results = [
+          {
+            "payload" => {
+              "issue_id" => other_issue.id
+            },
+            "score" => 0.85
+          }
+        ]
+        
+        @mock_db.expects(:similarity_search).returns(mock_results)
+        
+        result = @vector_tools.find_similar_issues(issue_id: @issue.id, k: 10)
+        
+        assert_equal 0, result.length
+      end
+
+      should "handle issues that cause generate_issue_data to fail" do
+        other_issue = Issue.find(2)
+        other_issue.project.enable_module!(:ai_helper)
+        
+        mock_results = [
+          {
+            "payload" => {
+              "issue_id" => other_issue.id
+            },
+            "score" => 0.85
+          }
+        ]
+        
+        @mock_db.expects(:similarity_search).returns(mock_results)
+        
+        # Mock generate_issue_data to raise an error
+        @vector_tools.stubs(:generate_issue_data).raises(NoMethodError.new("undefined method `id' for nil:NilClass"))
+        
+        result = @vector_tools.find_similar_issues(issue_id: @issue.id, k: 10)
+        
+        # Should return empty array when generate_issue_data fails
+        assert_equal 0, result.length
+      end
+
+      should "return empty array when no results from vector search" do
+        @mock_db.expects(:similarity_search).returns([])
+        
+        result = @vector_tools.find_similar_issues(issue_id: @issue.id, k: 10)
+        
+        assert_equal 0, result.length
+      end
+
+      should "handle nil results from vector search" do
+        @mock_db.expects(:similarity_search).returns(nil)
+        
+        result = @vector_tools.find_similar_issues(issue_id: @issue.id, k: 10)
+        
+        assert_equal 0, result.length
+      end
+    end
   end
 end

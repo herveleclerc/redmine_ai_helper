@@ -109,7 +109,6 @@
         <% additional_info.each do |key, value|%>
           ai_helper.page_info['additional_info']['<%= key %>'] = '<%= value %>';
         <% end %>
-        console.log(ai_helper.page_info);
 
         ai_helper.set_hamberger_menu();
       });

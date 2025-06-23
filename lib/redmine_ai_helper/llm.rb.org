@@ -112,13 +112,13 @@ module RedmineAiHelper
     # @return [Array<Hash>] Array of similar issues with metadata
     def find_similar_issues(issue:)
       begin
-        langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: "find similar issues for #{issue.id}")
-        agent = RedmineAiHelper::Agents::IssueAgent.new(project: issue.project, langfuse: langfuse)
-        langfuse.create_span(name: "find_similar_issues", input: "issue_id: #{issue.id}")
-        results = agent.find_similar_issues(issue: issue)
-        langfuse.finish_current_span(output: results)
+        langfuse = RedmineAiHelper::LangfuseUtil::LangfuseWrapper.new(input: task)
+        option[:langfuse] = langfuse
+        agent = RedmineAiHelper::Agents::LeaderAgent.new(option)
+        langfuse.create_span(name: "user_request", input: task)
+        answer = agent.perform_user_request(conversation.messages_for_openai, option, proc)
+        langfuse.finish_current_span(output: answer)
         langfuse.flush
-        results
       rescue => e
         ai_helper_logger.error "error: #{e.full_message}"
         raise e
@@ -162,7 +162,7 @@ module RedmineAiHelper
         options = {}
         options[:langfuse] = langfuse
         options[:project_id] = project.id
-        agent = RedmineAiHelper::Agents::ProjectAgent.new(options)
+        agent = RedmineAiHelper::Agents::LeaderAgent.new(options)
         langfuse.create_span(name: "user_request", input: prompt)
         answer = agent.project_health_report(
           project: project,

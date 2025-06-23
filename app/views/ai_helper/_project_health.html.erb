@@ -1,0 +1,74 @@
+<%
+  # Get project from hook context or controller instance
+  project = @project || instance_variable_get(:@project) || (respond_to?(:project) ? project : nil)
+
+  # Skip rendering if no project is available or user doesn't have permission
+  if project and project.module_enabled?(:ai_helper) and User.current.allowed_to?({ controller: :ai_helper, action: :project_health }, project) and AiHelperSetting.find_or_create.model_profile
+    # Safely access params
+    version_id = defined?(params) ? params[:version_id] : nil
+    start_date = defined?(params) ? params[:start_date] : nil
+    end_date = defined?(params) ? params[:end_date] : nil
+
+    # Check for cached health report
+    cache_key = "project_health_#{project.id}_#{version_id}_#{start_date}_#{end_date}"
+    health_report = Rails.cache.read(cache_key)
+%>
+
+<div class="ai-helper-project-health">
+  <h3><%= sprite_icon("ai-helper-robot", t('ai_helper.project_health.title'), plugin: :redmine_ai_helper) %></h3>
+  <div class="contextual">
+    <%= link_to t('ai_helper.project_health.generate_report'),
+                ai_helper_generate_project_health_path(project,
+                  version_id: version_id,
+                  start_date: start_date,
+                  end_date: end_date
+                ),
+                class: "icon icon-loading-action",
+                id: "ai-helper-generate-project-health-link" %>
+  </div>
+
+  <div class="ai-helper-project-health-content<% if health_report && !health_report.is_a?(Hash) %> has-report<% end %>">
+    <% if health_report && !health_report.is_a?(Hash) %>
+      <div id="ai-helper-project-health-result" class="ai-helper-final-content">
+        <%= raw textilizable(health_report.to_s, :object => project) %>
+      </div>
+      <!-- Hidden field to store the health report content for PDF generation -->
+      <input type="hidden" id="ai-helper-health-report-content" value="<%= html_escape(health_report.to_s) %>" />
+    <% elsif health_report && health_report.is_a?(Hash) && health_report[:error] %>
+      <div id="ai-helper-project-health-result" class="ai-helper-error">
+        <p><strong><%= l(:label_ai_helper_error) %>:</strong> <%= health_report[:error] %></p>
+      </div>
+    <% else %>
+      <div id="ai-helper-project-health-result" class="ai-helper-project-health-placeholder">
+        <p><%= t('ai_helper.project_health.placeholder') %></p>
+        <p class="ai-helper-note">
+          <%= t('ai_helper.project_health.note') %>
+        </p>
+      </div>
+    <% end %>
+  </div>
+
+  <% if health_report && !health_report.is_a?(Hash) %>
+    <p class="other-formats">
+      <%= l(:label_export_to) %>
+      <span><%= link_to 'Markdown', ai_helper_project_health_markdown_path(project),
+                        class: "text",
+                        id: "ai-helper-markdown-export-link" %></span>
+      <span><%= link_to 'PDF', ai_helper_project_health_pdf_path(project),
+                        class: "pdf",
+                        id: "ai-helper-pdf-export-link" %></span>
+    </p>
+  <% end %>
+</div>
+
+<!-- Meta tags for JavaScript configuration -->
+<meta name="error-message" content="<%= l(:label_ai_helper_error) %>" />
+<meta name="export-label" content="<%= l(:label_export_to) %>" />
+<meta name="markdown-export-url" content="<%= ai_helper_project_health_markdown_path(project) %>" />
+<meta name="pdf-export-url" content="<%= ai_helper_project_health_pdf_path(project) %>" />
+
+<% content_for :header_tags do %>
+  <%= javascript_include_tag 'ai_helper_project_health', plugin: 'redmine_ai_helper' %>
+<% end %>
+
+<% end # if project %>

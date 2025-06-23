@@ -81,6 +81,89 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
         assert_equal "Sub issue 1", sub_issues[0].subject
       end
     end
+
+    context "wiki_summary" do
+      setup do
+        @wiki = Wiki.find(1)
+        @wiki_page = @wiki.pages.first
+        @llm = RedmineAiHelper::Llm.new(@params)
+      end
+
+      should "generate summary for wiki page" do
+        summary = @llm.wiki_summary(wiki_page: @wiki_page)
+        assert_equal "test answer", summary
+      end
+
+      should "generate summary for visible wiki page" do
+        @wiki_page.stubs(:visible?).returns(true)
+        summary = @llm.wiki_summary(wiki_page: @wiki_page)
+        assert_equal "test answer", summary
+      end
+    end
+
+    context "find_similar_issues" do
+      setup do
+        @issue = Issue.find(1)
+        @llm = RedmineAiHelper::Llm.new(@params)
+      end
+
+      should "deny access for non-visible issue" do
+        @issue.stubs(:visible?).returns(false)
+        result = @llm.find_similar_issues(issue: @issue)
+        assert_equal [], result
+      end
+
+      should "return empty array when no similar issues found" do
+        @issue.stubs(:visible?).returns(true)
+        result = @llm.find_similar_issues(issue: @issue)
+        assert_equal [], result
+      end
+    end
+
+    context "error handling" do
+      should "handle basic chat functionality" do
+        message = AiHelperMessage.new(content: "test", role: "user")
+        @conversation.messages << message
+        
+        result = @llm.chat(@conversation, nil, { controller_name: "issues", action_name: "show", content_id: 1 })
+        assert_equal "assistant", result.role
+        assert_not_nil result.content
+      end
+    end
+
+    context "permission checks" do
+      setup do
+        @issue = Issue.find(1)
+        @wiki_page = WikiPage.first
+        @llm = RedmineAiHelper::Llm.new(@params)
+      end
+
+      should "check issue visibility for issue_summary" do
+        @issue.expects(:visible?).returns(false)
+        
+        result = @llm.issue_summary(issue: @issue)
+        assert_equal "Permission denied", result
+      end
+
+      should "check issue visibility for generate_issue_reply" do
+        @issue.expects(:visible?).returns(false)
+        
+        result = @llm.generate_issue_reply(issue: @issue, instructions: "test")
+        assert_equal "Permission denied", result
+      end
+
+      should "check issue visibility for generate_sub_issues" do
+        @issue.expects(:visible?).returns(false)
+        
+        result = @llm.generate_sub_issues(issue: @issue, instructions: "test")
+        assert_equal "Permission denied", result
+      end
+
+      should "generate wiki summary successfully" do
+        result = @llm.wiki_summary(wiki_page: @wiki_page)
+        assert_equal "test answer", result
+      end
+    end
   end
 
   private
@@ -218,6 +301,102 @@ class RedmineAiHelper::LlmTest < ActiveSupport::TestCase
       end)
       
       @llm.wiki_summary(wiki_page: @wiki_page)
+    end
+  end
+
+  context "find_similar_issues" do
+    setup do
+      @issue = Issue.find(1)
+      @llm = RedmineAiHelper::Llm.new(@params)
+    end
+
+    should "find similar issues successfully" do
+      # Mock langfuse wrapper
+      mock_langfuse = mock('langfuse_wrapper')
+      mock_langfuse.stubs(:create_span)
+      mock_langfuse.stubs(:finish_current_span)
+      mock_langfuse.stubs(:flush)
+      RedmineAiHelper::LangfuseUtil::LangfuseWrapper.stubs(:new).returns(mock_langfuse)
+      
+      # Mock IssueAgent
+      similar_issues_data = [
+        { id: 2, subject: "Similar issue", similarity_score: 85.0 }
+      ]
+      mock_agent = mock('issue_agent')
+      mock_agent.stubs(:find_similar_issues).with(issue: @issue).returns(similar_issues_data)
+      RedmineAiHelper::Agents::IssueAgent.stubs(:new).returns(mock_agent)
+      
+      result = @llm.find_similar_issues(issue: @issue)
+      assert_equal similar_issues_data, result
+    end
+
+    should "handle errors during similar issues search" do
+      # Mock IssueAgent to raise an error
+      RedmineAiHelper::Agents::IssueAgent.stubs(:new).raises(StandardError.new("Vector search failed"))
+      
+      assert_raises(StandardError, "Vector search failed") do
+        @llm.find_similar_issues(issue: @issue)
+      end
+    end
+
+    should "create langfuse trace for similar issues search" do
+      # Mock langfuse wrapper with expectations
+      mock_langfuse = mock('langfuse_wrapper')
+      mock_langfuse.expects(:create_span).with(name: "find_similar_issues", input: "issue_id: #{@issue.id}")
+      mock_langfuse.expects(:finish_current_span).with(anything)
+      mock_langfuse.expects(:flush)
+      RedmineAiHelper::LangfuseUtil::LangfuseWrapper.stubs(:new).with(input: "find similar issues for #{@issue.id}").returns(mock_langfuse)
+      
+      # Mock IssueAgent
+      similar_issues_data = []
+      mock_agent = mock('issue_agent')
+      mock_agent.stubs(:find_similar_issues).returns(similar_issues_data)
+      RedmineAiHelper::Agents::IssueAgent.stubs(:new).returns(mock_agent)
+      
+      result = @llm.find_similar_issues(issue: @issue)
+      assert_equal similar_issues_data, result
+    end
+
+    should "pass correct parameters to IssueAgent" do
+      # Mock langfuse
+      mock_langfuse = mock('langfuse_wrapper')
+      mock_langfuse.stubs(:create_span)
+      mock_langfuse.stubs(:finish_current_span)
+      mock_langfuse.stubs(:flush)
+      RedmineAiHelper::LangfuseUtil::LangfuseWrapper.stubs(:new).returns(mock_langfuse)
+      
+      # Verify IssueAgent is created with correct project and langfuse
+      RedmineAiHelper::Agents::IssueAgent.expects(:new).with(
+        project: @issue.project,
+        langfuse: mock_langfuse
+      ).returns(mock('agent').tap do |agent|
+        agent.stubs(:find_similar_issues).with(issue: @issue).returns([])
+      end)
+      
+      @llm.find_similar_issues(issue: @issue)
+    end
+
+    should "log errors and re-raise them" do
+      # Mock langfuse
+      mock_langfuse = mock('langfuse_wrapper')
+      mock_langfuse.stubs(:create_span)
+      mock_langfuse.stubs(:finish_current_span)
+      mock_langfuse.stubs(:flush)
+      RedmineAiHelper::LangfuseUtil::LangfuseWrapper.stubs(:new).returns(mock_langfuse)
+      
+      # Mock IssueAgent to raise an error
+      mock_agent = mock('issue_agent')
+      mock_agent.stubs(:find_similar_issues).raises(StandardError.new("Test error"))
+      RedmineAiHelper::Agents::IssueAgent.stubs(:new).returns(mock_agent)
+      
+      # Expect error logging
+      @llm.expects(:ai_helper_logger).returns(mock('logger').tap do |logger|
+        logger.expects(:error).with(regexp_matches(/error:/))
+      end)
+      
+      assert_raises(StandardError, "Test error") do
+        @llm.find_similar_issues(issue: @issue)
+      end
     end
   end
 

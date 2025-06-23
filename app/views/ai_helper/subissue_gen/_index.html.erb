@@ -17,8 +17,6 @@
         container.innerHTML = '<div class="ai-helper-loader"></div>';
 
         const url = "<%= ai_helper_subissue_gen_path(id: issue) %>"
-        console.log("Generating sub issues for issue ID:", issueId);
-        console.log("Request URL:", url);
 
         fetch(url, {
             method: 'POST',

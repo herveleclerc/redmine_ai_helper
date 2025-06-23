@@ -5,10 +5,23 @@ en:
   label_ai_helper_input_newline: "Press Shift + Enter for a new line."
   label_ai_helper_start_new_chat: "Start a new chat"
   ai_helper_summary: "Summarize with AI Helper"
+  ai_helper_similar_issues: "Find Similar Issues with AI Helper"
+  ai_helper_find_similar_issues: "Find Similar Issues"
+  ai_helper_similarity: "Similarity"
+  ai_helper_no_similar_issues_found: "No similar issues found"
   ai_helper_text_summary_generated_time: "Generated at %{time}"
   ai_helper_error_occurred: "An error occurred"
   permission_view_ai_helper: "View AI Helper"
+  label_ai_helper_error: "Error"
   ai_helper:
+    project_health:
+      title: "Project Health Report"
+      generate_report: "Generate Report"
+      generating: "Generating"
+      placeholder: "Click 'Generate Report' to analyze project metrics and get insights."
+      note: "The report will analyze issue statistics, timing metrics, workload distribution, and provide actionable recommendations."
+      no_report_available: "No health report available for PDF export"
+      report_content: "Health Report Content"
     generate_issue_reply:
       title: "Create a comment draft with AI Helper"
       instructions: "Please enter the key points or instructions for the reply."
@@ -80,3 +93,4 @@ en:
       ai_helper_project_setting:
         issue_draft_instructions: "Instructions for issue comment generation"
         subtask_instructions: "Instructions for subtask generation"
+        health_report_instructions: "Instructions for health report generation"
