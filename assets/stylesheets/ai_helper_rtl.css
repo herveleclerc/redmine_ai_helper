@@ -1,0 +1,147 @@
+/* RTL Support for AI Helper Project Health Report */
+
+/* Main container direction - works with RTL detection */
+.ai-helper-project-health[dir="rtl"] {
+  direction: rtl;
+}
+
+.ai-helper-project-health[dir="rtl"] .ai-helper-project-health-content {
+  direction: rtl;
+}
+
+/* Contextual menu positioning for RTL */
+.ai-helper-project-health[dir="rtl"] .contextual {
+  float: left;
+  padding-right: 10px;
+  padding-left: 0;
+}
+
+/* Content text alignment for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content,
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content *,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content * {
+  text-align: right;
+}
+
+/* Table alignment for RTL - reverse the default left alignment */
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content table.list td,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content table.list td {
+  text-align: right !important;
+}
+
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content table.list th,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content table.list th {
+  text-align: right !important;
+}
+
+/* Respect explicit alignment attributes in RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content table.list td[align=left],
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content table.list th[align=left],
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content table.list td[align=left],
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content table.list th[align=left] {
+  text-align: left !important;
+}
+
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content table.list td[align=right],
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content table.list th[align=right],
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content table.list td[align=right],
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content table.list th[align=right] {
+  text-align: right !important;
+}
+
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content table.list td[align=center],
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content table.list th[align=center],
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content table.list td[align=center],
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content table.list th[align=center] {
+  text-align: center !important;
+}
+
+/* List padding for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content ul,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content ul {
+  padding-right: 2em;
+  padding-left: 0;
+}
+
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content ol,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content ol {
+  padding-right: 2em;
+  padding-left: 0;
+}
+
+/* Export buttons alignment - keep buttons on the left in RTL */
+.ai-helper-project-health[dir="rtl"] p.other-formats {
+  text-align: left;
+}
+
+/* Placeholder text alignment for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-project-health-placeholder {
+  text-align: right;
+}
+
+.ai-helper-project-health[dir="rtl"] .ai-helper-project-health-placeholder p {
+  text-align: right;
+}
+
+.ai-helper-project-health[dir="rtl"] .ai-helper-project-health-placeholder .ai-helper-note {
+  text-align: right;
+}
+
+/* Loading message alignment for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-loading {
+  text-align: center; /* Keep centered for loading message */
+}
+
+/* Error message alignment for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-error {
+  text-align: right;
+}
+
+/* Note text alignment for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-note {
+  text-align: right;
+}
+
+/* Headings alignment for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content h1,
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content h2,
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content h3,
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content h4,
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content h5,
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content h6,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content h1,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content h2,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content h3,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content h4,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content h5,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content h6 {
+  text-align: right;
+}
+
+/* Paragraph alignment for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content p,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content p {
+  text-align: right;
+}
+
+/* Code blocks - keep monospace elements left-aligned for readability */
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content code,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content code,
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content pre,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content pre {
+  text-align: left;
+  direction: ltr;
+}
+
+/* Blockquote alignment for RTL */
+.ai-helper-project-health[dir="rtl"] .ai-helper-streaming-content blockquote,
+.ai-helper-project-health[dir="rtl"] .ai-helper-final-content blockquote {
+  text-align: right;
+  border-right: 4px solid #ddd;
+  border-left: none;
+  padding-right: 1em;
+  padding-left: 0;
+  margin-right: 0;
+  margin-left: 1em;
+}

@@ -14,7 +14,7 @@
     health_report = Rails.cache.read(cache_key)
 %>
 
-<div class="ai-helper-project-health">
+<div class="ai-helper-project-health"<%= ' dir="rtl"'.html_safe if l(:direction) == 'rtl' %>>
   <h3><%= sprite_icon("ai-helper-robot", t('ai_helper.project_health.title'), plugin: :redmine_ai_helper) %></h3>
   <div class="contextual">
     <%= link_to t('ai_helper.project_health.generate_report'),
@@ -69,6 +69,7 @@
 
 <% content_for :header_tags do %>
   <%= javascript_include_tag 'ai_helper_project_health', plugin: 'redmine_ai_helper' %>
+  <%= stylesheet_link_tag 'ai_helper_rtl', plugin: 'redmine_ai_helper' if l(:direction) == 'rtl' %>
 <% end %>
 
 <% end # if project %>
