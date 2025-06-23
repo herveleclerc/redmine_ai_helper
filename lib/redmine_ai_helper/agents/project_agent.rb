@@ -28,7 +28,7 @@ module RedmineAiHelper
         project_tools = RedmineAiHelper::Tools::ProjectTools.new
 
         # Check if there are any open versions in the project
-        open_versions = project.versions.open
+        open_versions = project.versions.open.order(created_on: :desc)
         metrics_list = []
 
         if open_versions.any?
