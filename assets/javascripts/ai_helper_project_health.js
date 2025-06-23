@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('AI Helper Project Health JS loaded');
 
   // Set flag to indicate main script is loaded
   window.aiHelperProjectHealthLoaded = true;
@@ -10,20 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof AiHelperMarkdownParser !== 'undefined') {
       parser = new AiHelperMarkdownParser();
     } else {
-      console.error('AiHelperMarkdownParser is not available');
       return;
     }
   } catch (error) {
-    console.error('Error initializing AiHelperMarkdownParser:', error);
     return;
   }
 
   const generateLink = document.getElementById('ai-helper-generate-project-health-link');
 
-  console.log('Generate link found:', generateLink);
-
   if (!generateLink) {
-    console.log('Generate link not found, script will not attach event listener');
     return;
   }
 
@@ -61,13 +55,6 @@ document.addEventListener('DOMContentLoaded', function() {
             newContentDiv.classList.add('has-report');
           }
 
-          // Re-parse markdown content if needed
-          const hiddenField = document.getElementById('ai-helper-health-report-content');
-          if (hiddenField && hiddenField.value) {
-            const formattedContent = parser.parse(hiddenField.value);
-            newResultDiv.innerHTML = '<div class="ai-helper-final-content">' + formattedContent + '</div>';
-          }
-
           // Ensure PDF button exists
           if (!document.querySelector('.other-formats')) {
             addPdfExportButton();
@@ -83,10 +70,17 @@ document.addEventListener('DOMContentLoaded', function() {
     observer.observe(healthContainer, { childList: true, subtree: true });
   }
 
+  let currentEventSource = null; // Keep track of current EventSource
+
   if (generateLink) {
     generateLink.addEventListener('click', function(e) {
-      console.log('Generate link clicked');
       e.preventDefault();
+
+      // Close any existing EventSource to prevent conflicts
+      if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+      }
 
       // Get the result div that should already exist in the scrollable container
       const resultDiv = document.getElementById('ai-helper-project-health-result');
@@ -103,7 +97,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const url = this.href;
 
       // Create EventSource for streaming
-      const eventSource = new EventSource(url);
+      currentEventSource = new EventSource(url);
+      const eventSource = currentEventSource;
       let content = '';
 
       eventSource.onmessage = function(event) {
@@ -134,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           if (data.choices && data.choices[0] && data.choices[0].finish_reason === 'stop') {
             eventSource.close();
+            currentEventSource = null;
             if (resultDiv) {
               const formattedContent = parser.parse(content);
               const finalHTML = '<div class="ai-helper-final-content">' +
@@ -160,6 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       eventSource.onerror = function(event) {
         eventSource.close();
+        currentEventSource = null;
         if (resultDiv) {
           const errorMessage = document.querySelector('meta[name="error-message"]');
           const errorText = errorMessage ? errorMessage.getAttribute('content') : 'Error';
