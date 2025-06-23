@@ -11,12 +11,12 @@ ja:
   ai_helper_no_similar_issues_found: "類似するチケットが見つかりませんでした"
   ai_helper_text_summary_generated_time: "%{time} に生成"
   ai_helper_error_occurred: "エラーが発生しました"
-  ai_helper_project_health_title: "プロジェクト健全性レポート"
   permission_view_ai_helper: "AIヘルパーの表示"
   label_ai_helper_error: "エラー"
   ai_helper:
     project_health:
       title: "プロジェクト健全性レポート"
+      pdf_title: "プロジェクト健全性レポート"
       generate_report: "レポートを生成"
       generating: "生成中"
       placeholder: "「レポートを生成」をクリックして、プロジェクトメトリクスを分析し洞察を得てください。"

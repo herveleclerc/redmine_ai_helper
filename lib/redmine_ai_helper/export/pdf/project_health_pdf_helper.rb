@@ -18,7 +18,7 @@ module RedmineAiHelper
         # @return [String] PDF content as binary string
         def project_health_to_pdf(project, health_report, options = {})
           pdf = Redmine::Export::PDF::ITCPDF.new(current_language)
-          pdf.set_title("#{project.name} - #{l(:ai_helper_project_health_title)}")
+          pdf.set_title("#{project.name} - #{l('ai_helper.project_health.pdf_title')}")
           pdf.alias_nb_pages
           pdf.footer_date = format_date(User.current.today)
           
@@ -35,7 +35,7 @@ module RedmineAiHelper
           pdf.ln(8)
           
           pdf.SetFontStyle('B', 14)
-          pdf.cell(0, 8, l(:ai_helper_project_health_title))
+          pdf.cell(0, 8, l('ai_helper.project_health.pdf_title'))
           pdf.ln(10)
 
           # Project information section
