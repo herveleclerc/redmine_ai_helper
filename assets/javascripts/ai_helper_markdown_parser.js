@@ -1,4 +1,6 @@
-class AiHelperMarkdownParser {
+// Prevent duplicate class declaration
+if (typeof AiHelperMarkdownParser === 'undefined') {
+  window.AiHelperMarkdownParser = class {
     constructor() {
       this.rules = [
         // Headers
@@ -204,6 +206,5 @@ class AiHelperMarkdownParser {
       
       return html.join('\n');
     }
-  }
-  
-  
+  };
+}
