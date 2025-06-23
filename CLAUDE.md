@@ -114,3 +114,6 @@ To create custom agents:
 
 ## Logging Guidelines
 - Don't use Rails.logger for logging. Use ai_helper_logger
+
+## CSS Guidelines
+- Do not specify custom colors or fonts in CSS. The appearance must be unified with the Redmine interface, so use Redmine's class definitions and CSS as much as possible.
