@@ -216,7 +216,9 @@ module RedmineAiHelper
           end
           issues_scope = issues_scope.where(fixed_version_id: version_id) if version_id
 
-          issues = issues_scope.includes(:status, :priority, :tracker, :assigned_to, :author, :fixed_version, :time_entries)
+          # Limit the number of issues to prevent memory issues and long processing times
+          # For health reports, we typically don't need more than 10,000 issues for meaningful analysis
+          issues = issues_scope.includes(:status, :priority, :tracker, :assigned_to, :author, :fixed_version, :time_entries).limit(10000)
 
           metrics = {
             project_info: {
