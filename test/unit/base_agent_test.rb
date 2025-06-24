@@ -77,11 +77,18 @@ class RedmineAiHelper::BaseAgentTest < ActiveSupport::TestCase
   context "AgentList" do
     setup do
       @agent_list = RedmineAiHelper::AgentList.instance
-      # Clear existing agents to avoid interference
+      # Store original agents to restore later
+      @original_agents = @agent_list.instance_variable_get(:@agents).dup
+      # Clear existing agents and add test agents
       @agent_list.instance_variable_set(:@agents, [])
       @agent_list.add_agent("test_agent", "BaseAgentTestModele::TestAgent")
       @agent_list.add_agent("test_agent2", "BaseAgentTestModele::TestAgent2")
       @agent_list.add_agent("disabled_agent", "BaseAgentTestModele::DisabledAgent")
+    end
+
+    teardown do
+      # Restore original agents to avoid interfering with other tests
+      @agent_list.instance_variable_set(:@agents, @original_agents)
     end
 
     should "return only enabled agents in list_agents" do
