@@ -35,6 +35,12 @@ module RedmineAiHelper
         # @return [Class] The generated tool class.
         def generate_tool_class(name:, json:)
           class_name = "Mcp#{name.capitalize}"
+          
+          # Check if class already exists to avoid redefinition warnings
+          if Object.const_defined?(class_name)
+            return Object.const_get(class_name)
+          end
+          
           Object.const_set(class_name,
                            Class.new(RedmineAiHelper::Tools::McpTools) do
             @mcp_server_json = json
