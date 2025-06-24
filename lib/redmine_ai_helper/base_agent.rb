@@ -77,6 +77,12 @@ module RedmineAiHelper
       raise NotImplementedError
     end
 
+    # Whether the agent is enabled or not
+    # @return [Boolean] true if the agent is enabled, false otherwise
+    def enabled?
+      true
+    end
+
     # The content of the system prompt
     # @return [Hash] The system prompt content.
     def system_prompt
@@ -195,8 +201,9 @@ module RedmineAiHelper
     end
 
     def list_agents
-      @agents.map { |a|
+      @agents.filter_map { |a|
         agent = Object.const_get(a[:class]).new
+        next unless agent.enabled?
         {
           agent_name: a[:name],
           backstory: agent.backstory,

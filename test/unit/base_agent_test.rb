@@ -56,11 +56,41 @@ class RedmineAiHelper::BaseAgentTest < ActiveSupport::TestCase
     end
   end
 
+  context "enabled?" do
+    should "return true by default for agents" do
+      assert_equal true, @agent.enabled?
+    end
+
+    should "return true for agent2" do
+      assert_equal true, @agent2.enabled?
+    end
+  end
+
   context "perform_task" do
     should "perform the task and return a response" do
       messages = [{ role: "user", content: "テストメッセージ" }]
       response = @agent.perform_task(messages)
       assert response
+    end
+  end
+
+  context "AgentList" do
+    setup do
+      @agent_list = RedmineAiHelper::AgentList.instance
+      # Clear existing agents to avoid interference
+      @agent_list.instance_variable_set(:@agents, [])
+      @agent_list.add_agent("test_agent", "BaseAgentTestModele::TestAgent")
+      @agent_list.add_agent("test_agent2", "BaseAgentTestModele::TestAgent2")
+      @agent_list.add_agent("disabled_agent", "BaseAgentTestModele::DisabledAgent")
+    end
+
+    should "return only enabled agents in list_agents" do
+      agents = @agent_list.list_agents
+      agent_names = agents.map { |a| a[:agent_name] }
+      
+      assert_includes agent_names, "test_agent"
+      assert_includes agent_names, "test_agent2"
+      assert_not_includes agent_names, "disabled_agent"
     end
   end
 
@@ -94,7 +124,7 @@ module BaseAgentTestModele
     end
 
     def generate_response(prompt:, **options)
-      # テスト用のダミー応答を生成するロジックを実装します
+      # Generate dummy response for testing
       "テストエージェントの応答"
     end
   end
@@ -105,8 +135,23 @@ module BaseAgentTestModele
     end
 
     def generate_response(prompt:, **options)
-      # テスト用のダミー応答を生成するロジックを実装します
+      # Generate dummy response for testing
       "テストエージェントの応答"
+    end
+  end
+
+  class DisabledAgent < RedmineAiHelper::BaseAgent
+    def backstory
+      "無効化されたテストエージェント"
+    end
+
+    def enabled?
+      false
+    end
+
+    def generate_response(prompt:, **options)
+      # Generate dummy response for testing
+      "無効化されたエージェントの応答"
     end
   end
 
