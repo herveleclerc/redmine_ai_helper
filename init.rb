@@ -7,6 +7,17 @@ require_dependency "redmine_ai_helper/view_hook"
 Dir[File.join(File.dirname(__FILE__), "lib/redmine_ai_helper/agents", "*_agent.rb")].each do |file|
   require file
 end
+
+# Generate SubMcpAgent classes after all agents are loaded
+begin
+  # Use ai_helper_logger directly
+  RedmineAiHelper::CustomLogger.instance.debug("Starting SubMcpAgent generation...")
+  RedmineAiHelper::Agents::McpAgent.generate_sub_agents
+  RedmineAiHelper::CustomLogger.instance.debug("SubMcpAgent generation completed")
+rescue => e
+  RedmineAiHelper::CustomLogger.instance.error("Error generating SubMcpAgent classes: #{e.message}")
+  RedmineAiHelper::CustomLogger.instance.error(e.backtrace.join("\n"))
+end
 Redmine::Plugin.register :redmine_ai_helper do
   name "Redmine Ai Helper plugin"
   author "Haruyuki Iida"
