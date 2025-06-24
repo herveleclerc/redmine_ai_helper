@@ -19,6 +19,12 @@ module RedmineAiHelper
         content = prompt.format
         content
       end
+
+      # McpAgent is only enabled if there are available tools
+      # @return [Boolean] true if available tools exist, false otherwise
+      def enabled?
+        !available_tools.empty?
+      end
     end
   end
 end

@@ -130,5 +130,17 @@ class AgentsTest < ActiveSupport::TestCase
         assert_equal RedmineAiHelper::Util::McpToolsLoader.load, @agent.available_tool_providers
       end
     end
+
+    context "enabled?" do
+      should "return false when no available tools" do
+        @agent.stubs(:available_tools).returns([])
+        assert_equal false, @agent.enabled?
+      end
+
+      should "return true when available tools exist" do
+        @agent.stubs(:available_tools).returns([{ "type" => "function", "function" => { "name" => "test_tool" } }])
+        assert_equal true, @agent.enabled?
+      end
+    end
   end
 end
