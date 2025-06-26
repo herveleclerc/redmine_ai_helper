@@ -16,6 +16,7 @@ ja:
   ai_helper:
     project_health:
       title: "プロジェクト健全性レポート"
+      pdf_title: "プロジェクト健全性レポート"
       generate_report: "レポートを生成"
       generating: "生成中"
       placeholder: "「レポートを生成」をクリックして、プロジェクトメトリクスを分析し洞察を得てください。"

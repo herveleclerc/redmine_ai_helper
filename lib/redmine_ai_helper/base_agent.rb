@@ -17,14 +17,32 @@ module RedmineAiHelper
       # @param subclass [Class] The subclass that is being inherited.
       # @return [void]
       def inherited(subclass)
+        # For dynamic classes, delay registration until class name is properly set
+        if subclass.name.nil?
+          # Store the subclass to register later when the name is set
+          @pending_dynamic_classes ||= []
+          @pending_dynamic_classes << subclass
+          return
+        end
+        
         class_name = subclass.name
-        class_name = subclass.to_s if class_name.nil?
         real_class_name = class_name.split("::").last
         @myname = real_class_name.underscore
         agent_list = AgentList.instance
         agent_list.add_agent(
           @myname,
           subclass.name,
+        )
+      end
+      
+      # Method to register pending dynamic classes
+      def register_pending_dynamic_class(subclass, class_name)
+        real_class_name = class_name.split("::").last
+        agent_name = real_class_name.underscore
+        agent_list = AgentList.instance
+        agent_list.add_agent(
+          agent_name,
+          class_name,
         )
       end
     end
@@ -75,6 +93,12 @@ module RedmineAiHelper
     # The backstory of the agent
     def backstory
       raise NotImplementedError
+    end
+
+    # Whether the agent is enabled or not
+    # @return [Boolean] true if the agent is enabled, false otherwise
+    def enabled?
+      true
     end
 
     # The content of the system prompt
@@ -195,17 +219,35 @@ module RedmineAiHelper
     end
 
     def list_agents
-      @agents.map { |a|
-        agent = Object.const_get(a[:class]).new
-        {
-          agent_name: a[:name],
-          backstory: agent.backstory,
-        }
+      @agents.filter_map { |a|
+        # Skip if class name is nil or empty
+        next if a[:class].nil? || a[:class].empty?
+        
+        begin
+          agent = Object.const_get(a[:class]).new
+          next unless agent.enabled?
+          {
+            agent_name: a[:name],
+            backstory: agent.backstory,
+          }
+        rescue NameError => e
+          # Skip agents whose classes don't exist or can't be loaded
+          RedmineAiHelper::CustomLogger.instance.warn("Cannot load agent class '#{a[:class]}': #{e.message}")
+          next
+        end
       }
     end
 
     def find_agent(name)
       @agents.find { |a| a[:name] == name }
+    end
+
+    def remove_agent(name)
+      @agents.delete_if { |a| a[:name] == name }
+    end
+
+    def debug_agents
+      RedmineAiHelper::CustomLogger.instance.info("Registered agents: #{@agents.map { |a| "#{a[:name]} (#{a[:class]})" }.join(', ')}")
     end
   end
 end
