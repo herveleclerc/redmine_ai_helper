@@ -305,10 +305,6 @@ table.ai-helper-sub-issues-table td {
 /* Project Health Report Styles */
 .ai-helper-project-health {
   margin: 10px 0;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: #fafafa;
 }
 
 .ai-helper-project-health-content {
