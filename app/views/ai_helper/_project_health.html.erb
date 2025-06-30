@@ -1,3 +1,4 @@
+<% if @project&.id %>
 <%
   # Get project from hook context or controller instance
   project = @project || instance_variable_get(:@project) || (respond_to?(:project) ? project : nil)
@@ -13,6 +14,7 @@
     cache_key = "project_health_#{project.id}_#{version_id}_#{start_date}_#{end_date}"
     health_report = Rails.cache.read(cache_key)
 %>
+
 
 <div class="ai-helper-project-health box"<%= ' dir="rtl"'.html_safe if l(:direction) == 'rtl' %>>
   <h3><%= sprite_icon("ai-helper-robot", t('ai_helper.project_health.title'), plugin: :redmine_ai_helper) %></h3>
@@ -73,3 +75,5 @@
 <% end %>
 
 <% end # if project %>
+
+<% end %>
