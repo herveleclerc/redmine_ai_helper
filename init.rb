@@ -18,6 +18,13 @@ rescue => e
   RedmineAiHelper::CustomLogger.instance.error("Error generating SubMcpAgent classes: #{e.message}")
   RedmineAiHelper::CustomLogger.instance.error(e.backtrace.join("\n"))
 end
+
+if Rails.env.development?
+  ((Rails.application.config.eager_load_paths + Rails.application.config.autoload_paths).uniq & Dir["#{__dir__}/app/**/*", "#{__dir__}/lib/**/*"]).each do |path|
+    Rails.configuration.watchable_files.concat Dir["#{path}/**/*.rb"]
+  end
+end
+
 Redmine::Plugin.register :redmine_ai_helper do
   name "Redmine Ai Helper plugin"
   author "Haruyuki Iida"

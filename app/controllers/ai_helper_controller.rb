@@ -185,8 +185,17 @@ class AiHelperController < ApplicationController
     instructions = data["instructions"]
     llm = RedmineAiHelper::Llm.new
 
+    # We need to handle both streaming and non-streaming responses.
+    # The `stream_llm_response` helper is designed for streaming.
+    # When the LLM client (like Gemini) doesn't stream, we get the full content
+    # at once and need to send it down the pipe correctly.
     stream_llm_response do |stream_proc|
-      llm.generate_issue_reply(issue: @issue, instructions: instructions, stream_proc: stream_proc)
+      # We call the LLM method without the stream_proc first, to get the full response.
+      full_response = llm.generate_issue_reply(issue: @issue, instructions: instructions, stream_proc: nil)
+      
+      # If the response is not streamed, the stream_proc is never called inside the LLM method.
+      # We must call it here with the full content to send it to the client.
+      stream_proc.call(full_response)
     end
   end
 

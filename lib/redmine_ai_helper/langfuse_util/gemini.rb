@@ -17,7 +17,9 @@ module RedmineAiHelper
           new_messages = []
           new_messages << { role: "system", content: params[:system] } if params[:system]
           params[:messages].each do |message|
-            new_messages << { role: message[:role], content: message.dig(:parts, 0, :text) }
+            # Gemini API requires "model" role for assistant messages.
+            role = message[:role] == "assistant" ? "model" : message[:role]
+            new_messages << { role: role, content: message.dig(:parts, 0, :text) }
           end
           generation = span.create_generation(name: "chat", messages: new_messages, model: parameters[:model], temperature: parameters[:temperature], max_tokens: max_tokens)
         end

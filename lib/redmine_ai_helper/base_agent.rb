@@ -129,9 +129,17 @@ module RedmineAiHelper
     # Chat with the assistant.
     # @param messages [Array] The messages to be sent to the assistant.
     # @param option [Hash] Additional options for the chat.
-    # @param callback [Proc] A callback function to be called with each chunk of the response.
-    # @return [String] The response from the assistant.
+      # @param callback [Proc] A callback function to be called with each chunk of the response.
+      # @return [String] The response from the assistant.
     def chat(messages, option = {}, callback = nil)
+      # Gemini API requires "model" role for assistant messages.
+      # We need to translate the roles before sending the request.
+      if llm_type == RedmineAiHelper::LlmProvider::LLM_GEMINI
+        messages.each do |message|
+          message[:role] = "model" if message[:role] == "assistant"
+        end
+      end
+      
       system_prompt_message = { "role": "system", "content": system_prompt }
       chat_params = llm_provider.create_chat_param(system_prompt_message, messages)
       answer = ""

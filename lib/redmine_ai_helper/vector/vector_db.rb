@@ -140,7 +140,19 @@ module RedmineAiHelper
       # @param k [Integer] The number of results to return.
       # @return [Array] An array of similar data that match the query.
       def similarity_search(question:, k: 10)
-        client.similarity_search(query: question, k: k)
+        # This is the final layer of defense. We wrap the call in a rescue block
+        # to ensure any error from the client is logged, and we return an empty array.
+        begin
+          Rails.logger.info "--- Entering VectorDb#similarity_search ---"
+          response = client.similarity_search(query: question, k: k)
+          Rails.logger.info "--- VectorDb#similarity_search response: #{response.inspect}"
+          response
+        rescue => e
+          Rails.logger.error "--- VECTORDB SIMILARITY SEARCH FAILED ---"
+          Rails.logger.error "Error: #{e.class} - #{e.message}"
+          Rails.logger.error "Backtrace: #{e.backtrace.join("\n")}"
+          [] # Return empty array on failure
+        end
       end
 
       # Searches for similar data in the vector database with a filter.

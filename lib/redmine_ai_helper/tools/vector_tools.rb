@@ -126,7 +126,15 @@ module RedmineAiHelper
           ai_helper_logger.debug("Performing similarity search with query: #{query[0..100]}...")
           
           # Search for similar issues
-          results = db.similarity_search(question: query, k: k)
+          begin
+            results = db.similarity_search(question: query, k: k)
+            Rails.logger.info "--- Raw similarity search results from Qdrant: #{results.inspect}"
+          rescue => e
+            Rails.logger.error "--- SIMILARITY SEARCH FAILED ---"
+            Rails.logger.error "Error during db.similarity_search: #{e.class} - #{e.message}"
+            Rails.logger.error "Backtrace: #{e.backtrace.join("\n")}"
+            results = [] # Ensure results is an empty array on failure
+          end
           ai_helper_logger.debug("Raw similarity search results: #{results&.length || 0} items")
           
           # Handle case where results is nil or empty
